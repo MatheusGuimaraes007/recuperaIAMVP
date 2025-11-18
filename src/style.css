@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@theme {
+  --color-background1: #ffffff;
+  --color-background2: #15221b;
+  --color-background3: #0a0f01;
+  --color-background4: #021505;
+  --color-text1: #7cba10;
+  /* (Texto Positivo, Negrito, Palavras-Chaves) */
+  --color-text2: #ef4343;
+  /* (Texto Negativo, inimigo em comum) */
+  /* Textos e Parágrafos, usar preto, branco e a cor abaixo */
+  --color-text3: #7cba10;
+}
