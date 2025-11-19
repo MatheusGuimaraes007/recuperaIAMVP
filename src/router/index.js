@@ -5,6 +5,7 @@ import Cadastro from '../components/all/Cadastro.vue';
 import RecuperarSenha from '../components/all/RecuperarSenha.vue';
 import RedefinirSenha from '../components/all/RedefinirSenha.vue';
 import Dashboard from '../components/dashboard/Dashboard.vue';
+import OpportunityList from "../components/opportunities/OpportunityList.vue";
 
 const routes = [
     {
@@ -44,6 +45,12 @@ const routes = [
         name: 'Dashboard',
         component: Dashboard,
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/oportunidades',
+        name: 'Oportunidades',
+        component: OpportunityList,
+        meta: { requiresAuth: true }
     }
 ];
 
@@ -61,7 +68,6 @@ router.beforeEach(async (to, from, next) => {
 
     const isAuthenticated = authStore.isAuthenticated;
     const isAdmin = authStore.isAdmin;
-
 
     if (to.meta.public) {
         return next();

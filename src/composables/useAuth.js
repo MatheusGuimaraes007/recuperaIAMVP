@@ -1,6 +1,7 @@
-
 import { storeToRefs } from 'pinia';
-import {useAuthStore} from "../stores/useAuthStore.js";
+import { useAuthStore } from '../stores/useAuthStore.js';
+import {validateEmail, validatePassword, validatePhone} from '../utils/validators.js';
+import { formatPhone } from '../utils/formatters.js';
 
 export const useAuth = () => {
     const authStore = useAuthStore();
@@ -24,32 +25,6 @@ export const useAuth = () => {
         updatePassword,
         clearError,
     } = authStore;
-
-    const validateEmail = (email) => {
-        const regex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-        return regex.test(email);
-    };
-
-    const validatePassword = (password) => {
-        return password.length >= 6;
-    };
-
-    const validatePhone = (phone) => {
-        const cleaned = phone.replace(/\D/g, '');
-        return cleaned.length === 10 || cleaned.length === 11;
-    };
-
-    const formatPhone = (phone) => {
-        const cleaned = phone.replace(/\D/g, '');
-
-        if (cleaned.length === 11) {
-            return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
-        } else if (cleaned.length === 10) {
-            return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
-        }
-
-        return phone;
-    };
 
     const requireAdmin = () => {
         if (!isAdmin.value) {
@@ -83,6 +58,7 @@ export const useAuth = () => {
         validateEmail,
         validatePassword,
         validatePhone,
+
         formatPhone,
 
         requireAdmin,
