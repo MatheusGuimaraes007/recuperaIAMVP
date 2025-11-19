@@ -1,10 +1,10 @@
-import {createClient} from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SIPABASE_KEY;
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Supabase URL or Key is not defined in environment variables');
+    throw new Error('Supabase URL or Key is not defined in environment variables');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
