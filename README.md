@@ -63,7 +63,7 @@ Acesse: `http://localhost:5173`
 | **[📐 ARCHITECTURE.md](./docs/ARCHITECTURE.md)** | Arquitetura completa do sistema, stack tecnológica e decisões de design |
 | **[📊 DATABASE.md](./docs/DATABASE.md)** | Schema do banco de dados, relacionamentos e políticas RLS |
 | **[🔄 DIAGRAMS.md](./docs/DIAGRAMS.md)** | Diagramas de entidades, fluxos e sequências |
-| **[🗂️ PROJECT_STRUCTURE.md](./docs/PROJECT_STRUCTURE.md)** | Estrutura de pastas, convenções e organização do código |
+| **[🗂️ PROJECT_STRUCTURE.md](./docs/Project_Structure.md)** | Estrutura de pastas, convenções e organização do código |
 | **[🔌 INTEGRATIONS.md](./docs/INTEGRATIONS.md)** | Documentação de integrações (WhatsApp, N8N, Checkouts) |
 
 ---
@@ -115,7 +115,7 @@ recupera-ia/
 └── package.json
 ```
 
-Veja [PROJECT_STRUCTURE.md](./docs/PROJECT_STRUCTURE.md) para detalhes completos.
+Veja [PROJECT_STRUCTURE.md](./docs/Project_Structure.md) para detalhes completos.
 
 ---
 
