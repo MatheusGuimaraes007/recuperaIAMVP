@@ -1,107 +1,108 @@
+<!-- Button.vue - Versão Melhorada (sem alterações na lógica) -->
 <script setup>
-    import { computed } from 'vue';
+import { computed } from 'vue';
 
-    const props = defineProps({
-    variant: {
+const props = defineProps({
+  variant: {
     type: String,
     default: 'primary',
     validator: (value) => ['primary', 'secondary', 'danger', 'ghost'].includes(value)
-},
-    size: {
+  },
+  size: {
     type: String,
     default: 'md',
     validator: (value) => ['sm', 'md', 'lg'].includes(value)
-},
-    disabled: {
+  },
+  disabled: {
     type: Boolean,
     default: false
-},
-    loading: {
+  },
+  loading: {
     type: Boolean,
     default: false
-},
-    fullWidth: {
+  },
+  fullWidth: {
     type: Boolean,
     default: false
-},
-    icon: {
+  },
+  icon: {
     type: Boolean,
     default: false
-}
+  }
 });
 
-    const emit = defineEmits(['click']);
+const emit = defineEmits(['click']);
 
-    const variantClasses = computed(() => {
-    const variants = {
-    primary: 'bg-[#7cba10] text-black hover:opacity-90 font-semibold',
-    secondary: 'border border-gray-700 text-gray-400 hover:border-gray-600',
-    danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
-    ghost: 'text-[#7cba10] border border-[#7cba10] hover:bg-[#7cba10]/10'
-};
-    return variants[props.variant];
+const variantClasses = computed(() => {
+  const variants = {
+    primary: 'bg-[#7cba10] text-black hover:bg-[#6aa50e] active:scale-95 font-semibold shadow-lg shadow-[#7cba10]/20',
+    secondary: 'border border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800/50 active:scale-95',
+    danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 active:scale-95',
+    ghost: 'text-[#7cba10] border border-[#7cba10]/30 hover:bg-[#7cba10]/10 hover:border-[#7cba10] active:scale-95'
+  };
+  return variants[props.variant];
 });
 
-    const sizeClasses = computed(() => {
-    if (props.icon) {
+const sizeClasses = computed(() => {
+  if (props.icon) {
     const sizes = {
-    sm: 'p-1.5',
-    md: 'p-2',
-    lg: 'p-3'
-};
+      sm: 'p-1.5',
+      md: 'p-2',
+      lg: 'p-3'
+    };
     return sizes[props.size];
-}
+  }
 
-    const sizes = {
+  const sizes = {
     sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
+    md: 'px-4 py-2.5 text-sm',
     lg: 'px-6 py-3 text-base'
-};
-    return sizes[props.size];
+  };
+  return sizes[props.size];
 });
 
-    const widthClass = computed(() => props.fullWidth ? 'w-full' : '');
+const widthClass = computed(() => props.fullWidth ? 'w-full' : '');
 
-    const handleClick = (event) => {
-    if (!props.disabled && !props.loading) {
+const handleClick = (event) => {
+  if (!props.disabled && !props.loading) {
     emit('click', event);
-}
+  }
 };
 </script>
 
 <template>
-    <button
+  <button
     :class="[
-    'rounded-lg transition-all duration-200 inline-flex items-center justify-center',
-    variantClasses,
-    sizeClasses,
-    widthClass,
-    { 'opacity-50 cursor-not-allowed': disabled || loading }
+      'rounded-lg transition-all duration-200 inline-flex items-center justify-center font-medium',
+      variantClasses,
+      sizeClasses,
+      widthClass,
+      { 'opacity-50 cursor-not-allowed': disabled || loading }
     ]"
     :disabled="disabled || loading"
     @click="handleClick"
-    >
+  >
     <svg
-        v-if="loading"
-        class="animate-spin h-4 w-4 mr-2"
-        viewBox="0 0 24 24"
+      v-if="loading"
+      class="animate-spin h-4 w-4 mr-2"
+      viewBox="0 0 24 24"
     >
-        <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-            fill="none"
-        />
-        <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        />
+      <circle
+        class="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="4"
+        fill="none"
+      />
+      <path
+        class="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
     </svg>
 
     <slot></slot>
-</button>
+  </button>
 </template>

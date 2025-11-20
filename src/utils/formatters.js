@@ -6,16 +6,39 @@ export const formatCurrency = (value) => {
     }).format(value);
 };
 
-export const formatDate = (date) => {
+export const formatDate = (date, showTime = false) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('pt-BR', {
+    
+    const dateObj = date instanceof Date ? date : new Date(date);
+    
+    if (isNaN(dateObj.getTime())) return '-';
+    
+    const options = {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        ...(showTime && {
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+    };
+    
+    return dateObj.toLocaleString('pt-BR', options);
+};
+
+
+export const formatDateShort = (date) => {
+    if (!date) return '-';
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return '-';
+    
+    return dateObj.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
     });
 };
+
 
 export const formatPhone = (phone) => {
     if (!phone) return '-';
@@ -37,9 +60,11 @@ export const formatPhone = (phone) => {
     return phone;
 };
 
+
 export const cleanPhone = (phone) => {
     return phone.replace(/\D/g, '');
 };
+
 
 export const formatDocument = (doc) => {
     if (!doc) return '-';
@@ -52,4 +77,38 @@ export const formatDocument = (doc) => {
     }
 
     return doc;
+};
+
+export const formatTimeFromMinutes = (minutes) => {
+    if (!minutes || minutes < 0) return '0min';
+    
+    if (minutes < 60) {
+        return `${minutes}min`;
+    }
+    
+    if (minutes < 1440) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+    }
+    
+
+    const days = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    
+    let result = `${days}d`;
+    if (hours > 0) result += ` ${hours}h`;
+    
+    return result;
+};
+
+
+export const formatNumber = (number) => {
+    if (!number) return '0';
+    return new Intl.NumberFormat('pt-BR').format(number);
+};
+
+export const formatPercentage = (value, decimals = 1) => {
+    if (!value) return '0%';
+    return `${parseFloat(value).toFixed(decimals)}%`;
 };

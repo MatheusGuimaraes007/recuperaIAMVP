@@ -6,6 +6,7 @@ import RecuperarSenha from '../components/all/RecuperarSenha.vue';
 import RedefinirSenha from '../components/all/RedefinirSenha.vue';
 import Dashboard from '../components/dashboard/Dashboard.vue';
 import OpportunityList from "../components/opportunities/OpportunityList.vue";
+import OpportunityDetail from "../components/opportunities/OpportunityDetail.vue";
 
 const routes = [
     {
@@ -51,7 +52,13 @@ const routes = [
         name: 'Oportunidades',
         component: OpportunityList,
         meta: { requiresAuth: true }
-    }
+    },
+    {
+  path: '/oportunidades/:id',
+  name: 'OpportunityDetail',
+  component: OpportunityDetail,
+  meta: { requiresAuth: true }
+}
 ];
 
 const router = createRouter({

@@ -1,3 +1,4 @@
+<!-- Card.vue - Versão Melhorada (sem alterações na lógica) -->
 <script setup>
 import { computed } from 'vue';
 
@@ -36,14 +37,14 @@ const paddingClasses = computed(() => {
 });
 
 const cardClasses = computed(() => {
-  const classes = ['rounded-xl'];
+  const classes = ['rounded-xl', 'transition-all', 'duration-200'];
 
   if (props.border) {
     classes.push('border border-[#7cba10]/20');
   }
 
   if (props.hoverable) {
-    classes.push('hover:border-[#7cba10]/40 transition-colors cursor-pointer');
+    classes.push('hover:border-[#7cba10]/40 hover:shadow-lg hover:shadow-[#7cba10]/5 cursor-pointer');
   }
 
   return classes.join(' ');
@@ -52,8 +53,8 @@ const cardClasses = computed(() => {
 
 <template>
   <div
-      :class="[cardClasses, paddingClasses]"
-      style="background-color: var(--color-background4)"
+    :class="[cardClasses, paddingClasses]"
+    style="background-color: var(--color-background4)"
   >
     <div v-if="title || subtitle || $slots.header" class="mb-4">
       <slot name="header">

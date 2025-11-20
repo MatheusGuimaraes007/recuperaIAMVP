@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { supabase } from '../utils/supabase';
 import { useAuthStore } from './useAuthStore';
+import { getDateRangeFromPeriod } from '../utils/date';
 
 export const useOpportunitiesStore = defineStore('opportunities', () => {
     const opportunities = ref([]);
@@ -13,8 +14,14 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
         status: null,
         search: null,
         page: 1,
-        limit: 25
+        limit: 25,
+        period: 'last7days',
+        startDate: null,
+        endDate: null
     });
+
+    let abortController = null;
+    let searchDebounceTimer = null;
 
     const setError = (message) => {
         error.value = message;
@@ -36,11 +43,42 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
             status: null,
             search: null,
             page: 1,
-            limit: 25
+            limit: 25,
+            period: 'last7days',
+            startDate: null,
+            endDate: null
         };
     };
 
+    /**
+     * Busca oportunidades com debounce automático para search
+     */
     const fetchOpportunities = async (filterParams = {}) => {
+        if (abortController) {
+            abortController.abort();
+        }
+        abortController = new AbortController();
+
+        if (filterParams.search !== undefined) {
+            return new Promise((resolve) => {
+                if (searchDebounceTimer) {
+                    clearTimeout(searchDebounceTimer);
+                }
+                
+                searchDebounceTimer = setTimeout(async () => {
+                    const result = await executeOpportunitiesQuery(filterParams);
+                    resolve(result);
+                }, 300);
+            });
+        }
+
+        return executeOpportunitiesQuery(filterParams);
+    };
+
+    /**
+     * Executa a query de oportunidades
+     */
+    const executeOpportunitiesQuery = async (filterParams = {}) => {
         loading.value = true;
         clearError();
 
@@ -52,31 +90,62 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                 throw new Error('Usuário não autenticado');
             }
 
+            const currentFilters = { ...filters.value, ...filterParams };
+
+            let contactIds = [];
+            
+            if (currentFilters.search && currentFilters.search.trim() !== '') {
+                const searchTerm = currentFilters.search.trim();
+                
+                const { data: matchingContacts } = await supabase
+                    .from('contacts')
+                    .select('id')
+                    .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+                    .limit(100);
+
+                if (matchingContacts && matchingContacts.length > 0) {
+                    contactIds = matchingContacts.map(c => c.id);
+                }
+            }
+
             let query = supabase
                 .from('opportunities')
                 .select(`
-          *,
-          contact:contacts(id, name, phone, email),
-          agent:agents(id, name),
-          product:products(id, name)
-        `, { count: 'exact' })
+                    *,
+                    contact:contacts(id, name, phone, email),
+                    agent:agents(id, name),
+                    product:products(id, name)
+                `, { count: 'exact' })
                 .eq('user_id', userId)
                 .is('deleted_at', null)
                 .order('created_at', { ascending: false });
 
-            if (filterParams.status) {
-                query = query.eq('status', filterParams.status);
+            if (contactIds.length > 0) {
+                query = query.in('contact_id', contactIds);
+            } else if (currentFilters.search && currentFilters.search.trim() !== '') {
+                const searchTerm = currentFilters.search.trim();
+                query = query.or(`notes.ilike.%${searchTerm}%,value::text.ilike.%${searchTerm}%`);
             }
 
-            if (filterParams.search) {
-                query = query.or(`
-          contact.name.ilike.%${filterParams.search}%,
-          contact.phone.ilike.%${filterParams.search}%
-        `);
+            if (currentFilters.status && currentFilters.status !== 'all') {
+                query = query.eq('status', currentFilters.status);
             }
 
-            const page = filterParams.page || filters.value.page;
-            const limit = filterParams.limit || filters.value.limit;
+            if (currentFilters.startDate && currentFilters.endDate) {
+                query = query
+                    .gte('created_at', currentFilters.startDate)
+                    .lte('created_at', currentFilters.endDate);
+            } else if (currentFilters.period && currentFilters.period !== 'all') {
+                const { startDate, endDate } = getDateRangeFromPeriod(currentFilters.period);
+                if (startDate) {
+                    query = query
+                        .gte('created_at', startDate)
+                        .lte('created_at', endDate);
+                }
+            }
+
+            const page = currentFilters.page || 1;
+            const limit = currentFilters.limit || 25;
             const from = (page - 1) * limit;
             const to = from + limit - 1;
 
@@ -89,23 +158,38 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
             opportunities.value = data || [];
             totalCount.value = count || 0;
 
-            updateFilters(filterParams);
+            updateFilters(currentFilters);
 
-            return { success: true, data };
+            return { success: true, data: opportunities.value };
         } catch (err) {
+            if (err.name === 'AbortError') {
+                return { success: false, error: 'cancelled' };
+            }
+
             console.error('Erro ao buscar oportunidades:', err);
             setError('Erro ao carregar oportunidades. Tente novamente.');
             return { success: false, error: err };
         } finally {
             loading.value = false;
+            abortController = null;
         }
     };
 
+    /**
+     * Busca oportunidade por ID
+     */
     const fetchOpportunityById = async (id) => {
         loading.value = true;
         clearError();
 
         try {
+            const found = opportunities.value.find(opp => opp.id === id);
+            if (found) {
+                currentOpportunity.value = found;
+                loading.value = false;
+                return { success: true, data: found };
+            }
+
             const authStore = useAuthStore();
             const userId = authStore.user?.id;
 
@@ -116,12 +200,12 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
             const { data, error: fetchError } = await supabase
                 .from('opportunities')
                 .select(`
-          *,
-          contact:contacts(id, name, phone, email, status),
-          agent:agents(id, name),
-          product:products(id, name, description),
-          integration:user_integrations(id, name)
-        `)
+                    *,
+                    contact:contacts(id, name, phone, email, status),
+                    agent:agents(id, name),
+                    product:products(id, name, description),
+                    integration:user_integrations(id, name)
+                `)
                 .eq('id', id)
                 .eq('user_id', userId)
                 .is('deleted_at', null)
@@ -140,6 +224,9 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
         }
     };
 
+    /**
+     * Cria oportunidade
+     */
     const createOpportunity = async (opportunityData) => {
         loading.value = true;
         clearError();
@@ -158,7 +245,12 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                     user_id: userId,
                     ...opportunityData
                 })
-                .select()
+                .select(`
+                    *,
+                    contact:contacts(id, name, phone, email),
+                    agent:agents(id, name),
+                    product:products(id, name)
+                `)
                 .single();
 
             if (createError) throw createError;
@@ -176,6 +268,9 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
         }
     };
 
+    /**
+     * Atualiza oportunidade
+     */
     const updateOpportunity = async (id, updates) => {
         loading.value = true;
         clearError();
@@ -196,18 +291,23 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                 })
                 .eq('id', id)
                 .eq('user_id', userId)
-                .select()
+                .select(`
+                    *,
+                    contact:contacts(id, name, phone, email),
+                    agent:agents(id, name),
+                    product:products(id, name)
+                `)
                 .single();
 
             if (updateError) throw updateError;
 
             const index = opportunities.value.findIndex(opp => opp.id === id);
             if (index !== -1) {
-                opportunities.value[index] = { ...opportunities.value[index], ...data };
+                opportunities.value[index] = data;
             }
 
             if (currentOpportunity.value?.id === id) {
-                currentOpportunity.value = { ...currentOpportunity.value, ...data };
+                currentOpportunity.value = data;
             }
 
             return { success: true, data };
@@ -220,6 +320,9 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
         }
     };
 
+    /**
+     * Deleta oportunidade (soft delete)
+     */
     const deleteOpportunity = async (id) => {
         loading.value = true;
         clearError();
@@ -257,6 +360,50 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
         }
     };
 
+    /**
+     * Atualização em lote
+     */
+    const bulkUpdateOpportunities = async (ids, updates) => {
+        loading.value = true;
+        clearError();
+
+        try {
+            const authStore = useAuthStore();
+            const userId = authStore.user?.id;
+
+            if (!userId) {
+                throw new Error('Usuário não autenticado');
+            }
+
+            const { data, error: updateError } = await supabase
+                .from('opportunities')
+                .update({
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                })
+                .in('id', ids)
+                .eq('user_id', userId)
+                .select();
+
+            if (updateError) throw updateError;
+
+            data.forEach(updatedOpp => {
+                const index = opportunities.value.findIndex(opp => opp.id === updatedOpp.id);
+                if (index !== -1) {
+                    opportunities.value[index] = updatedOpp;
+                }
+            });
+
+            return { success: true, data };
+        } catch (err) {
+            console.error('Erro ao atualizar oportunidades:', err);
+            setError('Erro ao atualizar oportunidades em lote.');
+            return { success: false, error: err };
+        } finally {
+            loading.value = false;
+        }
+    };
+
     return {
         opportunities,
         currentOpportunity,
@@ -270,6 +417,7 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
         createOpportunity,
         updateOpportunity,
         deleteOpportunity,
+        bulkUpdateOpportunities,
         updateFilters,
         clearFilters,
         clearError
