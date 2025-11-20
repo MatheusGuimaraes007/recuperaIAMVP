@@ -23,6 +23,14 @@ defineProps({
 
 const isOpen = ref(false);
 
+const toggleSidebar = () => {
+  isOpen.value = !isOpen.value;
+};
+
+const closeSidebar = () => {
+  isOpen.value = false;
+};
+
 const icons = {
   shield: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
   notification: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
@@ -33,13 +41,15 @@ const icons = {
 
 <template>
   <div
-      class="sidebar-trigger-wrapper"
-      :class="[position]"
-      @mouseenter="isOpen = true"
-      @mouseleave="isOpen = false"
+    class="sidebar-trigger-wrapper"
+    :class="[position]"
   >
     <!-- Botão de Trigger -->
-    <div class="trigger-button" :class="{ 'open': isOpen }">
+    <div 
+      class="trigger-button" 
+      :class="{ 'minimized': isOpen }"
+      @click="toggleSidebar"
+    >
       <div class="trigger-inner">
         <svg class="trigger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icons[icon]" />
@@ -48,13 +58,23 @@ const icons = {
       </div>
 
       <!-- Indicador de pulso -->
-      <div class="pulse-indicator"></div>
+      <div v-show="!isOpen" class="pulse-indicator"></div>
     </div>
 
     <!-- Panel Expansível -->
     <transition name="slide">
       <div v-if="isOpen" class="sidebar-panel" :style="{ width }">
-        <slot />
+        <!-- Botão de Fechar -->
+        <button @click="closeSidebar" class="close-button" :class="position">
+          <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <!-- Conteúdo do Slot -->
+        <div class="sidebar-content">
+          <slot />
+        </div>
       </div>
     </transition>
   </div>
@@ -93,6 +113,19 @@ const icons = {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(12px);
   overflow: hidden;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Minimiza mas mantém visível e clicável quando aberto */
+.trigger-button.minimized {
+  width: 40px;
+  opacity: 0.4;
+}
+
+.trigger-button.minimized:hover {
+  width: 52px;
+  opacity: 0.8;
 }
 
 .left .trigger-button {
@@ -119,13 +152,11 @@ const icons = {
   transition: opacity 0.3s ease;
 }
 
-.trigger-button:hover::before,
-.trigger-button.open::before {
+.trigger-button:hover::before {
   opacity: 1;
 }
 
-.trigger-button:hover,
-.trigger-button.open {
+.trigger-button:hover:not(.minimized) {
   width: 60px;
   background: linear-gradient(135deg, rgba(124, 186, 16, 0.3) 0%, rgba(124, 186, 16, 0.12) 100%);
   border-color: rgba(124, 186, 16, 0.6);
@@ -147,8 +178,7 @@ const icons = {
   transition: transform 0.3s ease;
 }
 
-.trigger-button:hover .trigger-icon,
-.trigger-button.open .trigger-icon {
+.trigger-button:hover .trigger-icon {
   transform: scale(1.1);
 }
 
@@ -193,9 +223,9 @@ const icons = {
 }
 
 .sidebar-panel {
+  position: relative;
   max-height: 90vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: hidden;
   background: linear-gradient(to bottom, var(--color-background3), rgba(15, 15, 20, 0.98));
   border: 1px solid rgba(124, 186, 16, 0.25);
   backdrop-filter: blur(16px);
@@ -213,25 +243,76 @@ const icons = {
   box-shadow: -6px 0 30px rgba(0, 0, 0, 0.6);
 }
 
-.sidebar-panel::-webkit-scrollbar {
+/* Botão de Fechar (X) */
+.close-button {
+  position: absolute;
+  top: 16px;
+  width: 36px;
+  height: 36px;
+  background: rgba(124, 186, 16, 0.15);
+  border: 1px solid rgba(124, 186, 16, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.close-button.left {
+  right: 16px;
+}
+
+.close-button.right {
+  left: 16px;
+}
+
+.close-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: rotate(90deg);
+}
+
+.close-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text1);
+  transition: color 0.3s ease;
+}
+
+.close-button:hover .close-icon {
+  color: #ef4444;
+}
+
+/* Conteúdo com scroll */
+.sidebar-content {
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 60px;
+}
+
+.sidebar-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.sidebar-panel::-webkit-scrollbar-track {
+.sidebar-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar-panel::-webkit-scrollbar-thumb {
+.sidebar-content::-webkit-scrollbar-thumb {
   background: rgba(124, 186, 16, 0.3);
   border-radius: 10px;
   transition: background 0.2s ease;
 }
 
-.sidebar-panel::-webkit-scrollbar-thumb:hover {
+.sidebar-content::-webkit-scrollbar-thumb:hover {
   background: rgba(124, 186, 16, 0.5);
 }
 
-/* Animações */
+/* Animações de Slide */
 .slide-enter-active,
 .slide-leave-active {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -261,9 +342,16 @@ const icons = {
     height: 160px;
   }
 
-  .trigger-button:hover,
-  .trigger-button.open {
+  .trigger-button:hover:not(.minimized) {
     width: 48px;
+  }
+
+  .trigger-button.minimized {
+    width: 36px;
+  }
+
+  .trigger-button.minimized:hover {
+    width: 44px;
   }
 
   .trigger-icon {
@@ -274,6 +362,29 @@ const icons = {
   .trigger-label {
     font-size: 10px;
     letter-spacing: 1.5px;
+  }
+
+  .close-button {
+    width: 32px;
+    height: 32px;
+    top: 12px;
+  }
+
+  .close-button.left {
+    right: 12px;
+  }
+
+  .close-button.right {
+    left: 12px;
+  }
+
+  .close-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sidebar-content {
+    padding-top: 52px;
   }
 }
 </style>
