@@ -5,6 +5,7 @@ import Cadastro from '../components/all/Cadastro.vue';
 import RecuperarSenha from '../components/all/RecuperarSenha.vue';
 import RedefinirSenha from '../components/all/RedefinirSenha.vue';
 import Dashboard from '../components/dashboard/Dashboard.vue';
+import AdminDashboard from '../components/adm/AdminDashboard.vue';
 
 const routes = [
     {
@@ -44,7 +45,14 @@ const routes = [
         name: 'Dashboard',
         component: Dashboard,
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/adm/dashboard',
+        name: 'AdminDashboard',
+        component: AdminDashboard,
+        meta: { requiresAuth: true, requiresAdmin: true }
     }
+
 ];
 
 const router = createRouter({
@@ -72,11 +80,11 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (to.meta.requiresAdmin && !isAdmin) {
-        return next({ name: 'Dashboard' });
+        return next({ name: 'AdminDashboard' });
     }
 
     if (to.meta.requiresGuest && isAuthenticated) {
-        return next({ name: 'Dashboard' });
+        return next({ name: 'AdminDashboard' });
     }
 
     next();

@@ -1,10 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../../composables/useAuth';
 
 const router = useRouter();
-const { login, loading, error, clearError, validateEmail, validatePassword } = useAuth();
+const { login, loading, error, clearError, validateEmail, validatePassword, isAdminUser } = useAuth();
 
 const formData = ref({
   email: '',
@@ -38,10 +38,25 @@ const handleSubmit = async () => {
   if (!validateForm()) return;
 
   const result = await login(formData.value.email, formData.value.password);
+  const isUserAdmin = await isAdminUser();
 
-  if (result.success) {
-    router.push('/dashboard');
+  if (result.success && isUserAdmin) {
+    router.push('/adm/dashboard');
+    return;
   }
+  if (result.success && !isUserAdmin) {
+    router.push('/dashboard');
+    return;
+  }
+
+  // console.log(result)
+  // if (await isAdminUser()) {
+  //   router.push('/adm/dashboard');
+  // }
+  // console.log('isAdminUser:', await isAdminUser());
+  // if (result.success) {
+  //   router.push('/dashboard');
+  // }
 };
 
 const isFormValid = computed(() => {
