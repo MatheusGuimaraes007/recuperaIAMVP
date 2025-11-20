@@ -1,6 +1,8 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import { useAuth } from '../../composables/useAuth';
+import SidebarTrigger from '../../shared/SidebarTrigger.vue';
+import GuaranteeCard from './GuaranteeCard.vue';
 
 const router = useRouter();
 const { user, isAdmin, logout } = useAuth();
@@ -146,5 +148,14 @@ const goToCadastro = () => {
         </div>
       </div>
     </main>
+
+    <SidebarTrigger
+        icon="shield"
+        label="Garantia"
+        position="left"
+        width="440px"
+    >
+      <GuaranteeCard />
+    </SidebarTrigger>
   </div>
 </template>
