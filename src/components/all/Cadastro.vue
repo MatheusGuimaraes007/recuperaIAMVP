@@ -2,17 +2,12 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../../composables/useAuth';
+import Button from '../../shared/Button.vue';
+import Card from '../../shared/Card.vue';
+import Navbar from '../../shared/Navbar.vue';
 
 const router = useRouter();
-const {
-  register,
-  loading,
-  error,
-  clearError,
-  validateEmail,
-  validatePassword,
-  validatePhone,
-} = useAuth();
+const { register, loading, error, clearError, validateEmail, validatePassword, validatePhone } = useAuth();
 
 const formData = ref({
   name: '',
@@ -82,127 +77,76 @@ const handleSubmit = async () => {
 
   if (result.success) {
     successMessage.value = 'Usuário cadastrado com sucesso!';
-
-    formData.value = {
-      name: '',
-      email: '',
-      phone: '',
-      password: '',
-      confirmPassword: '',
-      role: 'user'
-    };
-
-    setTimeout(() => {
-      router.push('/adm/dashboard');
-    }, 2000);
+    formData.value = { name: '', email: '', phone: '', password: '', confirmPassword: '', role: 'user' };
+    setTimeout(() => router.push('/adm/dashboard'), 2000);
   }
 };
 
-
 const handlePhoneInput = () => {
-  const cleaned = formData.value.phone.replace(/\D/g, '');
-  formData.value.phone = cleaned;
+  formData.value.phone = formData.value.phone.replace(/\D/g, '');
   formErrors.value.phone = '';
 };
 
 const isFormValid = computed(() => {
-  return formData.value.name &&
-      formData.value.email &&
-      formData.value.phone &&
-      formData.value.password &&
-      formData.value.confirmPassword;
+  return formData.value.name && formData.value.email && formData.value.phone && formData.value.password && formData.value.confirmPassword;
 });
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4 py-8"
-       style="background-color: var(--color-background3)">
+  <div class="min-h-screen" style="background-color: var(--color-background3)">
+    <Navbar />
 
-    <div class="w-full max-w-md">
-
-      <div class="flex items-center justify-between mb-8">
-        <button
-            @click="router.push('/adm/dashboard')"
-            class="text-gray-400 hover:text-white transition-colors"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        <h1 class="text-2xl font-bold">
-          <span class="text-white">recupera</span><span style="color: var(--color-text1)">.ia</span>
-        </h1>
-
-        <div class="w-6"></div>
-      </div>
-
-      <div class="rounded-2xl p-8 shadow-xl border"
-           style="background-color: var(--color-background4); border-color: rgba(124, 186, 16, 0.2)">
-
+    <main class="max-w-md mx-auto px-4 py-8">
+      <Card padding="lg">
         <div class="mb-6">
           <h2 class="text-2xl font-bold text-white mb-2">Cadastrar usuário</h2>
           <p class="text-gray-400 text-sm">Preencha os dados para criar uma nova conta.</p>
         </div>
 
-        <div v-if="successMessage" class="mb-4 p-3 rounded-lg border"
-             style="background-color: rgba(124, 186, 16, 0.1); border-color: var(--color-text1)">
+        <div v-if="successMessage" class="mb-4 p-3 rounded-lg border" style="background-color: rgba(124, 186, 16, 0.1); border-color: var(--color-text1)">
           <p class="text-sm" style="color: var(--color-text1)">{{ successMessage }}</p>
         </div>
 
-        <div v-if="error" class="mb-4 p-3 rounded-lg border"
-             style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)">
+        <div v-if="error" class="mb-4 p-3 rounded-lg border" style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)">
           <p class="text-sm" style="color: var(--color-text2)">{{ error }}</p>
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
-
+          <!-- Nome -->
           <div>
-            <label for="name" class="block text-sm font-medium text-gray-300 mb-2">
-              Nome completo
-            </label>
+            <label for="name" class="block text-sm font-medium text-gray-300 mb-2">Nome completo</label>
             <input
                 id="name"
                 v-model="formData.name"
                 type="text"
                 placeholder="João Silva"
                 class="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2"
-                :class="formErrors.name
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-700 focus:ring-[#7cba10]'"
+                :class="formErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-[#7cba10]'"
                 style="background-color: var(--color-background2); color: white"
                 @input="formErrors.name = ''"
             />
-            <p v-if="formErrors.name" class="mt-1 text-sm text-red-500">
-              {{ formErrors.name }}
-            </p>
+            <p v-if="formErrors.name" class="mt-1 text-sm text-red-500">{{ formErrors.name }}</p>
           </div>
 
+          <!-- Email -->
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
-              E-mail
-            </label>
+            <label for="email" class="block text-sm font-medium text-gray-300 mb-2">E-mail</label>
             <input
                 id="email"
                 v-model="formData.email"
                 type="email"
                 placeholder="joao@email.com"
                 class="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2"
-                :class="formErrors.email
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-700 focus:ring-[#7cba10]'"
+                :class="formErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-[#7cba10]'"
                 style="background-color: var(--color-background2); color: white"
                 @input="formErrors.email = ''"
             />
-            <p v-if="formErrors.email" class="mt-1 text-sm text-red-500">
-              {{ formErrors.email }}
-            </p>
+            <p v-if="formErrors.email" class="mt-1 text-sm text-red-500">{{ formErrors.email }}</p>
           </div>
 
+          <!-- Telefone -->
           <div>
-            <label for="phone" class="block text-sm font-medium text-gray-300 mb-2">
-              Telefone
-            </label>
+            <label for="phone" class="block text-sm font-medium text-gray-300 mb-2">Telefone</label>
             <input
                 id="phone"
                 v-model="formData.phone"
@@ -210,21 +154,16 @@ const isFormValid = computed(() => {
                 placeholder="11912345678"
                 maxlength="11"
                 class="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2"
-                :class="formErrors.phone
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-700 focus:ring-[#7cba10]'"
+                :class="formErrors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-[#7cba10]'"
                 style="background-color: var(--color-background2); color: white"
                 @input="handlePhoneInput"
             />
-            <p v-if="formErrors.phone" class="mt-1 text-sm text-red-500">
-              {{ formErrors.phone }}
-            </p>
+            <p v-if="formErrors.phone" class="mt-1 text-sm text-red-500">{{ formErrors.phone }}</p>
           </div>
 
+          <!-- Tipo de usuário -->
           <div>
-            <label for="role" class="block text-sm font-medium text-gray-300 mb-2">
-              Tipo de usuário
-            </label>
+            <label for="role" class="block text-sm font-medium text-gray-300 mb-2">Tipo de usuário</label>
             <select
                 id="role"
                 v-model="formData.role"
@@ -236,10 +175,9 @@ const isFormValid = computed(() => {
             </select>
           </div>
 
+          <!-- Senha -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
-              Senha
-            </label>
+            <label for="password" class="block text-sm font-medium text-gray-300 mb-2">Senha</label>
             <div class="relative">
               <input
                   id="password"
@@ -247,17 +185,11 @@ const isFormValid = computed(() => {
                   :type="showPassword ? 'text' : 'password'"
                   placeholder="Mínimo 6 caracteres"
                   class="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2"
-                  :class="formErrors.password
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-700 focus:ring-[#7cba10]'"
+                  :class="formErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-[#7cba10]'"
                   style="background-color: var(--color-background2); color: white"
                   @input="formErrors.password = ''"
               />
-              <button
-                  type="button"
-                  @click="showPassword = !showPassword"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
-              >
+              <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300">
                 <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -267,15 +199,12 @@ const isFormValid = computed(() => {
                 </svg>
               </button>
             </div>
-            <p v-if="formErrors.password" class="mt-1 text-sm text-red-500">
-              {{ formErrors.password }}
-            </p>
+            <p v-if="formErrors.password" class="mt-1 text-sm text-red-500">{{ formErrors.password }}</p>
           </div>
 
+          <!-- Confirmar Senha -->
           <div>
-            <label for="confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">
-              Confirmar senha
-            </label>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">Confirmar senha</label>
             <div class="relative">
               <input
                   id="confirmPassword"
@@ -283,17 +212,11 @@ const isFormValid = computed(() => {
                   :type="showConfirmPassword ? 'text' : 'password'"
                   placeholder="Digite a senha novamente"
                   class="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2"
-                  :class="formErrors.confirmPassword
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-700 focus:ring-[#7cba10]'"
+                  :class="formErrors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-700 focus:ring-[#7cba10]'"
                   style="background-color: var(--color-background2); color: white"
                   @input="formErrors.confirmPassword = ''"
               />
-              <button
-                  type="button"
-                  @click="showConfirmPassword = !showConfirmPassword"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
-              >
+              <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300">
                 <svg v-if="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -303,28 +226,14 @@ const isFormValid = computed(() => {
                 </svg>
               </button>
             </div>
-            <p v-if="formErrors.confirmPassword" class="mt-1 text-sm text-red-500">
-              {{ formErrors.confirmPassword }}
-            </p>
+            <p v-if="formErrors.confirmPassword" class="mt-1 text-sm text-red-500">{{ formErrors.confirmPassword }}</p>
           </div>
 
-          <button
-              type="submit"
-              :disabled="!isFormValid || loading"
-              class="w-full py-3 px-4 rounded-lg font-semibold text-black transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-              style="background-color: var(--color-text1)"
-          >
-            <span v-if="!loading">Cadastrar usuário</span>
-            <span v-else class="flex items-center justify-center">
-              <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Cadastrando...
-            </span>
-          </button>
+          <Button type="submit" variant="primary" size="lg" fullWidth :disabled="!isFormValid" :loading="loading">
+            Cadastrar usuário
+          </Button>
         </form>
-      </div>
-    </div>
+      </Card>
+    </main>
   </div>
 </template>

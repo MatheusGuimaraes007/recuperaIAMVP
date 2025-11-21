@@ -94,3 +94,11 @@ export const parseDate = (dateString) => {
     const date = new Date(dateString);
     return isValidDate(date) ? date : null;
 };
+
+
+export const getDaysDifference = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffMs = end - start;
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+};
