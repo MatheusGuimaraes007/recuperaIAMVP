@@ -8,6 +8,11 @@ import AdminDashboard from '../components/adm/AdminDashboard.vue';
 import OpportunityList from "../components/opportunities/OpportunityList.vue";
 import OpportunityDetail from "../components/opportunities/OpportunityDetail.vue";
 
+// Páginas placeholder - você pode criar componentes completos depois
+const Clientes = () => import('../components/clientes/ClientesList.vue');
+const Agents = () => import('../components/agents/AgentsList.vue');
+const BaseConhecimento = () => import('../components/conhecimento/BaseConhecimento.vue');
+
 const routes = [
     {
         path: '/',
@@ -48,6 +53,24 @@ const routes = [
         meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
+        path: '/clientes',
+        name: 'Clientes',
+        component: Clientes,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/agents',
+        name: 'Agents',
+        component: Agents,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/conhecimento',
+        name: 'BaseConhecimento',
+        component: BaseConhecimento,
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/oportunidades',
         name: 'Oportunidades',
         component: OpportunityList,
@@ -58,19 +81,7 @@ const routes = [
         name: 'OpportunityDetail',
         component: OpportunityDetail,
         meta: { requiresAuth: true }
-    },
-    {
-        path: '/oportunidades',
-        name: 'Oportunidades',
-        component: OpportunityList,
-        meta: { requiresAuth: true }
-    },
-    {
-  path: '/oportunidades/:id',
-  name: 'OpportunityDetail',
-  component: OpportunityDetail,
-  meta: { requiresAuth: true }
-}
+    }
 ];
 
 const router = createRouter({
@@ -97,7 +108,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (to.meta.requiresAdmin && !isAdmin) {
-        return next({ name: 'AdminDashboard' });
+        return next({ name: 'Clientes' });
     }
 
     if (to.meta.requiresGuest && isAuthenticated) {
