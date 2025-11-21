@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../../composables/useAuth';
 import { validateRequired } from '../../utils/validators';
@@ -9,13 +9,15 @@ import Alert from "../../shared/Alert.vue";
 import AuthFormContainer from "./AuthFormContainer.vue";
 
 const router = useRouter();
+
 const {
   login,
   loading,
   error,
   clearError,
   validateEmail,
-  validatePassword
+  validatePassword,
+  isAdminUser
 } = useAuth();
 
 const formData = ref({
@@ -52,9 +54,15 @@ const handleSubmit = async () => {
   if (!validateForm()) return;
 
   const result = await login(formData.value.email, formData.value.password);
+  const isUserAdmin = await isAdminUser();
 
-  if (result.success) {
-    router.push('/dashboard');
+  if (result.success && isUserAdmin) {
+    router.push('/adm/dashboard');
+    return;
+  }
+  if (result.success && !isUserAdmin) {
+    router.push('/oportunidades');
+    return;
   }
 };
 

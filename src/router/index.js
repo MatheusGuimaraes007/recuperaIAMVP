@@ -4,7 +4,7 @@ import Login from '../components/all/Login.vue';
 import Cadastro from '../components/all/Cadastro.vue';
 import RecuperarSenha from '../components/all/RecuperarSenha.vue';
 import RedefinirSenha from '../components/all/RedefinirSenha.vue';
-import Dashboard from '../components/dashboard/Dashboard.vue';
+import AdminDashboard from '../components/adm/AdminDashboard.vue';
 import OpportunityList from "../components/opportunities/OpportunityList.vue";
 import OpportunityDetail from "../components/opportunities/OpportunityDetail.vue";
 
@@ -42,9 +42,21 @@ const routes = [
         redirect: '/redefinir-senha'
     },
     {
-        path: '/dashboard',
-        name: 'Dashboard',
-        component: Dashboard,
+        path: '/adm/dashboard',
+        name: 'AdminDashboard',
+        component: AdminDashboard,
+        meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+        path: '/oportunidades',
+        name: 'Oportunidades',
+        component: OpportunityList,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/oportunidades/:id',
+        name: 'OpportunityDetail',
+        component: OpportunityDetail,
         meta: { requiresAuth: true }
     },
     {
@@ -85,11 +97,11 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (to.meta.requiresAdmin && !isAdmin) {
-        return next({ name: 'Dashboard' });
+        return next({ name: 'AdminDashboard' });
     }
 
     if (to.meta.requiresGuest && isAuthenticated) {
-        return next({ name: 'Dashboard' });
+        return next({ name: 'AdminDashboard' });
     }
 
     next();
