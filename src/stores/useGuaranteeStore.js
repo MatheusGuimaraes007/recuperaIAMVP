@@ -47,7 +47,7 @@ export const useGuaranteeStore = defineStore('guarantee', () => {
                 .eq('status', 'active')
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
 
             if (fetchError) {
                 if (fetchError.code === 'PGRST116') {

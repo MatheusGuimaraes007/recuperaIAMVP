@@ -6,6 +6,7 @@ import { onMounted, ref, computed } from 'vue';
 import Button from '../../shared/Button.vue';
 import Card from '../../shared/Card.vue';
 import Navbar from '../../shared/Navbar.vue';
+import GuaranteeCard from "../dashboard/GuaranteeCard.vue";
 
 const router = useRouter();
 const { user, isAdmin } = useAuth();
@@ -105,6 +106,9 @@ const goToCadastro = () => router.push('/cadastro');
 <template>
   <div class="min-h-screen" style="background-color: var(--color-background3)">
     <Navbar />
+
+    <!-- Guarantee Card Sidebar -->
+    <GuaranteeCard />
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
