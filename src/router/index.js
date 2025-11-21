@@ -58,7 +58,19 @@ const routes = [
         name: 'OpportunityDetail',
         component: OpportunityDetail,
         meta: { requiresAuth: true }
-    }
+    },
+    {
+        path: '/oportunidades',
+        name: 'Oportunidades',
+        component: OpportunityList,
+        meta: { requiresAuth: true }
+    },
+    {
+  path: '/oportunidades/:id',
+  name: 'OpportunityDetail',
+  component: OpportunityDetail,
+  meta: { requiresAuth: true }
+}
 ];
 
 const router = createRouter({

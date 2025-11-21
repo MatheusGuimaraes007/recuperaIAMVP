@@ -9,7 +9,15 @@ import Alert from "../../shared/Alert.vue";
 import AuthFormContainer from "./AuthFormContainer.vue";
 
 const router = useRouter();
-const { login, loading, error, clearError, validateEmail, validatePassword, isAdminUser } = useAuth();
+
+const {
+  login,
+  loading,
+  error,
+  clearError,
+  validateEmail,
+  validatePassword
+} = useAuth();
 
 const formData = ref({
   email: '',
