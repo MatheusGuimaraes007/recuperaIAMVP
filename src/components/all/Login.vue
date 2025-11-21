@@ -16,7 +16,8 @@ const {
   error,
   clearError,
   validateEmail,
-  validatePassword
+  validatePassword,
+  isAdminUser
 } = useAuth();
 
 const formData = ref({
