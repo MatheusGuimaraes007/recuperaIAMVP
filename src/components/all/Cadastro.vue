@@ -93,7 +93,7 @@ const handleSubmit = async () => {
     };
 
     setTimeout(() => {
-      router.push('/dashboard');
+      router.push('/adm/dashboard');
     }, 2000);
   }
 };
@@ -122,7 +122,7 @@ const isFormValid = computed(() => {
 
       <div class="flex items-center justify-between mb-8">
         <button
-            @click="router.push('/dashboard')"
+            @click="router.push('/adm/dashboard')"
             class="text-gray-400 hover:text-white transition-colors"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
