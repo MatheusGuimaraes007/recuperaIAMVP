@@ -35,10 +35,10 @@ const emit = defineEmits(['click']);
 
 const variantClasses = computed(() => {
   const variants = {
-    primary: 'bg-[#7cba10] text-black hover:bg-[#6aa50e] active:scale-95 font-semibold shadow-lg shadow-[#7cba10]/20',
-    secondary: 'border border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800/50 active:scale-95',
-    danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 active:scale-95',
-    ghost: 'text-[#7cba10] border border-[#7cba10]/30 hover:bg-[#7cba10]/10 hover:border-[#7cba10] active:scale-95'
+    primary: 'bg-[#7cba10] text-black hover:bg-[#6aa50e] active:scale-95 font-semibold shadow-lg shadow-[#7cba10]/20 cursor-pointer',
+    secondary: 'border border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800/50 active:scale-95 cursor-pointer',
+    danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 active:scale-95 cursor-pointer',
+    ghost: 'text-[#7cba10] border border-[#7cba10]/30 hover:bg-[#7cba10]/10 hover:border-[#7cba10] active:scale-95 cursor-pointer'
   };
   return variants[props.variant];
 });

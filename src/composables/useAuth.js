@@ -5,7 +5,6 @@ import { formatPhone } from '../utils/formatters.js';
 
 export const useAuth = () => {
     const authStore = useAuthStore();
-
     const {
         user,
         session,
@@ -38,6 +37,11 @@ export const useAuth = () => {
         }
     };
 
+    async function isAdminUser() {
+        await initializeAuth();
+        return isAdmin.value;
+    }
+
     return {
         user,
         session,
@@ -63,5 +67,7 @@ export const useAuth = () => {
 
         requireAdmin,
         requireAuth,
+
+        isAdminUser,
     };
 };
