@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../stores/useAuthStore.js';
 import {validateEmail, validatePassword, validatePhone} from '../utils/validators.js';
@@ -5,6 +6,15 @@ import { formatPhone } from '../utils/formatters.js';
 
 export const useAuth = () => {
     const authStore = useAuthStore();
+=======
+
+import { storeToRefs } from 'pinia';
+import {useAuthStore} from "../stores/useAuthStore.js";
+
+export const useAuth = () => {
+    const authStore = useAuthStore();
+
+>>>>>>> Stashed changes
     const {
         user,
         session,
@@ -25,6 +35,35 @@ export const useAuth = () => {
         clearError,
     } = authStore;
 
+<<<<<<< Updated upstream
+=======
+    const validateEmail = (email) => {
+        const regex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+        return regex.test(email);
+    };
+
+    const validatePassword = (password) => {
+        return password.length >= 6;
+    };
+
+    const validatePhone = (phone) => {
+        const cleaned = phone.replace(/\D/g, '');
+        return cleaned.length === 10 || cleaned.length === 11;
+    };
+
+    const formatPhone = (phone) => {
+        const cleaned = phone.replace(/\D/g, '');
+
+        if (cleaned.length === 11) {
+            return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+        } else if (cleaned.length === 10) {
+            return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+        }
+
+        return phone;
+    };
+
+>>>>>>> Stashed changes
     const requireAdmin = () => {
         if (!isAdmin.value) {
             throw new Error('Acesso negado. Apenas administradores podem realizar esta ação.');
@@ -37,11 +76,14 @@ export const useAuth = () => {
         }
     };
 
+<<<<<<< Updated upstream
     async function isAdminUser() {
         await initializeAuth();
         return isAdmin.value;
     }
 
+=======
+>>>>>>> Stashed changes
     return {
         user,
         session,
@@ -62,12 +104,18 @@ export const useAuth = () => {
         validateEmail,
         validatePassword,
         validatePhone,
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
         formatPhone,
 
         requireAdmin,
         requireAuth,
+<<<<<<< Updated upstream
 
         isAdminUser,
+=======
+>>>>>>> Stashed changes
     };
 };
