@@ -1,16 +1,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuth } from '../../composables/useAuth';
+import { useOpportunities } from "../../composables/useOpportunities.js";
+import { PAGINATION } from '../../utils/constants';
+
+// Componentes
 import OpportunityFilters from './OpportunityFilters.vue';
 import OpportunityTable from './OpportunityTable.vue';
-import { PAGINATION } from '../../utils/constants';
 import Card from "../../shared/Card.vue";
 import LoadingState from "../../shared/LoadingState.vue";
 import EmptyState from "../../shared/EmptyState.vue";
 import Pagination from "../../shared/Pagination.vue";
-import { useOpportunities } from "../../composables/useOpportunities.js";
-import { useRouter } from 'vue-router';
-import { useAuth } from '../../composables/useAuth';
 import GuaranteeCard from "../dashboard/GuaranteeCard.vue";
+import Navbar from '../../shared/Navbar.vue'; // ✅ Import da Navbar
 
 const { logout } = useAuth();
 const router = useRouter();
@@ -166,103 +169,106 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen p-6" style="background-color: var(--color-background3)">
-    <!-- Guarantee Card Sidebar -->
-    <GuaranteeCard />
+  <div class="min-h-screen" style="background-color: var(--color-background3)">
+    <Navbar />
 
-    <div class="max-w-[1600px] mx-auto">
+    <div class="p-6">
+      <GuaranteeCard />
 
-      <div class="mb-8 bg-amber-200 flex items-center justify-between p-6 rounded-lg"
-           style="background-color: var(--color-background4); border: 1px solid var(--color-border1)">
-        <div>
-          <h1 class="text-3xl font-bold text-white mb-2">
-            Detalhamento dos Atendimentos
-          </h1>
-          <p class="text-gray-400 text-sm">
-            Visualize e filtre suas oportunidades de vendas
-          </p>
-        </div>
-        <div>
-          <button
-              @click="handleLogout"
-              class="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
-              title="Sair"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
-        </div>
-      </div>
+      <div class="max-w-[1600px] mx-auto">
 
-      <div class="mb-6">
-        <OpportunityFilters
-            :loading="loading"
-            :metrics="metrics"
-            @search="handleSearch"
-            @status-change="handleStatusChange"
-            @period-change="handlePeriodChange"
-            @date-range-change="handleDateRangeChange"
-            @clear="handleClearFilters"
-        />
-      </div>
-
-      <Card v-if="error" padding="md" class="mb-6">
-        <div
-            class="p-4 rounded-lg border flex items-start gap-3"
-            style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)"
-        >
-          <svg
-              class="w-5 h-5 flex-shrink-0 mt-0.5"
-              style="color: var(--color-text2)"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-          >
-            <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd"
-            />
-          </svg>
+        <div class="mb-8 flex items-center justify-between p-6 rounded-lg"
+             style="background-color: var(--color-background4); border: 1px solid var(--color-border1)">
           <div>
-            <p class="text-sm font-medium" style="color: var(--color-text2)">
-              Erro ao carregar dados
-            </p>
-            <p class="text-sm mt-1" style="color: var(--color-text2); opacity: 0.8">
-              {{ error }}
+            <h1 class="text-3xl font-bold text-white mb-2">
+              Detalhamento dos Atendimentos
+            </h1>
+            <p class="text-gray-400 text-sm">
+              Visualize e filtre suas oportunidades de vendas
             </p>
           </div>
+          <div>
+            <button
+                @click="handleLogout"
+                class="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
+                title="Sair"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
         </div>
-      </Card>
 
-      <LoadingState
-          v-if="loading && !hasOpportunities"
-          message="Carregando oportunidades..."
-      />
-
-      <EmptyState
-          v-else-if="showEmptyState"
-          :title="hasActiveFilters ? 'Nenhuma oportunidade encontrada' : 'Nenhuma oportunidade cadastrada'"
-          :message="hasActiveFilters ? 'Tente ajustar os filtros ou a busca' : 'Comece criando sua primeira oportunidade'"
-          icon="search"
-          :action-label="hasActiveFilters ? 'Limpar filtros' : undefined"
-          @action="handleClearFilters"
-      />
-
-      <OpportunityTable
-          v-else
-          :opportunities="opportunities"
-      >
-        <template #pagination>
-          <Pagination
-              :current-page="currentPage"
-              :total-pages="totalPages"
-              :total-count="totalCount"
-              :items-per-page="itemsPerPage"
-              @page-change="handlePageChange"
+        <div class="mb-6">
+          <OpportunityFilters
+              :loading="loading"
+              :metrics="metrics"
+              @search="handleSearch"
+              @status-change="handleStatusChange"
+              @period-change="handlePeriodChange"
+              @date-range-change="handleDateRangeChange"
+              @clear="handleClearFilters"
           />
-        </template>
-      </OpportunityTable>
+        </div>
+
+        <Card v-if="error" padding="md" class="mb-6">
+          <div
+              class="p-4 rounded-lg border flex items-start gap-3"
+              style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)"
+          >
+            <svg
+                class="w-5 h-5 flex-shrink-0 mt-0.5"
+                style="color: var(--color-text2)"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+            >
+              <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+              />
+            </svg>
+            <div>
+              <p class="text-sm font-medium" style="color: var(--color-text2)">
+                Erro ao carregar dados
+              </p>
+              <p class="text-sm mt-1" style="color: var(--color-text2); opacity: 0.8">
+                {{ error }}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <LoadingState
+            v-if="loading && !hasOpportunities"
+            message="Carregando oportunidades..."
+        />
+
+        <EmptyState
+            v-else-if="showEmptyState"
+            :title="hasActiveFilters ? 'Nenhuma oportunidade encontrada' : 'Nenhuma oportunidade cadastrada'"
+            :message="hasActiveFilters ? 'Tente ajustar os filtros ou a busca' : 'Comece criando sua primeira oportunidade'"
+            icon="search"
+            :action-label="hasActiveFilters ? 'Limpar filtros' : undefined"
+            @action="handleClearFilters"
+        />
+
+        <OpportunityTable
+            v-else
+            :opportunities="opportunities"
+        >
+          <template #pagination>
+            <Pagination
+                :current-page="currentPage"
+                :total-pages="totalPages"
+                :total-count="totalCount"
+                :items-per-page="itemsPerPage"
+                @page-change="handlePageChange"
+            />
+          </template>
+        </OpportunityTable>
+      </div>
     </div>
   </div>
 </template>

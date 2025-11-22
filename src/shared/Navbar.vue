@@ -1,25 +1,29 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import {useAuth} from "../composables/useAuth.js";
+import { useAuth } from "../composables/useAuth.js";
 
 const router = useRouter();
 const route = useRoute();
 const { user, isAdmin, logout } = useAuth();
 
 const navItems = computed(() => {
-  const items = [
-    { name: 'Dashboard', path: '/adm/dashboard', icon: 'dashboard' },
-    { name: 'Clientes', path: '/clientes', icon: 'users' },
-    { name: 'Agents', path: '/agents', icon: 'robot' },
-    { name: 'Base de Conhecimento', path: '/conhecimento', icon: 'book' },
-  ];
-
+  // Se for ADMIN - mostrar todas as opções
   if (isAdmin.value) {
-    items.splice(1, 0, { name: 'Cadastro', path: '/cadastro', icon: 'user-plus' });
+    return [
+      { name: 'Dashboard', path: '/adm/dashboard', icon: 'dashboard', adminOnly: true },
+      { name: 'Cadastro', path: '/cadastro', icon: 'user-plus', adminOnly: true },
+      { name: 'Gestão Clientes', path: '/admin/clientes', icon: 'users-cog', adminOnly: true },
+      { name: 'Agents', path: '/agents', icon: 'robot', adminOnly: true },
+      { name: 'Base de Conhecimento', path: '/conhecimento', icon: 'book', adminOnly: true },
+    ];
   }
-
-  return items;
+  
+  // Se for USER - mostrar apenas Oportunidades e Clientes
+  return [
+    { name: 'Oportunidades', path: '/oportunidades', icon: 'clipboard', adminOnly: false },
+    { name: 'Clientes', path: '/clientes', icon: 'users', adminOnly: false },
+  ];
 });
 
 const isActive = (path) => route.path === path;
@@ -30,6 +34,10 @@ const handleLogout = async () => {
   const result = await logout();
   if (result.success) router.push('/login');
 };
+
+const dashboardPath = computed(() => {
+  return isAdmin.value ? '/adm/dashboard' : '/oportunidades';
+});
 </script>
 
 <template>
@@ -39,7 +47,7 @@ const handleLogout = async () => {
 
         <!-- Logo e Título -->
         <div class="flex items-center">
-          <div class="flex items-center cursor-pointer" @click="navigate('/adm/dashboard')">
+          <div class="flex items-center cursor-pointer" @click="navigate(dashboardPath)">
             <h1 class="text-2xl font-bold">
               <span class="text-white">recupera</span>
               <span style="color: var(--color-text1)">.ia</span>
@@ -47,8 +55,8 @@ const handleLogout = async () => {
           </div>
           <hr class="mx-4 h-8 border-l border-gray-700 opacity-50 hidden sm:block"/>
           <div class="hidden sm:flex flex-col ml-2">
-            <span class="text-white text-sm">Dashboard Interno</span>
-            <span class="text-xs text-gray-500">Gestão de Clientes</span>
+            <span class="text-white text-sm">{{ isAdmin ? 'Dashboard Interno' : 'Painel do Cliente' }}</span>
+            <span class="text-xs text-gray-500">{{ isAdmin ? 'Gestão de Clientes' : 'Recuperação de Vendas' }}</span>
           </div>
         </div>
 
@@ -67,22 +75,38 @@ const handleLogout = async () => {
             <svg v-if="item.icon === 'dashboard'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
+            
             <!-- User Plus Icon -->
             <svg v-if="item.icon === 'user-plus'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
+            
+            <!-- Users Cog Icon (Admin Clients Management) -->
+            <svg v-if="item.icon === 'users-cog'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            
             <!-- Users Icon -->
             <svg v-if="item.icon === 'users'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
+            
+            <!-- Clipboard Icon (Opportunities) -->
+            <svg v-if="item.icon === 'clipboard'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            
             <!-- Robot Icon -->
             <svg v-if="item.icon === 'robot'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
+            
             <!-- Book Icon -->
             <svg v-if="item.icon === 'book'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
+            
             <span class="hidden lg:inline">{{ item.name }}</span>
           </button>
         </nav>
@@ -94,7 +118,14 @@ const handleLogout = async () => {
             <p class="text-xs text-gray-400">{{ user?.email }}</p>
           </div>
           <div class="flex items-center space-x-2">
-            <span v-if="isAdmin" class="px-2 py-1 rounded text-xs font-medium" style="background-color: var(--color-border1); color: var(--color-text1)">
+            <span 
+              v-if="isAdmin" 
+              class="px-2 py-1 rounded text-xs font-medium flex items-center gap-1" 
+              style="background-color: rgba(168, 85, 247, 0.2); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3)"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
               Admin
             </span>
             <button
@@ -119,21 +150,42 @@ const handleLogout = async () => {
             class="p-2 rounded-lg transition-all duration-200 flex flex-col items-center gap-1"
             :class="isActive(item.path) ? 'text-[#7cba10]' : 'text-gray-400'"
         >
+          <!-- Dashboard Icon -->
           <svg v-if="item.icon === 'dashboard'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
           </svg>
+          
+          <!-- User Plus Icon -->
           <svg v-if="item.icon === 'user-plus'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
           </svg>
+          
+          <!-- Users Cog Icon -->
+          <svg v-if="item.icon === 'users-cog'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          
+          <!-- Users Icon -->
           <svg v-if="item.icon === 'users'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
+          
+          <!-- Clipboard Icon -->
+          <svg v-if="item.icon === 'clipboard'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          
+          <!-- Robot Icon -->
           <svg v-if="item.icon === 'robot'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
+          
+          <!-- Book Icon -->
           <svg v-if="item.icon === 'book'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
+          
           <span class="text-[10px]">{{ item.name.split(' ')[0] }}</span>
         </button>
       </nav>
