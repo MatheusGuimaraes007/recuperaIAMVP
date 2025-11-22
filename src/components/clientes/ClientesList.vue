@@ -90,14 +90,11 @@ const handlePageChange = async (page) => {
 };
 
 const handleContactClick = (contact) => {
-  console.log('Contact clicked:', contact);
-  // Aqui você pode implementar navegação para detalhes ou abrir modal
-  // router.push(`/clientes/${contact.id}`);
+  router.push(`/clientes/${contact.id}`);
 };
 
 const handleStatusChangeForContact = async ({ contactId, newStatus }) => {
   console.log('Change status:', contactId, newStatus);
-  // Implementar mudança de status se necessário
 };
 
 const totalPages = computed(() => {
@@ -115,12 +112,10 @@ const hasActiveFilters = computed(() => {
 
 <template>
   <div class="min-h-screen" style="background-color: var(--color-background3)">
-    <!-- Navbar -->
     <Navbar />
     
     <div class="p-6">
       <div class="max-w-[1600px] mx-auto">
-        <!-- Header -->
         <div class="mb-8 flex items-center justify-between p-6 rounded-lg"
              style="background-color: var(--color-background4); border: 1px solid var(--color-border1)">
           <div>
@@ -133,7 +128,6 @@ const hasActiveFilters = computed(() => {
           </div>
         </div>
 
-        <!-- Filters -->
         <div class="mb-6">
           <ClientesFilters
             :loading="loading"
@@ -145,7 +139,6 @@ const hasActiveFilters = computed(() => {
           />
         </div>
 
-        <!-- Error State -->
         <Card v-if="error" padding="md" class="mb-6">
           <div
             class="p-4 rounded-lg border flex items-start gap-3"
@@ -174,13 +167,11 @@ const hasActiveFilters = computed(() => {
           </div>
         </Card>
 
-        <!-- Loading State -->
         <LoadingState
           v-if="loading && !hasContacts"
           message="Carregando contatos..."
         />
 
-        <!-- Empty State -->
         <EmptyState
           v-else-if="showEmptyState"
           :title="hasActiveFilters ? 'Nenhum contato encontrado' : 'Nenhum contato cadastrado'"
@@ -190,7 +181,6 @@ const hasActiveFilters = computed(() => {
           @action="handleClearFilters"
         />
 
-        <!-- Table -->
         <ClientesTable
           v-else
           :contacts="contacts"
@@ -213,5 +203,4 @@ const hasActiveFilters = computed(() => {
 </template>
 
 <style scoped>
-/* Estilos adicionais se necessário */
 </style>

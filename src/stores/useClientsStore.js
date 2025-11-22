@@ -47,7 +47,6 @@ export const useClientsStore = defineStore('clients', () => {
             const from = (page - 1) * limit;
             const to = from + limit - 1;
 
-            // Query otimizada com índices
             let query = supabase
                 .from('contacts')
                 .select(`
@@ -65,12 +64,10 @@ export const useClientsStore = defineStore('clients', () => {
                 .is('deleted_at', null)
                 .order('created_at', { ascending: false });
 
-            // Filtro de status
             if (status && status !== 'all') {
                 query = query.eq('status', status);
             }
 
-            // Busca por texto (usa índice trigram)
             if (search && search.trim() !== '') {
                 const searchTerm = search.trim();
                 query = query.or(
@@ -78,7 +75,6 @@ export const useClientsStore = defineStore('clients', () => {
                 );
             }
 
-            // Paginação
             query = query.range(from, to);
 
             const { data, error: fetchError, count } = await query;
@@ -114,7 +110,6 @@ export const useClientsStore = defineStore('clients', () => {
                 throw new Error('Usuário não autenticado');
             }
 
-            // Busca principal do contato
             const { data: contactData, error: contactError } = await supabase
                 .from('contacts')
                 .select(`
@@ -128,7 +123,6 @@ export const useClientsStore = defineStore('clients', () => {
 
             if (contactError) throw contactError;
 
-            // Busca oportunidades relacionadas (usa índice idx_opportunities_contact_status)
             const { data: opportunities, error: oppError } = await supabase
                 .from('opportunities')
                 .select(`
@@ -154,7 +148,6 @@ export const useClientsStore = defineStore('clients', () => {
 
             if (oppError) throw oppError;
 
-            // Busca últimas 50 mensagens (usa índice idx_messages_contact_created)
             const { data: messages, error: msgError } = await supabase
                 .from('messages')
                 .select(`
@@ -170,7 +163,6 @@ export const useClientsStore = defineStore('clients', () => {
 
             if (msgError) throw msgError;
 
-            // Montar objeto completo
             const fullContact = {
                 ...contactData,
                 opportunities: opportunities || [],
@@ -227,13 +219,11 @@ export const useClientsStore = defineStore('clients', () => {
 
             if (updateError) throw updateError;
 
-            // Atualizar na lista local
             const index = contacts.value.findIndex(c => c.id === contactId);
             if (index !== -1) {
                 contacts.value[index] = { ...contacts.value[index], ...data };
             }
 
-            // Atualizar contato atual se for o mesmo
             if (currentContact.value?.id === contactId) {
                 currentContact.value = { ...currentContact.value, ...data };
             }
@@ -268,13 +258,11 @@ export const useClientsStore = defineStore('clients', () => {
 
             if (updateError) throw updateError;
 
-            // Atualizar na lista local
             const index = contacts.value.findIndex(c => c.id === contactId);
             if (index !== -1) {
                 contacts.value[index] = { ...contacts.value[index], ...data };
             }
 
-            // Atualizar contato atual
             if (currentContact.value?.id === contactId) {
                 currentContact.value = { ...currentContact.value, ...data };
             }
@@ -314,7 +302,6 @@ export const useClientsStore = defineStore('clients', () => {
 
             const offset = (page - 1) * limit;
 
-            // Usa função SQL otimizada
             const { data, error: searchError } = await supabase
                 .rpc('search_contacts', {
                     p_user_id: userId,
@@ -325,7 +312,6 @@ export const useClientsStore = defineStore('clients', () => {
                 });
 
             if (searchError) {
-                // Fallback para query normal se função não existir
                 console.warn('Função search_contacts não disponível, usando query padrão');
                 return await fetchContacts(filters);
             }
@@ -336,7 +322,6 @@ export const useClientsStore = defineStore('clients', () => {
             return { success: true, data };
         } catch (err) {
             console.error('Erro na busca otimizada:', err);
-            // Fallback para query normal
             return await fetchContacts(filters);
         } finally {
             loading.value = false;
@@ -357,14 +342,12 @@ export const useClientsStore = defineStore('clients', () => {
     };
 
     return {
-        // State
         contacts,
         currentContact,
         totalCount,
         loading,
         error,
 
-        // Actions
         fetchContacts,
         fetchContactById,
         fetchContactMetrics,

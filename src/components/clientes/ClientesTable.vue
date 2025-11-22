@@ -68,11 +68,9 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
 <template>
   <div>
     <Card padding="none" class="overflow-hidden">
-      <!-- Table Header com gradiente sutil -->
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="relative">
-            <!-- Gradiente de fundo -->
             <div class="absolute inset-0 bg-gradient-to-r from-gray-800/50 to-gray-900/50"></div>
             <tr class="border-b-2" style="border-color: var(--color-border1)">
               <th class="relative px-6 py-4 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">
@@ -132,13 +130,10 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
               @click="handleContactClick(contact)"
               class="group hover:bg-gradient-to-r hover:from-gray-800/40 hover:to-transparent transition-all duration-200 cursor-pointer relative"
             >
-              <!-- Linha de destaque ao hover -->
               <td colspan="6" class="absolute inset-y-0 left-0 w-1 bg-[#7cba10] opacity-0 group-hover:opacity-100 transition-opacity"></td>
               
-              <!-- Nome -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <!-- Avatar com gradiente -->
                   <div class="relative">
                     <div class="absolute -inset-0.5 bg-gradient-to-r from-[#7cba10] to-purple-600 rounded-full blur opacity-0 group-hover:opacity-50 transition duration-300"></div>
                     <div class="relative w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white transition-transform group-hover:scale-110"
@@ -160,7 +155,6 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
                 </div>
               </td>
 
-              <!-- Contato -->
               <td class="px-6 py-4">
                 <div class="space-y-1.5">
                   <a :href="`tel:${contact.phone}`" @click.stop class="text-sm text-white flex items-center gap-1.5 hover:text-[#7cba10] transition-colors w-fit">
@@ -178,7 +172,6 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
                 </div>
               </td>
 
-              <!-- Status -->
               <td class="px-6 py-4">
                 <span
                   class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all group-hover:scale-105"
@@ -193,7 +186,6 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
                 </span>
               </td>
 
-              <!-- Agente -->
               <td class="px-6 py-4">
                 <div v-if="contact.agent?.name" class="flex items-center gap-2">
                   <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#7cba10] to-[#5a8c0d] flex items-center justify-center text-white text-xs font-bold">
@@ -204,7 +196,6 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
                 <span v-else class="text-sm text-gray-500 italic">Não atribuído</span>
               </td>
 
-              <!-- Data Cadastro -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-2">
                   <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +205,6 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
                 </div>
               </td>
 
-              <!-- Ações -->
               <td class="px-6 py-4 text-right">
                 <button
                   @click.stop="handleContactClick(contact)"
@@ -232,7 +222,6 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
         </table>
       </div>
 
-      <!-- Pagination Slot com estilo melhorado -->
       <div class="px-6 py-5 border-t bg-gradient-to-r from-gray-800/20 to-transparent" style="border-color: var(--color-border1)">
         <slot name="pagination"></slot>
       </div>
@@ -241,7 +230,6 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
 </template>
 
 <style scoped>
-/* Animação suave para as linhas */
 tbody tr {
   animation: fadeInRow 0.3s ease-out;
 }
@@ -257,12 +245,10 @@ tbody tr {
   }
 }
 
-/* Efeito de hover mais suave */
 tbody tr:hover {
   transform: translateX(2px);
 }
 
-/* Links com underline animado */
 a {
   position: relative;
 }

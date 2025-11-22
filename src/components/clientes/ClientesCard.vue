@@ -69,10 +69,8 @@ const handleCardClick = () => {
     @click="handleCardClick"
   >
     <div class="space-y-4">
-      <!-- Header com Avatar e Status -->
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <!-- Avatar -->
           <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#7cba10] to-[#5a8c0d] flex items-center justify-center text-white text-base font-bold flex-shrink-0 group-hover:scale-110 transition-transform">
             {{ getInitials(contact.name) }}
           </div>
@@ -87,7 +85,6 @@ const handleCardClick = () => {
           </div>
         </div>
         
-        <!-- Status Badge -->
         <span 
           class="px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap flex items-center gap-1.5"
           :class="getStatusColor(contact.status)"
@@ -97,7 +94,6 @@ const handleCardClick = () => {
         </span>
       </div>
 
-      <!-- Contact Info Grid -->
       <div class="grid grid-cols-2 gap-4">
         <div>
           <p class="text-xs text-gray-400 mb-1">Email</p>
@@ -113,7 +109,6 @@ const handleCardClick = () => {
         </div>
       </div>
 
-      <!-- Tags -->
       <div v-if="contact.tags && contact.tags.length" class="flex flex-wrap gap-2">
         <span
           v-for="tag in contact.tags.slice(0, 3)"
@@ -127,7 +122,6 @@ const handleCardClick = () => {
         </span>
       </div>
 
-      <!-- Footer -->
       <div class="flex items-center justify-between pt-3 border-t border-gray-700">
         <div class="flex items-center text-gray-400">
           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

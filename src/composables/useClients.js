@@ -6,7 +6,6 @@ import { formatPhone } from '../utils/formatters';
 export const useClients = () => {
     const clientsStore = useClientsStore();
 
-    // State refs da store
     const {
         contacts,
         currentContact,
@@ -15,7 +14,6 @@ export const useClients = () => {
         error
     } = storeToRefs(clientsStore);
 
-    // Actions da store
     const {
         fetchContacts,
         fetchContactById,
@@ -28,12 +26,10 @@ export const useClients = () => {
         clearError
     } = clientsStore;
 
-    // Computed: verifica se há contatos
     const hasContacts = computed(() => {
         return contacts.value && contacts.value.length > 0;
     });
 
-    // Computed: verifica se há contato atual carregado
     const hasCurrentContact = computed(() => {
         return currentContact.value !== null;
     });
@@ -124,7 +120,6 @@ export const useClients = () => {
             blocked: 0
         });
 
-        // Taxa de conversão (convertidos / total)
         metrics.conversionRate = metrics.total > 0
             ? ((metrics.converted / metrics.total) * 100).toFixed(1)
             : 0;
@@ -163,12 +158,10 @@ export const useClients = () => {
             totalMessages: currentContact.value.messages?.length || 0
         };
 
-        // Taxa de conversão
         metrics.conversionRate = metrics.totalOpportunities > 0
             ? ((metrics.wonOpportunities / metrics.totalOpportunities) * 100).toFixed(1)
             : 0;
 
-        // Tempo médio de conversão (apenas de oportunidades ganhas com tempo registrado)
         const wonWithTime = opps.filter(o => 
             o.status === 'won' && o.conversion_time_minutes
         );
@@ -274,17 +267,11 @@ export const useClients = () => {
         return reasons[reason] || reason;
     };
 
-    /**
-     * Busca otimizada com fallback
-     * Tenta usar a função SQL otimizada, se falhar usa a query normal
-     */
     const searchContacts = async (filters = {}) => {
         try {
-            // Tenta usar a versão otimizada primeiro
             const result = await searchContactsOptimized(filters);
             
             if (!result.success) {
-                // Fallback para busca normal
                 return await fetchContacts(filters);
             }
             
@@ -296,31 +283,26 @@ export const useClients = () => {
     };
 
     return {
-        // State
         contacts,
         currentContact,
         totalCount,
         loading,
         error,
-        
-        // Computed
+
         hasContacts,
         hasCurrentContact,
         getContactMetrics,
         getCurrentContactMetrics,
         statusOptionsWithCount,
         
-        // Configs
         contactStatusConfig,
         opportunityStatusConfig,
         statusOptions,
         
-        // Helpers
         getOpportunityTypeLabel,
         getLostReasonLabel,
         formatPhone,
-        
-        // Actions
+
         fetchContacts,
         fetchContactById,
         fetchContactMetrics,

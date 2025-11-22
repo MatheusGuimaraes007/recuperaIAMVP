@@ -112,7 +112,6 @@ const getOpportunityTypeLabel = (type) => {
     <div class="p-4 md:p-6">
       <div class="max-w-[1600px] mx-auto">
         
-        <!-- Header com Botão Voltar - MELHORADO -->
         <div class="mb-6">
           <button
             @click="goBack"
@@ -125,10 +124,8 @@ const getOpportunityTypeLabel = (type) => {
           </button>
         </div>
 
-        <!-- Loading State -->
         <LoadingState v-if="loading" message="Carregando detalhes do contato..." />
 
-        <!-- Error State - MELHORADO -->
         <Card v-else-if="error" padding="lg">
           <div class="text-center py-12">
             <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-500/10 mb-6">
@@ -148,12 +145,9 @@ const getOpportunityTypeLabel = (type) => {
           </div>
         </Card>
 
-        <!-- Contact Details -->
         <template v-else-if="contact">
           
-          <!-- Contact Info Card - MELHORADO -->
           <Card padding="lg" class="mb-6 overflow-hidden relative">
-            <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-5">
               <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 40px 40px;"></div>
             </div>
@@ -161,7 +155,6 @@ const getOpportunityTypeLabel = (type) => {
             <div class="relative">
               <div class="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
                 <div class="flex items-center gap-4">
-                  <!-- Avatar - MELHORADO com gradiente e efeito -->
                   <div class="relative group">
                     <div class="absolute -inset-0.5 bg-gradient-to-r from-[#7cba10] to-[#667eea] rounded-full blur opacity-30 group-hover:opacity-100 transition duration-300"></div>
                     <div class="relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-2xl md:text-3xl font-bold text-white"
@@ -189,7 +182,6 @@ const getOpportunityTypeLabel = (type) => {
                   </div>
                 </div>
 
-                <!-- Status Badge - MELHORADO com animação -->
                 <div
                   class="px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"
                   :style="{
@@ -204,7 +196,6 @@ const getOpportunityTypeLabel = (type) => {
                 </div>
               </div>
 
-              <!-- Contact Metadata - MELHORADO com ícones -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t" style="border-color: var(--color-border1)">
                 <div class="flex items-start gap-3">
                   <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
@@ -243,7 +234,6 @@ const getOpportunityTypeLabel = (type) => {
             </div>
           </Card>
 
-          <!-- Metrics Cards - MELHORADO com hover e animações -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card padding="md" class="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div class="flex items-center justify-between">
@@ -302,7 +292,6 @@ const getOpportunityTypeLabel = (type) => {
             </Card>
           </div>
 
-          <!-- Opportunities List - MELHORADO -->
           <Card padding="lg">
             <div class="flex items-center justify-between mb-6">
               <div>
@@ -410,7 +399,6 @@ const getOpportunityTypeLabel = (type) => {
 </template>
 
 <style scoped>
-/* Animação suave para os cards */
 @keyframes fadeIn {
   from {
     opacity: 0;

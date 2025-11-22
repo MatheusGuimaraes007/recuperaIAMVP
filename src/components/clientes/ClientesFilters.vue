@@ -61,9 +61,7 @@ const hasActiveFilters = () => {
 
 <template>
   <div class="space-y-6">
-    <!-- Métricas Cards - MELHORADO com animações e hover -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Total de Contatos -->
       <Card padding="md" class="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
         <div class="relative flex items-center gap-4">
@@ -77,7 +75,6 @@ const hasActiveFilters = () => {
         </div>
       </Card>
 
-      <!-- Engajados -->
       <Card padding="md" class="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
         <div class="relative flex items-center gap-4">
@@ -91,7 +88,6 @@ const hasActiveFilters = () => {
         </div>
       </Card>
 
-      <!-- Convertidos -->
       <Card padding="md" class="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
         <div class="relative flex items-center gap-4">
@@ -105,7 +101,6 @@ const hasActiveFilters = () => {
         </div>
       </Card>
 
-      <!-- Taxa de Conversão -->
       <Card padding="md" class="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
         <div class="relative flex items-center gap-4">
@@ -120,15 +115,12 @@ const hasActiveFilters = () => {
       </Card>
     </div>
 
-    <!-- Filtros - MELHORADO com melhor layout e indicadores -->
     <Card padding="lg" class="relative overflow-hidden">
-      <!-- Background Pattern -->
       <div class="absolute top-0 right-0 w-64 h-64 opacity-5">
         <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
       </div>
 
       <div class="relative space-y-6">
-        <!-- Header com indicador de filtros ativos -->
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg font-bold text-white mb-1">Filtros de Busca</h3>
@@ -140,7 +132,6 @@ const hasActiveFilters = () => {
           </div>
         </div>
 
-        <!-- Campo de Busca -->
         <div class="relative">
           <div class="relative">
             <Input
@@ -151,7 +142,6 @@ const hasActiveFilters = () => {
               :disabled="loading"
               class="pr-24"
             />
-            <!-- Indicador de loading no input -->
             <div v-if="loading && searchInput" class="absolute right-3 top-1/2 -translate-y-1/2">
               <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -169,7 +159,6 @@ const hasActiveFilters = () => {
           </div>
         </div>
 
-        <!-- Status Filters - MELHORADO com design de pills -->
         <div>
           <label class="text-sm font-semibold text-gray-300 mb-3 block">Filtrar por Status</label>
           <div class="flex flex-wrap gap-2">
@@ -183,11 +172,9 @@ const hasActiveFilters = () => {
                 ? 'border-[#7cba10] text-white bg-[#7cba10]/20 shadow-lg'
                 : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300 bg-gray-800/30'"
             >
-              <!-- Glow effect quando selecionado -->
               <div v-if="selectedStatus === option.value" class="absolute inset-0 rounded-xl bg-[#7cba10]/20 blur-xl"></div>
               <span class="relative flex items-center gap-2">
                 <span>{{ option.label }}</span>
-                <!-- Badge com contagem (se disponível) -->
                 <span v-if="selectedStatus === option.value" class="px-2 py-0.5 rounded-full text-xs font-bold bg-[#7cba10] text-white">
                   ✓
                 </span>
@@ -196,7 +183,6 @@ const hasActiveFilters = () => {
           </div>
         </div>
 
-        <!-- Actions - MELHORADO com melhor feedback visual -->
         <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t" style="border-color: var(--color-border1)">
           <Button
             variant="secondary"
@@ -210,7 +196,6 @@ const hasActiveFilters = () => {
             <span>Limpar Filtros</span>
           </Button>
           
-          <!-- Loading indicator -->
           <div v-if="loading" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 text-sm text-gray-400">
             <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -219,7 +204,6 @@ const hasActiveFilters = () => {
             <span class="font-medium">Buscando contatos...</span>
           </div>
 
-          <!-- Resultado da busca -->
           <div v-else-if="!loading && hasActiveFilters()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30 text-sm text-green-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -233,7 +217,6 @@ const hasActiveFilters = () => {
 </template>
 
 <style scoped>
-/* Animação para o pulso do indicador */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -247,7 +230,6 @@ const hasActiveFilters = () => {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Transições suaves */
 button {
   transition: all 0.2s ease-in-out;
 }
