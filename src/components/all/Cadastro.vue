@@ -114,7 +114,7 @@ const formProgress = computed(() => {
           <div class="relative flex items-center justify-between">
             <div class="flex items-center gap-4">
               <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-[#7cba10] to-[#5a8c0d] flex items-center justify-center flex-shrink-0 shadow-lg">
-                <span class="text-4xl">👤</span>
+                <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus-icon lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
               </div>
               <div>
                 <h1 class="text-3xl font-bold text-white mb-2">Cadastrar Novo Usuário</h1>
@@ -243,8 +243,8 @@ const formProgress = computed(() => {
                         class="w-full px-4 py-3 rounded-lg border-2 border-gray-700 focus:ring-2 focus:ring-[#7cba10] focus:outline-none transition-all appearance-none group-hover:border-gray-600"
                         style="background-color: var(--color-background2); color: white"
                     >
-                      <option value="user">👤 Usuário</option>
-                      <option value="admin">👑 Administrador</option>
+                      <option value="user">Usuário</option>
+                      <option value="admin">Administrador</option>
                     </select>
                     <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
