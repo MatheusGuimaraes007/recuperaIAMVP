@@ -57,14 +57,30 @@ const routes = [
       title: "Detalhes do Cliente",
     },
   },
-
-  {
-    path: "/agents",
-    name: "Agents",
-    component: () => import("../components/agents/AgentsList.vue"),
-    meta: { requiresAuth: true },
-  },
-
+    {
+        path: '/agents',
+        name: 'agents',
+        component: () => import('../components/agents/AgentsList.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/agentes/:id',
+        name: 'agent-detail',
+        component: () => import('../components/agents/AgentDetail.vue'),
+        meta: { requiresAuth: true }
+    },
+    // {
+    //     path: '/agentes/novo',
+    //     name: 'agent-create',
+    //     component: () => import('../components/agents/AgentForm.vue'), // Criar depois
+    //     meta: { requiresAuth: true }
+    // },
+    // {
+    //     path: '/agentes/:id/editar',
+    //     name: 'agent-edit',
+    //     component: () => import('../components/agents/AgentForm.vue'), // Criar depois
+    //     meta: { requiresAuth: true }
+    // },
   {
     path: "/conhecimento",
     name: "BaseConhecimento",
@@ -84,6 +100,7 @@ const routes = [
     component: () => import("../components/opportunities/OpportunityDetail.vue"),
     meta: { requiresAuth: true },
   },
+
 ];
 
 const router = createRouter({
