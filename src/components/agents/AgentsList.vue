@@ -11,6 +11,7 @@ import Pagination from '../../shared/Pagination.vue';
 import Navbar from '../../shared/Navbar.vue';
 import Button from '../../shared/Button.vue';
 import { PAGINATION } from '../../utils/constants';
+import { Bot, Plus, AlertCircle } from 'lucide-vue-next';
 
 const router = useRouter();
 
@@ -104,33 +105,43 @@ const hasActiveFilters = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen" style="background-color: var(--color-background3)">
+  <div class="min-h-screen bg-background-base">
     <Navbar />
 
-    <div class="p-6">
+    <div class="p-4 md:p-6">
       <div class="max-w-[1600px] mx-auto">
+
         <!-- Header -->
-        <div class="mb-8 flex items-center justify-between p-6 rounded-lg"
-             style="background-color: var(--color-background4); border: 1px solid var(--color-border1)">
-          <div>
-            <h1 class="text-3xl font-bold text-white mb-2">
-              Gestão de Agentes IA
-            </h1>
-            <p class="text-gray-400 text-sm">
-              Configure e gerencie seus assistentes virtuais
-            </p>
+        <Card padding="lg" class="mb-8 relative overflow-hidden">
+          <div class="absolute inset-0 opacity-5">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,_white_1px,_transparent_0)] bg-[length:40px_40px]"></div>
           </div>
 
-          <Button
-              @click="handleCreateAgent"
-              class="flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            <span>Novo Agente</span>
-          </Button>
-        </div>
+          <div class="relative flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <Bot :size="24" class="text-white" />
+                </div>
+                <h1 class="text-3xl font-bold text-white">
+                  Gestão de Agentes IA
+                </h1>
+              </div>
+              <p class="text-gray-400 text-sm ml-15">
+                Configure e gerencie seus assistentes virtuais
+              </p>
+            </div>
+
+            <Button
+                @click="handleCreateAgent"
+                variant="primary"
+                class="flex items-center gap-2"
+            >
+              <Plus :size="20" />
+              <span>Novo Agente</span>
+            </Button>
+          </div>
+        </Card>
 
         <!-- Filtros -->
         <div class="mb-6">
@@ -144,27 +155,13 @@ const hasActiveFilters = computed(() => {
 
         <!-- Error State -->
         <Card v-if="error" padding="md" class="mb-6">
-          <div
-              class="p-4 rounded-lg border flex items-start gap-3"
-              style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)"
-          >
-            <svg
-                class="w-5 h-5 flex-shrink-0 mt-0.5"
-                style="color: var(--color-text2)"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-            >
-              <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clip-rule="evenodd"
-              />
-            </svg>
+          <div class="p-4 rounded-lg border flex items-start gap-3 bg-status-error-light border-status-error-border">
+            <AlertCircle :size="20" class="text-status-error flex-shrink-0 mt-0.5" />
             <div>
-              <p class="text-sm font-medium" style="color: var(--color-text2)">
+              <p class="text-sm font-medium text-status-error">
                 Erro ao carregar dados
               </p>
-              <p class="text-sm mt-1" style="color: var(--color-text2); opacity: 0.8">
+              <p class="text-sm mt-1 text-status-error opacity-80">
                 {{ error }}
               </p>
             </div>
@@ -182,7 +179,7 @@ const hasActiveFilters = computed(() => {
             v-else-if="showEmptyState"
             :title="hasActiveFilters ? 'Nenhum agente encontrado' : 'Nenhum agente cadastrado'"
             :message="hasActiveFilters ? 'Tente ajustar os filtros ou a busca' : 'Crie seu primeiro agente IA para começar'"
-            icon="robot"
+            icon="bot"
             :action-label="hasActiveFilters ? 'Limpar filtros' : 'Criar Agente'"
             @action="hasActiveFilters ? handleClearFilters() : handleCreateAgent()"
         />
@@ -209,7 +206,3 @@ const hasActiveFilters = computed(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Estilos adicionais se necessário */
-</style>

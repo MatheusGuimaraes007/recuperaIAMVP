@@ -1,6 +1,7 @@
 <script setup>
-import { useRouter } from 'vue-router';
-import Card from "../../shared/Card.vue";
+import { useRouter } from 'vue-router'
+import Card from '../../shared/Card.vue'
+import { ArrowLeft } from 'lucide-vue-next'
 
 defineProps({
   title: {
@@ -17,49 +18,50 @@ defineProps({
   },
   backRoute: {
     type: String,
-    default: '/dashboard'
+    default: '/login'
   }
-});
+})
 
-const router = useRouter();
+const router = useRouter()
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4 py-8"
-       style="background-color: var(--color-background3)">
-    <div class="w-full max-w-md">
+  <div class="min-h-screen flex items-center justify-center px-4 py-12 bg-background-base">
+    <div class="w-full max-w-md animate-fade-in">
 
-      <div class="flex items-center justify-between mb-8">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold mb-2 cursor-default select-none">
+          <span class="text-white">recupera</span><span class="text-primary">.ia</span>
+        </h1>
+      </div>
+
+      <Card padding="lg" class="border-border shadow-2xl relative overflow-hidden">
         <button
             v-if="showBackButton"
             @click="router.push(backRoute)"
-            class="text-gray-400 hover:text-white transition-colors"
+            class="absolute top-6 left-6 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all group"
+            title="Voltar"
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
+          <ArrowLeft :size="20" class="group-hover:-translate-x-1 transition-transform" />
         </button>
-        <div v-else class="w-6"></div>
 
-        <h1 class="text-2xl font-bold">
-          <span class="text-white">recupera</span><span style="color: var(--color-text1)">.ia</span>
-        </h1>
-
-        <div class="w-6"></div>
-      </div>
-
-      <Card padding="lg">
-        <div class="mb-6">
+        <div class="mb-8 text-center" :class="{ 'mt-4': showBackButton }">
           <h2 class="text-2xl font-bold text-white mb-2">{{ title }}</h2>
-          <p v-if="subtitle" class="text-gray-400 text-sm">{{ subtitle }}</p>
+          <p v-if="subtitle" class="text-sm text-gray-400 max-w-xs mx-auto leading-relaxed">
+            {{ subtitle }}
+          </p>
         </div>
 
-        <slot></slot>
+        <slot />
       </Card>
 
-      <div v-if="$slots.footer" class="mt-6">
-        <slot name="footer"></slot>
+      <div v-if="$slots.footer" class="mt-8 text-center">
+        <slot name="footer" />
       </div>
+
+      <p class="mt-8 text-center text-xs text-gray-600">
+        &copy; {{ new Date().getFullYear() }} Recupera.ai. Todos os direitos reservados.
+      </p>
     </div>
   </div>
 </template>
