@@ -1526,7 +1526,7 @@ defineEmits(['close', 'update'])
 
 **A. Renomear arquivo com typo**
 ```bash
-mv GuarantteTimeSection.vue GuaranteeTimeSection.vue
+mv GuaranteeTimeSection.vue GuaranteeTimeSection.vue
 ```
 
 **B. Remover Prop Drilling de Funções**
