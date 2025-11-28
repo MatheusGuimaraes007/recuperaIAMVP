@@ -2,8 +2,11 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { supabase } from '../utils/supabase';
 import { useAuthStore } from './useAuthStore';
+import { storeCache, createCacheKey, createInvalidationPattern, CacheTTL } from '../utils/storeCache';
+import ErrorHandler from '../utils/errorHandler';
 
 export const useAdminClientsStore = defineStore('adminClients', () => {
+
     const clients = ref([]);
     const currentClient = ref(null);
     const totalCount = ref(0);
@@ -21,10 +24,6 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
         error.value = null;
     };
 
-    /**
-     * Busca todos os clientes da plataforma (usuários com role='user')
-     * Inclui métricas agregadas de cada cliente
-     */
     const fetchPlatformClients = async (filters = {}) => {
         loading.value = true;
         clearError();
@@ -37,7 +36,6 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 throw new Error('Usuário não autenticado');
             }
 
-            // Verificar se é admin
             if (!authStore.isAdmin) {
                 throw new Error('Acesso negado. Apenas administradores podem acessar esta funcionalidade.');
             }
@@ -48,6 +46,75 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 status = null,
                 search = ''
             } = filters;
+
+            const cacheKey = createCacheKey('admin-clients', adminId, { page, limit, status, search });
+
+            const cached = storeCache.get(cacheKey);
+            if (cached) {
+                clients.value = cached.data;
+                totalCount.value = cached.count;
+                loading.value = false;
+
+                console.log('✅ Clientes (admin) carregados do CACHE:', cacheKey);
+                return { success: true, data: cached.data, count: cached.count, fromCache: true };
+            }
+
+            console.log('⏳ Cache MISS, tentando RPC otimizado...');
+
+            const offset = (page - 1) * limit;
+
+            try {
+                const { data: rpcData, error: rpcError } = await supabase.rpc('get_all_clients_with_metrics', {
+                    p_admin_id: adminId,
+                    p_status: status === 'all' ? null : status,
+                    p_search: search || null,
+                    p_limit: limit,
+                    p_offset: offset
+                });
+
+                if (!rpcError && rpcData) {
+                    const transformedData = rpcData.map(row => ({
+                        id: row.id,
+                        name: row.name,
+                        email: row.email,
+                        phone: row.phone,
+                        status: row.status,
+                        role: row.role,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
+                        metrics: {
+                            totalOpportunities: row.total_opportunities || 0,
+                            wonOpportunities: row.won_opportunities || 0,
+                            lostOpportunities: row.lost_opportunities || 0,
+                            activeOpportunities: row.active_opportunities || 0,
+                            totalRecovered: row.total_recovered || 0,
+                            conversionRate: row.conversion_rate || 0,
+                            subscriptionStatus: row.subscription_status,
+                            planName: row.plan_name,
+                            monthlyFee: row.monthly_fee
+                        }
+                    }));
+
+                    clients.value = transformedData;
+
+                    const { count } = await supabase
+                        .from('users')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role', 'user')
+                        .is('deleted_at', null);
+
+                    totalCount.value = count || 0;
+
+                    storeCache.set(cacheKey, { data: transformedData, count }, CacheTTL.SHORT);
+                    console.log('💾 Clientes (admin) salvos no CACHE via RPC');
+
+                    return { success: true, data: transformedData, count, fromCache: false, source: 'rpc' };
+                }
+            } catch (rpcError) {
+                console.warn('⚠️  RPC get_all_clients_with_metrics não disponível, usando fallback:', rpcError.message);
+            }
+
+            console.log('📋 Usando query normal (fallback)');
 
             const from = (page - 1) * limit;
             const to = from + limit - 1;
@@ -69,12 +136,10 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 .is('deleted_at', null)
                 .order('created_at', { ascending: false });
 
-            // Filtro por status
             if (status && status !== 'all') {
                 query = query.eq('status', status);
             }
 
-            // Filtro por busca (nome ou email)
             if (search && search.trim() !== '') {
                 const searchTerm = search.trim();
                 query = query.or(
@@ -82,14 +147,14 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 );
             }
 
-            // Paginação
             query = query.range(from, to);
 
             const { data: clientsData, error: fetchError, count } = await query;
 
             if (fetchError) throw fetchError;
 
-            // Buscar métricas para cada cliente
+            console.log('⚠️  Buscando métricas individualmente (lento - use RPC!)');
+
             const clientsWithMetrics = await Promise.all(
                 (clientsData || []).map(async (client) => {
                     const metrics = await fetchClientMetrics(client.id);
@@ -110,22 +175,22 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
             clients.value = clientsWithMetrics;
             totalCount.value = count || 0;
 
-            return { success: true, data: clientsWithMetrics, count };
+            storeCache.set(cacheKey, { data: clientsWithMetrics, count }, CacheTTL.SHORT);
+            console.log('💾 Clientes (admin) salvos no CACHE via fallback');
+
+            return { success: true, data: clientsWithMetrics, count, fromCache: false, source: 'fallback' };
+
         } catch (err) {
-            console.error('Erro ao buscar clientes da plataforma:', err);
-            setError('Erro ao carregar clientes.');
+            const friendlyMessage = ErrorHandler.handle(err, 'fetchPlatformClients', { filters });
+            setError(friendlyMessage);
             return { success: false, error: err };
         } finally {
             loading.value = false;
         }
     };
 
-    /**
-     * Busca métricas agregadas de um cliente específico
-     */
     const fetchClientMetrics = async (clientId) => {
         try {
-            // Buscar oportunidades do cliente
             const { data: opportunities, error: oppError } = await supabase
                 .from('opportunities')
                 .select('id, status, value, converted_value')
@@ -135,7 +200,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
             if (oppError) throw oppError;
 
             const opps = opportunities || [];
-            
+
             const metrics = {
                 totalOpportunities: opps.length,
                 wonOpportunities: opps.filter(o => o.status === 'won').length,
@@ -149,14 +214,13 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                     : 0
             };
 
-            // Buscar informações de assinatura
             const { data: subscription } = await supabase
                 .from('user_subscriptions')
                 .select('status, plan_name, monthly_fee')
                 .eq('user_id', clientId)
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
 
             if (subscription) {
                 metrics.subscriptionStatus = subscription.status;
@@ -167,14 +231,10 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
             return { success: true, data: metrics };
         } catch (err) {
             console.error('Erro ao buscar métricas do cliente:', err);
-            return { success: false, error: err };
+            return { success: false, error: err, data: null };
         }
     };
 
-    /**
-     * Busca detalhes completos de um cliente específico
-     * Usado quando admin acessa o dashboard/oportunidades do cliente
-     */
     const fetchClientById = async (clientId) => {
         loading.value = true;
         clearError();
@@ -185,6 +245,26 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
             if (!authStore.isAdmin) {
                 throw new Error('Acesso negado.');
             }
+
+            const found = clients.value.find(c => c.id === clientId);
+            if (found && found.metrics) {
+                currentClient.value = found;
+                loading.value = false;
+                console.log('✅ Cliente encontrado na lista local');
+                return { success: true, data: found, source: 'local' };
+            }
+
+            const cacheKey = `admin-clients:${authStore.user.id}:detail:${clientId}`;
+
+            const cached = storeCache.get(cacheKey);
+            if (cached) {
+                currentClient.value = cached;
+                loading.value = false;
+                console.log('✅ Cliente carregado do CACHE');
+                return { success: true, data: cached, fromCache: true };
+            }
+
+            console.log('⏳ Cache MISS, buscando do banco...');
 
             // Buscar dados do cliente
             const { data: clientData, error: clientError } = await supabase
@@ -206,7 +286,6 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
             if (clientError) throw clientError;
 
-            // Buscar métricas
             const metricsResult = await fetchClientMetrics(clientId);
 
             const fullClient = {
@@ -216,19 +295,20 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
             currentClient.value = fullClient;
 
-            return { success: true, data: fullClient };
+            storeCache.set(cacheKey, fullClient, CacheTTL.SHORT);
+            console.log('💾 Cliente salvo no CACHE');
+
+            return { success: true, data: fullClient, fromCache: false };
+
         } catch (err) {
-            console.error('Erro ao buscar cliente:', err);
-            setError('Erro ao carregar detalhes do cliente.');
+            const friendlyMessage = ErrorHandler.handle(err, 'fetchClientById', { clientId });
+            setError(friendlyMessage);
             return { success: false, error: err };
         } finally {
             loading.value = false;
         }
     };
 
-    /**
-     * Atualiza status de um cliente
-     */
     const updateClientStatus = async (clientId, newStatus) => {
         loading.value = true;
         clearError();
@@ -252,7 +332,6 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
             if (updateError) throw updateError;
 
-            // Atualizar no array de clientes
             const index = clients.value.findIndex(c => c.id === clientId);
             if (index !== -1) {
                 clients.value[index] = { ...clients.value[index], ...data };
@@ -262,19 +341,25 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 currentClient.value = { ...currentClient.value, ...data };
             }
 
+            const pattern = createInvalidationPattern('admin-clients', authStore.user.id);
+            storeCache.invalidatePattern(pattern);
+            console.log('🗑️  Cache invalidado após update status');
+
             return { success: true, data };
+
         } catch (err) {
-            console.error('Erro ao atualizar status do cliente:', err);
-            setError('Erro ao atualizar status.');
+            const friendlyMessage = ErrorHandler.handle(err, 'updateClientStatus', {
+                clientId,
+                newStatus
+            });
+            setError(friendlyMessage);
             return { success: false, error: err };
         } finally {
             loading.value = false;
         }
     };
 
-    /**
-     * Busca estatísticas gerais da plataforma
-     */
+
     const fetchPlatformStats = async () => {
         try {
             const authStore = useAuthStore();
@@ -283,53 +368,68 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 throw new Error('Acesso negado.');
             }
 
-            // Total de clientes
-            const { count: totalClients } = await supabase
-                .from('users')
-                .select('*', { count: 'exact', head: true })
-                .eq('role', 'user')
-                .is('deleted_at', null);
+            const cacheKey = `admin-clients:${authStore.user.id}:stats`;
 
-            // Clientes ativos
-            const { count: activeClients } = await supabase
-                .from('users')
-                .select('*', { count: 'exact', head: true })
-                .eq('role', 'user')
-                .eq('status', 'active')
-                .is('deleted_at', null);
+            const cached = storeCache.get(cacheKey);
+            if (cached) {
+                console.log('✅ Stats da plataforma carregadas do CACHE');
+                return { success: true, data: cached, fromCache: true };
+            }
 
-            // Clientes em trial
-            const { count: trialClients } = await supabase
-                .from('users')
-                .select('*', { count: 'exact', head: true })
-                .eq('role', 'user')
-                .eq('status', 'trial')
-                .is('deleted_at', null);
+            console.log('⏳ Buscando stats da plataforma...');
 
-            // Total de oportunidades
-            const { count: totalOpportunities } = await supabase
-                .from('opportunities')
-                .select('*', { count: 'exact', head: true })
-                .is('deleted_at', null);
+            const [
+                { count: totalClients },
+                { count: activeClients },
+                { count: trialClients },
+                { count: totalOpportunities }
+            ] = await Promise.all([
+                supabase
+                    .from('users')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('role', 'user')
+                    .is('deleted_at', null),
 
-            return {
-                success: true,
-                data: {
-                    totalClients: totalClients || 0,
-                    activeClients: activeClients || 0,
-                    trialClients: trialClients || 0,
-                    totalOpportunities: totalOpportunities || 0
-                }
+                supabase
+                    .from('users')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('role', 'user')
+                    .eq('status', 'active')
+                    .is('deleted_at', null),
+
+                supabase
+                    .from('users')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('role', 'user')
+                    .eq('status', 'trial')
+                    .is('deleted_at', null),
+
+                supabase
+                    .from('opportunities')
+                    .select('*', { count: 'exact', head: true })
+                    .is('deleted_at', null)
+            ]);
+
+            const stats = {
+                totalClients: totalClients || 0,
+                activeClients: activeClients || 0,
+                trialClients: trialClients || 0,
+                totalOpportunities: totalOpportunities || 0
             };
+
+            storeCache.set(cacheKey, stats, CacheTTL.SHORT);
+            console.log('💾 Stats da plataforma salvas no CACHE');
+
+            return { success: true, data: stats, fromCache: false };
+
         } catch (err) {
-            console.error('Erro ao buscar estatísticas da plataforma:', err);
+            const friendlyMessage = ErrorHandler.handle(err, 'fetchPlatformStats');
+            console.error(friendlyMessage);
             return { success: false, error: err };
         }
     };
 
-    /**
-     * Limpa dados da store
-     */
+
     const clearClients = () => {
         clients.value = [];
         totalCount.value = 0;
@@ -339,6 +439,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
     const clearCurrentClient = () => {
         currentClient.value = null;
     };
+
 
     return {
         clients,
@@ -357,3 +458,4 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
         clearError
     };
 });
+
