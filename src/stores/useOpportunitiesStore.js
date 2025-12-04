@@ -155,6 +155,9 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                         notes: row.notes,
                         created_at: row.created_at,
                         updated_at: row.updated_at,
+                        conversion_time_minutes: row.conversion_time_minutes,
+                        recovery_time_minutes: row.recovery_time_minutes,
+                        lost_reason: row.lost_reason,
                         contact: row.contact_id ? {
                             id: row.contact_id,
                             name: row.contact_name,

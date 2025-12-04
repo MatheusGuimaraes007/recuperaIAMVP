@@ -14,7 +14,10 @@ import {
   Award,
   BarChart3,
   Percent,
-  Briefcase
+  Briefcase,
+  XCircle,
+  RefreshCw,
+  Layers
 } from 'lucide-vue-next'
 import Card from './Card.vue'
 
@@ -34,14 +37,14 @@ const props = defineProps({
   variant: {
     type: String,
     default: 'blue',
-    validator: (value) => ['blue', 'purple', 'green', 'orange', 'primary'].includes(value)
+    validator: (value) => ['blue', 'purple', 'green', 'orange', 'red', 'primary'].includes(value)
   },
   trend: {
     type: Object,
     default: null,
     validator: (value) => {
       if (!value) return true
-      return value.value !== undefined && ['up', 'down'].includes(value.direction)
+      return value.value !== undefined && ['up', 'down', 'neutral'].includes(value.direction)
     }
   },
   loading: {
@@ -64,7 +67,10 @@ const ICON_MAP = {
   award: Award,
   'bar-chart': BarChart3,
   percent: Percent,
-  briefcase: Briefcase
+  briefcase: Briefcase,
+  'x-circle': XCircle,
+  'refresh-cw': RefreshCw,
+  layers: Layers
 }
 
 const iconComponent = computed(() => {
@@ -97,14 +103,20 @@ const variantClasses = computed(() => {
       iconColor: 'text-metric-orange',
       border: 'border-metric-orange-border'
     },
+    red: {
+      gradient: 'from-status-error/5 to-transparent',
+      iconBg: 'bg-status-error/10',
+      iconColor: 'text-status-error',
+      border: 'border-status-error/20'
+    },
     primary: {
-      gradient: 'from-primary-100 to-transparent',
-      iconBg: 'bg-primary-100',
+      gradient: 'from-primary/5 to-transparent',
+      iconBg: 'bg-primary/10',
       iconColor: 'text-primary',
-      border: 'border-primary-300'
+      border: 'border-primary/20'
     }
   }
-  return variants[props.variant]
+  return variants[props.variant] || variants.blue
 })
 
 const formattedValue = computed(() => {
@@ -160,15 +172,15 @@ const formattedValue = computed(() => {
       </div>
 
       <div
-          v-if="trend && !loading"
+          v-if="trend && !loading && trend.direction !== 'neutral'"
           class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium"
           :class="trend.direction === 'up'
-          ? 'bg-status-success-light text-status-success'
-          : 'bg-status-error-light text-status-error'"
+          ? 'bg-status-success/10 text-status-success'
+          : 'bg-status-error/10 text-status-error'"
       >
         <TrendingUp v-if="trend.direction === 'up'" :size="14" />
         <TrendingDown v-else :size="14" />
-        <span>{{ trend.value }}%</span>
+        <span>{{ Math.abs(trend.value) }}%</span>
       </div>
     </div>
   </Card>

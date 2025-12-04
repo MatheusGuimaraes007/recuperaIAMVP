@@ -10,7 +10,8 @@ const props = defineProps({
   remainingAmount: { type: Number, required: true },
   hasActiveGuarantee: { type: Boolean, required: true },
   isCritical: { type: Boolean, default: false },
-  isInAlert: { type: Boolean, default: false }
+  isInAlert: { type: Boolean, default: false },
+  roi: { type: Number, default: 0 }
 });
 
 const progressWidth = computed(() => Math.min(props.progressPercentage, 100));
@@ -19,6 +20,10 @@ const progressGlow = computed(() => {
   if (props.isCritical) return 'rgba(239, 68, 68, 0.4)';
   if (props.isInAlert) return 'rgba(245, 158, 11, 0.4)';
   return 'rgba(124, 186, 16, 0.4)';
+});
+
+const showROI = computed(() => {
+  return props.roi > 0;
 });
 </script>
 
@@ -61,6 +66,19 @@ const progressGlow = computed(() => {
         <span class="block text-2xl font-bold text-white group-hover:scale-105 transition-transform origin-left">
           {{ formatCurrency(guarantee.goal_amount) }}
         </span>
+      </div>
+    </div>
+
+    <!-- ROI Card - Only shows when positive -->
+    <div v-if="showROI" class="mb-5 p-4 bg-gradient-to-br from-status-success/10 to-status-success/5 border border-status-success/20 rounded-xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Retorno sobre Investimento</span>
+          <span class="block text-2xl font-bold text-status-success">{{ roi.toFixed(1) }}%</span>
+        </div>
+        <div class="w-12 h-12 bg-status-success/15 rounded-xl flex items-center justify-center">
+          <span class="text-2xl">📈</span>
+        </div>
       </div>
     </div>
 

@@ -1,11 +1,12 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { STATUS_OPTIONS } from '../../utils/constants';
+import { formatCurrency } from '../../utils/formatters';
 import Card from "../../shared/Card.vue";
 import Input from "../../shared/Input.vue";
 import Button from "../../shared/Button.vue";
 import DatePicker from "../../shared/DatePicker.vue";
-import MetricCard from "../../shared/MetricCard.vue"; // ✅ Novo Import
+import MetricCard from "../../shared/MetricCard.vue";
 
 const props = defineProps({
   loading: {
@@ -17,12 +18,19 @@ const props = defineProps({
     default: () => ({
       total: 0,
       won: 0,
+      lost: 0,
+      recovered: 0,
       conversionRate: 0,
+      recoveryRate: 0,
       totalValue: 0,
+      lostValue: 0,
       convertedValue: 0,
+      recoveredValue: 0,
       roi: 0,
       averageMessages: 0,
-      averageTime: '0min'
+      averageRecoveryMessages: 0,
+      averageTime: '0min',
+      averageRecoveryTime: '0min'
     })
   }
 });
@@ -41,6 +49,10 @@ const periodOptions = [
   { value: 'year', label: 'Ano' },
   { value: 'all', label: 'Desde o início' }
 ];
+
+const showROI = computed(() => {
+  return props.metrics.roi > 0;
+});
 
 watch(searchTerm, (newValue) => {
   if (searchTimeout) clearTimeout(searchTimeout);
@@ -105,60 +117,66 @@ const handleClear = () => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
-          label="Oportunidades"
-          :value="metrics.total"
-          icon="layers"
-          variant="blue"
+          label="Oportunidades Perdidas"
+          :value="metrics.lost"
+          icon="x-circle"
+          variant="red"
           :loading="loading"
       />
       <MetricCard
-          label="Convertidas"
-          :value="metrics.won"
-          icon="check-circle"
-          variant="green"
-          :loading="loading"
-      />
-      <MetricCard
-          label="Taxa Conversão"
-          :value="metrics.conversionRate"
+          label="% Recuperação"
+          :value="`${metrics.recoveryRate}%`"
           icon="percent"
           variant="purple"
           :loading="loading"
-          :trend="{ value: metrics.conversionRate, direction: metrics.conversionRate > 0 ? 'up' : 'down' }"
+          :trend="{ value: metrics.recoveryRate, direction: metrics.recoveryRate > 0 ? 'up' : 'neutral' }"
       />
       <MetricCard
-          label="Valor Total"
-          :value="metrics.totalValue"
+          label="Valor de Oportunidades Perdidas"
+          :value="formatCurrency(metrics.lostValue)"
           icon="dollar-sign"
-          variant="blue"
+          variant="red"
           :loading="loading"
       />
       <MetricCard
-          label="Valor Convertido"
-          :value="metrics.convertedValue"
+          label="Tempo Médio até Recuperação"
+          :value="metrics.averageRecoveryTime"
+          icon="clock"
+          variant="orange"
+          :loading="loading"
+      />
+
+      <MetricCard
+          label="Oportunidades Recuperadas"
+          :value="metrics.recovered"
+          icon="refresh-cw"
+          variant="green"
+          :loading="loading"
+      />
+
+      <MetricCard
+          v-if="showROI"
+          label="ROI"
+          :value="metrics.roi"
+          icon="trending-up"
+          variant="green"
+          :loading="loading"
+      />
+
+      <MetricCard
+          :class="{ 'md:col-span-1': showROI, 'md:col-span-2 lg:col-span-1': !showROI }"
+          label="Valor de Oportunidades Recuperadas"
+          :value="formatCurrency(metrics.recoveredValue)"
           icon="dollar-sign"
           variant="green"
           :loading="loading"
       />
+
       <MetricCard
-          label="ROI"
-          :value="`${metrics.roi}%`"
-          icon="trending-up"
-          variant="orange"
-          :loading="loading"
-      />
-      <MetricCard
-          label="Média Mensagens"
-          :value="metrics.averageMessages"
+          label="Mensagens até Recuperação"
+          :value="metrics.averageRecoveryMessages"
           icon="message-circle"
           variant="purple"
-          :loading="loading"
-      />
-      <MetricCard
-          label="Tempo Médio"
-          :value="metrics.averageTime"
-          icon="clock"
-          variant="orange"
           :loading="loading"
       />
     </div>

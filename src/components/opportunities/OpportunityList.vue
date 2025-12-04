@@ -5,7 +5,6 @@ import { useAuth } from '../../composables/useAuth';
 import { useOpportunities } from "../../composables/useOpportunities.js";
 import { PAGINATION } from '../../utils/constants';
 
-// Componentes
 import OpportunityFilters from './OpportunityFilters.vue';
 import OpportunityTable from './OpportunityTable.vue';
 import Card from "../../shared/Card.vue";
@@ -13,7 +12,8 @@ import LoadingState from "../../shared/LoadingState.vue";
 import EmptyState from "../../shared/EmptyState.vue";
 import Pagination from "../../shared/Pagination.vue";
 import GuaranteeCard from "../dashboard/GuaranteeCard.vue";
-import Navbar from '../../shared/Navbar.vue'; // ✅ Import da Navbar
+import Navbar from '../../shared/Navbar.vue';
+import { MessageCircle } from 'lucide-vue-next';
 
 const { logout } = useAuth();
 const router = useRouter();
@@ -137,12 +137,19 @@ const metrics = computed(() => {
     return {
       total: 0,
       won: 0,
+      lost: 0,
+      recovered: 0,
       conversionRate: 0,
+      recoveryRate: 0,
       totalValue: 0,
+      lostValue: 0,
       convertedValue: 0,
+      recoveredValue: 0,
       roi: 0,
       averageMessages: 0,
-      averageTime: '0min'
+      averageRecoveryMessages: 0,
+      averageTime: '0min',
+      averageRecoveryTime: '0min'
     };
   }
 
@@ -165,6 +172,12 @@ const handleLogout = async () => {
   if (result.success) {
     router.push('/login');
   }
+};
+
+// Botão de suporte
+const handleSupportClick = () => {
+  // adicionar a lógica de redirecionamento para sistema de suporte Ou abrir um chat interno
+  alert('Redirecionando para o suporte...');
 };
 </script>
 
@@ -259,8 +272,30 @@ const handleLogout = async () => {
         </OpportunityTable>
       </div>
     </div>
+
+    <!-- Botão Flutuante de Suporte -->
+    <button
+        @click="handleSupportClick"
+        class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-primary to-primary-dark rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center group hover:scale-110 z-50"
+        title="Falar com Suporte"
+    >
+      <MessageCircle :size="24" class="text-white group-hover:scale-110 transition-transform" />
+      <span class="absolute -top-1 -right-1 w-3 h-3 bg-status-success rounded-full animate-pulse"></span>
+    </button>
   </div>
 </template>
 
 <style scoped>
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 </style>
