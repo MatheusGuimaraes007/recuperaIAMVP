@@ -1,16 +1,20 @@
 <script setup>
 import { computed } from 'vue';
-import { Shield, Info } from 'lucide-vue-next';
+import { Shield, Info, CheckCircle } from 'lucide-vue-next';
 
 const props = defineProps({
   guarantee: { type: Object, required: true },
   guaranteeStatusConfig: { type: Object, required: true },
   statusMessage: { type: String, required: true },
   isCritical: { type: Boolean, default: false },
-  isInAlert: { type: Boolean, default: false }
+  isInAlert: { type: Boolean, default: false },
+  isGracePeriod: { type: Boolean, default: false }
 });
 
 const headerClasses = computed(() => {
+  if (props.isGracePeriod && props.guarantee.status === 'achieved') {
+    return 'bg-gradient-to-br from-status-success/20 to-status-success/5 border-status-success/20';
+  }
   if (props.isCritical) return 'bg-gradient-to-br from-status-error/20 to-status-error/5 border-status-error/20';
   if (props.isInAlert) return 'bg-gradient-to-br from-status-warning/20 to-status-warning/5 border-status-warning/20';
   return 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20';
@@ -23,9 +27,19 @@ const statusBadgeStyle = computed(() => ({
 }));
 
 const messageClasses = computed(() => {
+  if (props.isGracePeriod && props.guarantee.status === 'achieved') {
+    return 'bg-status-success/10 border-l-status-success text-status-success';
+  }
   if (props.isCritical) return 'bg-status-error/10 border-l-status-error text-status-error animate-pulse';
   if (props.isInAlert) return 'bg-status-warning/10 border-l-status-warning text-status-warning';
   return 'bg-primary/10 border-l-primary text-primary';
+});
+
+const statusIcon = computed(() => {
+  if (props.isGracePeriod && props.guarantee.status === 'achieved') {
+    return CheckCircle;
+  }
+  return Info;
 });
 </script>
 
@@ -54,7 +68,7 @@ const messageClasses = computed(() => {
     </div>
 
     <div class="flex items-start gap-3 p-4 border-l-4 rounded-xl transition-all" :class="messageClasses">
-      <Info :size="20" class="mt-0.5 flex-shrink-0" />
+      <component :is="statusIcon" :size="20" class="mt-0.5 flex-shrink-0" />
       <p class="text-sm font-medium leading-relaxed">{{ statusMessage }}</p>
     </div>
   </div>

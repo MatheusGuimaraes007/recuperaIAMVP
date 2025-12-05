@@ -1,7 +1,7 @@
 <script setup>
 import { formatCurrency } from '../../../utils/formatters';
 import Button from '../../../shared/Button.vue';
-import { DollarSign, Layers, AlertCircle } from 'lucide-vue-next';
+import { DollarSign, AlertCircle } from 'lucide-vue-next';
 
 defineProps({
   guarantee: { type: Object, required: true },
@@ -19,16 +19,6 @@ defineProps({
         <div class="flex-1">
           <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Investimento (90 dias)</span>
           <span class="text-lg font-bold text-white leading-tight">{{ formatCurrency(guarantee.investment_90days) }}</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-4 p-4 bg-primary/5 border border-primary/10 rounded-xl hover:bg-primary/10 transition-colors">
-        <div class="w-11 h-11 bg-primary/15 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Layers :size="22" class="text-primary" />
-        </div>
-        <div class="flex-1">
-          <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Plano</span>
-          <span class="text-lg font-bold text-white leading-tight">{{ guarantee.subscription?.plan_name || 'N/A' }}</span>
         </div>
       </div>
     </div>

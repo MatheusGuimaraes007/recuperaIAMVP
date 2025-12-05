@@ -1,14 +1,13 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useGuarantee } from '../../composables/useGuarantee.js';
 import SidebarTrigger from '../../shared/SidebarTrigger.vue';
 import LoadingState from '../../shared/LoadingState.vue';
 import EmptyState from '../../shared/EmptyState.vue';
 
-// Sub-componentes
 import GuaranteeHeader from './guarantee/GuaranteeHeader.vue';
 import GuaranteeProgressSection from './guarantee/GuaranteeProgressSection.vue';
-import GuaranteeTimeSection from './guarantee/GuaranteeTimeSection.vue'; // ✅ Renomeado
+import GuaranteeTimeSection from './guarantee/GuaranteeTimeSection.vue';
 import GuaranteeInfoSection from './guarantee/GuaranteeInfoSection.vue';
 import GuaranteeOpportunitiesSection from './guarantee/GuaranteeOpportunitiesSection.vue';
 
@@ -26,22 +25,29 @@ const {
   statusMessage,
   progressBarColor,
   hasActiveGuarantee,
+  showGuarantee,
+  isGracePeriod,
+  roi,
   fetchActiveGuarantee,
-  // formatters removidos daqui, usados diretamente nos filhos
 } = useGuarantee();
 
 onMounted(async () => {
   await fetchActiveGuarantee();
 });
+
+const shouldShowTrigger = computed(() => {
+  return showGuarantee.value && (!loading.value || guarantee.value);
+});
 </script>
 
 <template>
   <SidebarTrigger
-      v-if="!loading || guarantee"
+      v-if="shouldShowTrigger"
       icon="shield"
       label="Garantia"
       position="left"
       width="600px"
+      class="m-4 sm:m-6"
   >
     <LoadingState v-if="loading && !guarantee" message="Carregando garantia..." />
 
@@ -71,6 +77,7 @@ onMounted(async () => {
           :status-message="statusMessage"
           :is-critical="isCritical"
           :is-in-alert="isInAlert"
+          :is-grace-period="isGracePeriod"
       />
 
       <GuaranteeProgressSection
@@ -81,6 +88,7 @@ onMounted(async () => {
           :has-active-guarantee="hasActiveGuarantee"
           :is-critical="isCritical"
           :is-in-alert="isInAlert"
+          :roi="roi"
       />
 
       <GuaranteeTimeSection
