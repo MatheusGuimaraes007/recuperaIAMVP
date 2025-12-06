@@ -113,21 +113,32 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
             if (rpcError) throw rpcError;
 
+            // CORREÇÃO: data agora é um objeto JSON direto, não um array
+            console.log('📊 Dados recebidos da RPC:', data);
+
             const newStats = {
-                monthlyRevenue: data.current_revenue,
-                monthlyBillings: data.current_commissions,
-                totalFilteredRevenue: data.current_revenue + data.current_commissions,
+                monthlyRevenue: parseFloat(data.current_revenue) || 0,
+                monthlyBillings: parseFloat(data.current_commissions) || 0,
+                totalFilteredRevenue: (parseFloat(data.current_revenue) || 0) + (parseFloat(data.current_commissions) || 0),
 
-                historyTotalRevenue: data.history_total_revenue,
-                averageRecoveryRate: data.average_recovery_rate + '%',
+                historyTotalRevenue: parseFloat(data.history_total_revenue) || 0,
+                averageRecoveryRate: parseFloat(data.average_recovery_rate) || 0,
 
-                revenueGrowth: isAllTime ? "-" : calculateGrowth(data.current_revenue, data.prev_revenue),
-                billingGrowth: isAllTime ? "-" : calculateGrowth(data.current_commissions, data.prev_commissions),
+                revenueGrowth: isAllTime ? "-" : calculateGrowth(
+                    parseFloat(data.current_revenue) || 0,
+                    parseFloat(data.prev_revenue) || 0
+                ),
+                billingGrowth: isAllTime ? "-" : calculateGrowth(
+                    parseFloat(data.current_commissions) || 0,
+                    parseFloat(data.prev_commissions) || 0
+                ),
                 totalGrowth: isAllTime ? "-" : calculateGrowth(
-                    (data.current_revenue + data.current_commissions),
-                    (data.prev_revenue + data.prev_commissions)
+                    (parseFloat(data.current_revenue) || 0) + (parseFloat(data.current_commissions) || 0),
+                    (parseFloat(data.prev_revenue) || 0) + (parseFloat(data.prev_commissions) || 0)
                 )
             };
+
+            console.log('✅ Stats processadas:', newStats);
 
             stats.value = newStats;
 
@@ -138,6 +149,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         } catch (err) {
             const friendlyMessage = ErrorHandler.handle(err, 'fetchDashboardStats', { filters });
             setError(friendlyMessage);
+            console.error('❌ Erro ao buscar stats:', err);
             return { success: false, error: err };
         } finally {
             loading.value = false;
@@ -172,8 +184,9 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
                     .lte('created_at', end.toISOString()),
 
                 supabase.from('opportunities')
-                    .select('value, created_at')
+                    .select('value, converted_value, created_at')
                     .eq('status', 'won')
+                    .is('deleted_at', null)
                     .gte('created_at', start.toISOString())
                     .lte('created_at', end.toISOString())
             ]);
@@ -189,8 +202,11 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
                 dailyData[day] += value;
             };
 
-            revResult.data?.forEach(r => addToDay(r.created_at, r.total_invested || 0));
-            commResult.data?.forEach(c => addToDay(c.created_at, (c.value || 0) * 0.20));
+            revResult.data?.forEach(r => addToDay(r.created_at, parseFloat(r.total_invested) || 0));
+            commResult.data?.forEach(c => {
+                const value = parseFloat(c.converted_value || c.value) || 0;
+                addToDay(c.created_at, value * 0.20);
+            });
 
             const timeline = [];
             const diffTime = Math.abs(end - start);
@@ -235,7 +251,8 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
             const { data: opportunities, error } = await supabase
                 .from('opportunities')
-                .select('status');
+                .select('status')
+                .is('deleted_at', null);
 
             if (error) throw error;
 
