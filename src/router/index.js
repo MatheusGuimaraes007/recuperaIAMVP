@@ -13,7 +13,7 @@ const routes = [
     meta: { requiresGuest: true },
   },
   {
-    path: "/cadastro",
+    path: "/admin/cadastro",
     name: "Cadastro",
     component: () => import("../components/all/Cadastro.vue"),
     meta: { requiresAuth: true, requiresAdmin: true },
@@ -112,13 +112,13 @@ const routes = [
     },
   },
   {
-    path: '/agents',
+    path: '/admin/agents',
     name: 'agents',
     component: () => import('../components/agents/AgentsList.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/agentes/:id',
+    path: '/admin/agentes/:id',
     name: 'agent-detail',
     component: () => import('../components/agents/AgentDetail.vue'),
     meta: { requiresAuth: true }

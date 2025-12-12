@@ -42,11 +42,11 @@ const loadAgentDetails = async () => {
 };
 
 const handleBack = () => {
-  router.push('/agents');
+  router.push('/admin/agents');
 };
 
 const handleEdit = () => {
-  router.push(`/agents/${agentId.value}/editar`);
+  router.push(`/admin/agents/${agentId.value}/editar`);
 };
 
 const healthStatus = computed(() => {

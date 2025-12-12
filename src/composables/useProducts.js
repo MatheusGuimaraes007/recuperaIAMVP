@@ -16,7 +16,7 @@ export const useProducts = () => {
   async function fetchAlProducts() {
     let query = supabase
       .from('products')
-      .select('*')
+      .select('*, user:users(name)') 
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
     if (userUuid.value) {

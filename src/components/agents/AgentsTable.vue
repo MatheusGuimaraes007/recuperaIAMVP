@@ -18,7 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['agent-click', 'edit-agent', 'delete-agent']);
 
 const handleAgentClick = (agent) => {
-  router.push(`/agentes/${agent.id}`);
+  router.push(`/admin/agentes/${agent.id}`);
 };
 
 const handleEditAgent = (agent, event) => {
