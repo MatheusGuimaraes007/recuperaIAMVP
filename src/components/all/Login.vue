@@ -2,20 +2,20 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { useFormValidation } from '../../composables/useFormValidation'
 import Input from '../../shared/Input.vue'
 import Button from '../../shared/Button.vue'
 import Alert from '../../shared/Alert.vue'
 import AuthFormContainer from './AuthFormContainer.vue'
-
 const router = useRouter()
+const authStore = useAuthStore()
 
 const {
   login,
   loading,
   error,
   clearError,
-  isAdminUser
 } = useAuth()
 
 const { validateRequired, validateEmail, validateMinLength } = useFormValidation()
@@ -48,16 +48,28 @@ const handleSubmit = async () => {
 
   if (!validateForm()) return
 
+
   const result = await login(formData.value.email, formData.value.password)
 
   if (result.success) {
-    const isUserAdmin = await isAdminUser()
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const isUserAdmin = authStore.isAdmin
+
+    console.log('👤 Tipo de usuário:', {
+      isAdmin: isUserAdmin,
+      role: authStore.user?.role,
+      user: authStore.user
+    })
 
     if (isUserAdmin) {
-      router.push('/adm/dashboard')
+      await router.push({ name: 'AdminDashboard' })
     } else {
-      router.push('/oportunidades')
+      await router.push({ name: 'Oportunidades' })
     }
+  } else {
+    console.error('❌ Erro no login:', result.error)
   }
 }
 
