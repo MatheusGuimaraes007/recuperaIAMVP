@@ -11,18 +11,19 @@ const navItems = computed(() => {
   // Se for ADMIN - mostrar todas as opções
   if (isAdmin.value) {
     return [
-      { name: 'Dashboard', path: '/adm/dashboard', icon: 'dashboard', adminOnly: true },
+      { name: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard', adminOnly: true },
       { name: 'Cadastro', path: '/cadastro', icon: 'user-plus', adminOnly: true },
-      { name: 'Gestão Clientes', path: '/admin/clientes', icon: 'users-cog', adminOnly: true },
+      { name: 'Clientes', path: '/admin/clientes', icon: 'users-cog', adminOnly: true },
       { name: 'Agents', path: '/agents', icon: 'robot', adminOnly: true },
-      { name: 'Base de Conhecimento', path: '/conhecimento', icon: 'book', adminOnly: true },
+      { name: 'Produtos', path: '/admin/produtos', icon: 'book', adminOnly: true },
+      { name: 'Conhecimento', path: '/admin/conhecimento', icon: 'book', adminOnly: true },
     ];
   }
   
-  // Se for USER - mostrar apenas Oportunidades e Clientes
   return [
     { name: 'Oportunidades', path: '/oportunidades', icon: 'clipboard', adminOnly: false },
     { name: 'Clientes', path: '/clientes', icon: 'users', adminOnly: false },
+    { name: 'Base de Conhecimento', path: '/conhecimento', icon: 'book', adminOnly: false}
   ];
 });
 

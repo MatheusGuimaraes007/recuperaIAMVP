@@ -72,7 +72,7 @@ const hasContacts = computed(() => props.contacts && props.contacts.length > 0);
         <table class="w-full">
           <thead class="relative">
             <div
-              class="absolute inset-0 bg-gradient-to-r from-gray-800/50 to-gray-900/50"
+              class="absolute inset-0 from-gray-800/50 to-gray-900/50"
             ></div>
             <tr class="border-b-2" style="border-color: var(--color-border1)">
               <th

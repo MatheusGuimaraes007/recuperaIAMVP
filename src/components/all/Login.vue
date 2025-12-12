@@ -57,9 +57,9 @@ const handleSubmit = async () => {
   
   if (result.success) {
     const isUserAdmin = await isAdminUser();
-
     if (isUserAdmin) {
-      router.push('/adm/dashboard');
+      console.log('teste')
+      router.push('/admin/dashboard');
     } else {
       router.push('/oportunidades');
     }

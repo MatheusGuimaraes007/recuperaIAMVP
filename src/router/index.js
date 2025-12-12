@@ -37,7 +37,7 @@ const routes = [
 
   // --- Rotas Administrativas ---
   {
-    path: "/adm/dashboard",
+    path: "/admin/dashboard",
     name: "AdminDashboard",
     component: () => import("../components/adm/AdminDashboard.vue"),
     meta: { requiresAuth: true, requiresAdmin: true },
@@ -74,6 +74,26 @@ const routes = [
       title: "Oportunidades do Cliente"
     },
   },
+  {
+      path: "/admin/conhecimento/:baseId",
+      name: "AdminClientKnowledgeBases",
+      component: () => import("../components/conhecimento/adm/EditarBaseConhecimento.vue"),
+      meta: { 
+      requiresAuth: true, 
+      requiresAdmin: true,
+      title: "Editar Base de Conhecimento"
+    },
+  },
+  {
+      path: "/admin/produtos",
+      name: "AdminProdutos",
+      component: () => import("../components/produtos/adm/AdminProdutos.vue"),
+      meta: { 
+      requiresAuth: true, 
+      requiresAdmin: true,
+      title: "Todos os Produtos"
+    },
+  },
 
   // --- Rotas de Usuário / Plataforma ---
   {
@@ -104,15 +124,21 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: "/conhecimento",
+    path: "/admin/conhecimento",
     name: "BaseConhecimento",
-    component: () => import("../components/conhecimento/BaseConhecimento.vue"),
+    component: () => import("../components/conhecimento/adm/BaseConhecimento.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/oportunidades",
     name: "Oportunidades",
     component: () => import("../components/opportunities/OpportunityList.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/conhecimento",
+    name: "ClienteBaseConhecimento",
+    component: () => import("../components/conhecimento/cliente/ClienteBaseConhecimento.vue"),
     meta: { requiresAuth: true },
   },
   {

@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
                 .from('users')
                 .select('*')
                 .eq('auth_uuid', authUuid)
-                .maybeSingle(); // Mudado de .single() para .maybeSingle()
+                .maybeSingle();
 
             if (fetchError) throw fetchError;
 
@@ -99,7 +99,6 @@ export const useAuthStore = defineStore('auth', () => {
             loading.value = false;
         }
     };
-
 
     const register = async (userData) => {
         loading.value = true;
@@ -207,8 +206,24 @@ export const useAuthStore = defineStore('auth', () => {
         }
     };
 
-    return {
+    const refreshSession = async () => {
+        try {
+            const { data, error } = await supabase.auth.refreshSession();
+            
+            if (error) throw error;
+            
+            if (data.session) {
+                session.value = data.session;
+                return true;
+            }
+            return false;
+        } catch (err) {
+            console.error('Erro ao renovar sessão:', err);
+            return false;
+        }
+    };
 
+    return {
         user,
         session,
         loading,
@@ -225,5 +240,7 @@ export const useAuthStore = defineStore('auth', () => {
         resetPassword,
         updatePassword,
         clearError,
+        
+        refreshSession // <--- EXPORTADA AQUI
     };
 });
