@@ -1,5 +1,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAdminDashboardStore } from '../stores/useAdminDashboardStore';
+import { supabase } from '../utils/supabase';
 import { storeToRefs } from 'pinia';
 
 export const useAdminDashboard = () => {
@@ -16,6 +17,7 @@ export const useAdminDashboard = () => {
     const customStartDate = ref('');
     const customEndDate = ref('');
     const showCustomInputs = ref(false);
+    const periodConversionRate = ref(null);
 
     const animatedRevenue = ref(0);
     const animatedBillings = ref(0);
@@ -107,6 +109,43 @@ export const useAdminDashboard = () => {
         }
     };
 
+    // Função para buscar taxa de conversão do período
+    const fetchPeriodConversionRate = async (startDate, endDate) => {
+        try {
+            let query = supabase
+                .from('opportunities')
+                .select('status')
+                .is('deleted_at', null);
+
+            if (startDate) {
+                query = query.gte('created_at', startDate);
+            }
+            if (endDate) {
+                query = query.lte('created_at', endDate);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                periodConversionRate.value = 0;
+                return;
+            }
+
+            const total = data.length;
+            const converted = data.filter(opp => opp.status === 'won').length;
+
+            periodConversionRate.value = (converted / total) * 100;
+
+            console.log(`📊 Taxa de Conversão do Período: ${periodConversionRate.value.toFixed(2)}% (${converted}/${total})`);
+
+        } catch (err) {
+            console.error('❌ Erro ao buscar taxa de conversão:', err);
+            periodConversionRate.value = 0;
+        }
+    };
+
     const applyFilter = async (filterType) => {
         selectedFilter.value = filterType;
         let start = null;
@@ -143,7 +182,8 @@ export const useAdminDashboard = () => {
         await Promise.all([
             dashboardStore.fetchDashboardStats(filtersObj),
             dashboardStore.fetchTimeline(filtersObj),
-            dashboardStore.fetchDistribution()
+            dashboardStore.fetchDistribution(),
+            fetchPeriodConversionRate(start, end) // Buscar taxa de conversão do período
         ]);
 
         triggerAnimations();
@@ -161,7 +201,8 @@ export const useAdminDashboard = () => {
             await Promise.all([
                 dashboardStore.fetchDashboardStats(filtersObj),
                 dashboardStore.fetchTimeline(filtersObj),
-                dashboardStore.fetchDistribution()
+                dashboardStore.fetchDistribution(),
+                fetchPeriodConversionRate(start, endISO) // Buscar taxa de conversão do período
             ]);
 
             triggerAnimations();
@@ -183,6 +224,7 @@ export const useAdminDashboard = () => {
         showCustomInputs,
         filtersList,
         filterLabel,
+        periodConversionRate,
 
         animatedRevenue,
         animatedBillings,

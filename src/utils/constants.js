@@ -24,20 +24,28 @@ export const STATUS_OPTIONS = [
 
 /**
  * Tipos de oportunidade
+ * ✅ CORRIGIDO: Baseado nos dados reais do banco
  */
 export const OPPORTUNITY_TYPES = {
-    BOLETO: 'boleto',
-    PIX: 'pix',
-    CART: 'carrinho'
+    BOLETO: 'boleto_emitido',
+    PIX: 'pix_emitido',
+    CART: 'abandono_de_carrinho',
+    REFUSED_CARD: 'cartao_recusado'
 };
 
 /**
  * Labels de tipos de oportunidade
+ * ✅ CORRIGIDO: Mapeamento completo
  */
 export const OPPORTUNITY_TYPE_LABELS = {
-    [OPPORTUNITY_TYPES.BOLETO]: 'Boleto',
-    [OPPORTUNITY_TYPES.PIX]: 'PIX',
-    [OPPORTUNITY_TYPES.CART]: 'Carrinho'
+    'boleto_emitido': 'Boleto emitido',
+    'pix_emitido': 'PIX emitido',
+    'abandono_de_carrinho': 'Abandono de carrinho',
+    'cartao_recusado': 'Cartão recusado',
+    // Fallbacks para valores antigos (se existirem)
+    'boleto': 'Boleto',
+    'pix': 'PIX',
+    'carrinho': 'Carrinho'
 };
 
 /**
