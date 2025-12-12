@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
   data: {
@@ -18,20 +18,31 @@ const props = defineProps({
 
 const hoveredBar = ref(null);
 
-const maxValue = computed(() => {
-  if (!props.data || props.data.length === 0) return 1;
-  return Math.max(...props.data.map(d => d.value), 1);
+const hasValidData = computed(() => {
+  const isValid = Array.isArray(props.data) &&
+      props.data.length > 0 &&
+      props.data.some(item => item && typeof item.value === 'number' && item.value > 0);
+
+  return isValid;
 });
+
+const maxValue = computed(() => {
+  if (!hasValidData.value) return 1;
+  return Math.max(...props.data.map(d => d.value || 0), 1);
+});
+
+watch(() => props.data, (newData) => {
+}, { immediate: true, deep: true });
 
 const chartHeight = 220;
 const chartWidth = 580;
 const padding = { top: 20, right: 10, bottom: 40, left: 50 };
 
 const barWidth = computed(() => {
-  if (!props.data || props.data.length === 0) return 0;
+  if (!hasValidData.value) return 0;
   const availableWidth = chartWidth - padding.left - padding.right;
   const spacing = 8;
-  return (availableWidth - (props.data.length - 1) * spacing) / props.data.length;
+  return Math.max((availableWidth - (props.data.length - 1) * spacing) / props.data.length, 4);
 });
 
 const getBarX = (index) => {
@@ -40,26 +51,26 @@ const getBarX = (index) => {
 };
 
 const getBarHeight = (value) => {
+  if (!value || value <= 0) return 0;
   const availableHeight = chartHeight - padding.top - padding.bottom;
-  return (value / maxValue.value) * availableHeight;
+  const height = (value / maxValue.value) * availableHeight;
+  return Math.max(height, 2);
 };
 
 const getBarY = (value) => {
   return chartHeight - padding.bottom - getBarHeight(value);
 };
 
-// Função para calcular posição do tooltip (evita corte)
 const getTooltipY = (value) => {
   const barY = getBarY(value);
   const tooltipHeight = 45;
   const minY = tooltipHeight + 10;
 
-  // Se o tooltip ia ficar acima do espaço disponível, coloca abaixo da barra
   if (barY < minY) {
-    return barY + getBarHeight(value) + 15; // Abaixo da barra
+    return barY + getBarHeight(value) + 15;
   }
 
-  return barY - 10; // Acima da barra (normal)
+  return barY - 10;
 };
 
 const isTooltipBelow = (value) => {
@@ -77,20 +88,20 @@ const handleMouseLeave = () => {
   hoveredBar.value = null;
 };
 
-// Função para decidir quais labels mostrar no eixo X
 const shouldShowLabel = (index) => {
-  if (!props.data) return false;
+  if (!hasValidData.value) return false;
   const dataLength = props.data.length;
 
-  // Se poucos dados, mostra todos
   if (dataLength <= 7) return true;
 
-  // Se muitos dados, mostra apenas alguns pontos estratégicos
   if (dataLength <= 15) {
-    return index === 0 || index === Math.floor(dataLength / 2) || index === dataLength - 1;
+    return index % 2 === 0 || index === dataLength - 1;
   }
 
-  // Para muitos dados (30+), mostra apenas primeiro, meio e último
+  if (dataLength <= 30) {
+    return index % 5 === 0 || index === dataLength - 1;
+  }
+
   return index === 0 || index === Math.floor(dataLength / 2) || index === dataLength - 1;
 };
 </script>
@@ -149,7 +160,8 @@ const shouldShowLabel = (index) => {
         </filter>
       </defs>
 
-      <template v-if="data && data.length > 0">
+      <!-- ✅ Renderização condicional baseada em hasValidData -->
+      <template v-if="hasValidData">
         <!-- Bars -->
         <g v-for="(d, i) in data" :key="'bar-' + i">
           <!-- Background Bar (shadow effect) -->
@@ -222,7 +234,6 @@ const shouldShowLabel = (index) => {
               {{ d.date }}
             </text>
 
-            <!-- Tooltip Value -->
             <text
                 :x="getBarX(i) + barWidth / 2"
                 :y="isTooltipBelow(d.value) ? getTooltipY(d.value) + 33 : getTooltipY(d.value) - 12"
@@ -235,7 +246,6 @@ const shouldShowLabel = (index) => {
               {{ formatValue(d.value) }}
             </text>
 
-            <!-- Indicator line conectando tooltip à barra -->
             <line
                 :x1="getBarX(i) + barWidth / 2"
                 :y1="isTooltipBelow(d.value) ? getBarY(d.value) + getBarHeight(d.value) : getBarY(d.value)"
@@ -250,20 +260,47 @@ const shouldShowLabel = (index) => {
         </g>
       </template>
 
-      <!-- Empty State -->
+      <g v-else-if="!loading">
+        <rect x="250" y="80" width="100" height="80" fill="rgba(255, 255, 255, 0.05)" rx="8"/>
+        <line x1="270" y1="140" x2="270" y2="120" stroke="rgba(255, 255, 255, 0.2)" stroke-width="3"/>
+        <line x1="290" y1="140" x2="290" y2="110" stroke="rgba(255, 255, 255, 0.2)" stroke-width="3"/>
+        <line x1="310" y1="140" x2="310" y2="125" stroke="rgba(255, 255, 255, 0.2)" stroke-width="3"/>
+        <line x1="330" y1="140" x2="330" y2="115" stroke="rgba(255, 255, 255, 0.2)" stroke-width="3"/>
+
+        <text
+            x="300"
+            y="180"
+            text-anchor="middle"
+            fill="rgba(255, 255, 255, 0.4)"
+            font-size="14"
+            font-weight="600"
+        >
+          Nenhum dado disponível
+        </text>
+        <text
+            x="300"
+            y="200"
+            text-anchor="middle"
+            fill="rgba(255, 255, 255, 0.3)"
+            font-size="11"
+        >
+          Não há receita registrada neste período
+        </text>
+      </g>
+
       <text
-          v-else
+          v-else-if="loading"
           x="300"
           y="140"
           text-anchor="middle"
-          fill="rgba(255, 255, 255, 0.3)"
+          fill="rgba(255, 255, 255, 0.4)"
           font-size="14"
+          font-weight="600"
       >
-        {{ loading ? 'Carregando dados...' : 'Nenhum dado disponível' }}
+        Carregando dados...
       </text>
     </svg>
 
-    <!-- Legend -->
     <div class="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 text-xs text-gray-400">
       <div class="w-3 h-3 rounded bg-primary"></div>
       <span>Receita Total</span>
