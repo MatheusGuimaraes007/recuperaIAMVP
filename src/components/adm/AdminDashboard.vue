@@ -1,13 +1,16 @@
 <script setup>
-import { ref,watch} from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useAuth } from '../../composables/useAuth';
 import { useAdminDashboard } from '../../composables/useAdminDashboard';
+import { useDashboardClients } from '../../composables/useDashboardClients';
 import Navbar from '../../shared/Navbar.vue';
 import DashboardHeader from './dashboard/DashboardHeader.vue';
+import LowConversionAlert from './dashboard/LowConversionAlert.vue';
 import DashboardFilters from './dashboard/DashboardFilters.vue';
 import DashboardMetrics from './dashboard/DashboardMetrics.vue';
 import DashboardCharts from './dashboard/DashboardCharts.vue';
 import DashboardClients from './dashboard/DashboardClients.vue';
+
 const { user, isAdmin } = useAuth();
 
 const {
@@ -20,6 +23,7 @@ const {
   showCustomInputs,
   filtersList,
   filterLabel,
+  periodConversionRate,
   animatedRevenue,
   animatedBillings,
   animatedTotal,
@@ -31,8 +35,20 @@ const {
   formatShortCurrency
 } = useAdminDashboard();
 
+const {
+  clientsWithGuarantee,
+  loadClientsWithGuarantees,
+  formatPercent
+} = useDashboardClients();
+
 const loadingClients = ref(false);
 const clientsLoaded = ref(false);
+
+const lowConversionClients = computed(() => {
+  return clientsWithGuarantee.value.filter(client =>
+      parseFloat(client.metrics?.conversionRate || 0) < 12
+  );
+});
 
 const getTrend = (growthStr) => {
   if (!growthStr) return null;
@@ -47,7 +63,7 @@ const getTrend = (growthStr) => {
 const loadClients = async () => {
   if (!loading.value && !clientsLoaded.value) {
     loadingClients.value = true;
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await loadClientsWithGuarantees();
     loadingClients.value = false;
     clientsLoaded.value = true;
   }
@@ -81,6 +97,15 @@ watch(loading, (newVal) => {
             :loading="loading"
         />
 
+        <!-- Low Conversion Alert -->
+        <LowConversionAlert
+            :clients="lowConversionClients"
+            :loading="loadingClients"
+            :formatPercent="formatPercent"
+            :filterLabel="filterLabel"
+            :periodConversionRate="periodConversionRate"
+        />
+
         <!-- Filters Card -->
         <DashboardFilters
             :filtersList="filtersList"
@@ -109,6 +134,10 @@ watch(loading, (newVal) => {
               :loading="loading"
               :formatCurrency="formatCurrency"
               :getTrend="getTrend"
+              :filterLabel="filterLabel"
+              :selectedFilter="selectedFilter"
+              :periodConversionRate="periodConversionRate"
+              :lowConversionCount="lowConversionClients.length"
           />
 
           <!-- Charts Section -->

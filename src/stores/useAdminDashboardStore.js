@@ -161,13 +161,11 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
      * Mantido via queries paralelas pois retorna array diário complexo
      */
     const fetchTimeline = async (filters = {}) => {
-
         try {
             const authStore = useAuthStore();
             const { startDate, endDate } = filters;
 
             const cacheKey = createCacheKey('admin_timeline', authStore.user.id, filters);
-
             const cached = storeCache.get(cacheKey);
             if (cached) {
                 timelineData.value = cached;
@@ -176,6 +174,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
             const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
             const end = endDate ? new Date(endDate) : new Date();
+
 
             const [revResult, commResult] = await Promise.all([
                 supabase.from('user_subscriptions')
@@ -194,33 +193,22 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
             if (revResult.error) throw revResult.error;
             if (commResult.error) throw commResult.error;
 
-            // Agrupamento por dia
-            const dailyData = {};
-            const addToDay = (dateStr, value) => {
-                const day = dateStr.split('T')[0];
-                if (!dailyData[day]) dailyData[day] = 0;
-                dailyData[day] += value;
-            };
-
-            revResult.data?.forEach(r => addToDay(r.created_at, parseFloat(r.total_invested) || 0));
-            commResult.data?.forEach(c => {
-                const value = parseFloat(c.converted_value || c.value) || 0;
-                addToDay(c.created_at, value * 0.20);
+            console.log('📊 Dados brutos:', {
+                subscriptions: revResult.data?.length || 0,
+                opportunities: commResult.data?.length || 0
             });
 
-            const timeline = [];
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            for (let i = 0; i <= diffDays; i++) {
-                const date = new Date(start);
-                date.setDate(start.getDate() + i);
-                const dayStr = date.toISOString().split('T')[0];
+            let timeline;
 
-                timeline.push({
-                    date: new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date),
-                    value: dailyData[dayStr] || 0
-                });
+            if (diffDays <= 31) {
+                timeline = groupByDay(revResult.data, commResult.data, start, end);
+            } else if (diffDays <= 90) {
+                timeline = groupByWeek(revResult.data, commResult.data, start, end);
+            } else {
+                timeline = groupByMonth(revResult.data, commResult.data, start, end);
             }
 
             timelineData.value = timeline;
@@ -230,10 +218,167 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
         } catch (err) {
             const friendlyMessage = ErrorHandler.handle(err, 'fetchTimeline');
-            console.error(friendlyMessage);
+            console.error('❌ Erro fetchTimeline:', friendlyMessage);
+            timelineData.value = [];
             return { success: false, error: err };
         }
     };
+
+    /**
+     * Agrupamento DIÁRIO (para períodos de até 31 dias)
+     */
+    function groupByDay(subscriptions, opportunities, startDate, endDate) {
+        const dailyData = {};
+
+        const addToDay = (dateStr, value) => {
+            const day = dateStr.split('T')[0];
+            if (!dailyData[day]) dailyData[day] = 0;
+            dailyData[day] += value;
+        };
+
+        subscriptions?.forEach(r => {
+            const value = parseFloat(r.total_invested) || 0;
+            if (value > 0) addToDay(r.created_at, value);
+        });
+
+        // Processar opportunities (20% de comissão)
+        opportunities?.forEach(c => {
+            const value = parseFloat(c.converted_value || c.value) || 0;
+            if (value > 0) addToDay(c.created_at, value * 0.20);
+        });
+
+        const timeline = [];
+        const diffTime = Math.abs(endDate - startDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        for (let i = 0; i <= diffDays; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            const dayStr = date.toISOString().split('T')[0];
+
+            timeline.push({
+                date: new Intl.DateTimeFormat('pt-BR', {
+                    day: '2-digit',
+                    month: 'short'
+                }).format(date),
+                value: dailyData[dayStr] || 0
+            });
+        }
+
+        return timeline;
+    }
+
+    /**
+     * Agrupamento SEMANAL (para períodos de 32-90 dias)
+     */
+    function groupByWeek(subscriptions, opportunities, startDate, endDate) {
+        const weeklyData = {};
+
+        const getWeekKey = (dateStr) => {
+            const date = new Date(dateStr);
+            const startOfWeek = new Date(date);
+            startOfWeek.setDate(date.getDate() - date.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
+            return startOfWeek.toISOString().split('T')[0];
+        };
+
+        const addToWeek = (dateStr, value) => {
+            const weekKey = getWeekKey(dateStr);
+            if (!weeklyData[weekKey]) weeklyData[weekKey] = 0;
+            weeklyData[weekKey] += value;
+        };
+
+        subscriptions?.forEach(r => {
+            const value = parseFloat(r.total_invested) || 0;
+            if (value > 0) addToWeek(r.created_at, value);
+        });
+
+        opportunities?.forEach(c => {
+            const value = parseFloat(c.converted_value || c.value) || 0;
+            if (value > 0) addToWeek(c.created_at, value * 0.20);
+        });
+
+        const timeline = [];
+        const currentWeek = new Date(startDate);
+        currentWeek.setDate(currentWeek.getDate() - currentWeek.getDay());
+
+        while (currentWeek <= endDate) {
+            const weekKey = currentWeek.toISOString().split('T')[0];
+
+            const weekEnd = new Date(currentWeek);
+            weekEnd.setDate(currentWeek.getDate() + 6);
+
+            const startLabel = new Intl.DateTimeFormat('pt-BR', {
+                day: '2-digit',
+                month: '2-digit'
+            }).format(currentWeek);
+
+            const endLabel = new Intl.DateTimeFormat('pt-BR', {
+                day: '2-digit',
+                month: '2-digit'
+            }).format(weekEnd);
+
+            timeline.push({
+                date: `${startLabel}`,
+                value: weeklyData[weekKey] || 0
+            });
+
+            currentWeek.setDate(currentWeek.getDate() + 7);
+        }
+
+        return timeline;
+    }
+
+    /**
+     * Agrupamento MENSAL (para períodos maiores que 90 dias)
+     */
+    function groupByMonth(subscriptions, opportunities, startDate, endDate) {
+        const monthlyData = {};
+
+        const getMonthKey = (dateStr) => {
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        };
+
+        const addToMonth = (dateStr, value) => {
+            const monthKey = getMonthKey(dateStr);
+            if (!monthlyData[monthKey]) monthlyData[monthKey] = 0;
+            monthlyData[monthKey] += value;
+        };
+
+        subscriptions?.forEach(r => {
+            const value = parseFloat(r.total_invested) || 0;
+            if (value > 0) addToMonth(r.created_at, value);
+        });
+
+        opportunities?.forEach(c => {
+            const value = parseFloat(c.converted_value || c.value) || 0;
+            if (value > 0) addToMonth(c.created_at, value * 0.20);
+        });
+
+        const timeline = [];
+        const currentMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+        while (currentMonth <= endDate) {
+            const monthKey = getMonthKey(currentMonth.toISOString());
+
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const monthLabel = `${months[currentMonth.getMonth()]}/${String(currentMonth.getFullYear()).slice(-2)}`;
+
+            timeline.push({
+                date: monthLabel,
+                value: monthlyData[monthKey] || 0
+            });
+
+            // Avançar para próximo mês
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+        }
+
+        return timeline;
+    }
 
     /**
      * Busca distribuição de leads (Pie Chart)

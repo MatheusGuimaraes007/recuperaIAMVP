@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../../composables/useAuth';
 import { useOpportunities } from "../../composables/useOpportunities.js";
+import { useRevenueMetrics } from "../../composables/useRevenueMetrics.js";
 import { PAGINATION } from '../../utils/constants';
 
 import OpportunityFilters from './OpportunityFilters.vue';
@@ -12,8 +13,11 @@ import LoadingState from "../../shared/LoadingState.vue";
 import EmptyState from "../../shared/EmptyState.vue";
 import Pagination from "../../shared/Pagination.vue";
 import GuaranteeCard from "../dashboard/GuaranteeCard.vue";
+import RevenueComparisonCard from "../../shared/RevenueComparisonCard.vue";
+import OpportunityTypesCard from "./OpportunityTypesCard.vue";
+import SupportButton from "../../shared/SupportButton.vue";
 import Navbar from '../../shared/Navbar.vue';
-import { MessageCircle } from 'lucide-vue-next';
+import {SUPPORT_WHATSAPP} from "../../utils/supportButton.js";
 
 const { logout } = useAuth();
 const router = useRouter();
@@ -30,6 +34,13 @@ const {
   getMetricsByDateRange
 } = useOpportunities();
 
+const {
+  platformRevenue,
+  recoveredRevenue,
+  loading: revenueLoading,
+  fetchRevenueMetrics
+} = useRevenueMetrics();
+
 const currentPage = ref(PAGINATION.DEFAULT_PAGE);
 const itemsPerPage = PAGINATION.ITEMS_PER_PAGE;
 const currentPeriod = ref('last7days');
@@ -38,8 +49,24 @@ const currentStatus = ref('all');
 const currentSearch = ref('');
 
 onMounted(async () => {
-  await loadOpportunities();
+  await Promise.all([
+    loadOpportunities(),
+    loadRevenueMetrics()
+  ]);
 });
+
+const loadRevenueMetrics = async () => {
+  const filters = {
+    period: currentPeriod.value
+  };
+
+  if (currentDateRange.value?.startDate && currentDateRange.value?.endDate) {
+    filters.startDate = currentDateRange.value.startDate;
+    filters.endDate = currentDateRange.value.endDate;
+  }
+
+  await fetchRevenueMetrics(filters);
+};
 
 const loadOpportunities = async (filters = {}) => {
   const filterParams = {
@@ -92,11 +119,14 @@ const handlePeriodChange = async (period) => {
   currentDateRange.value = null;
   currentPage.value = 1;
 
-  await loadOpportunities({
-    period: period,
-    status: currentStatus.value !== 'all' ? currentStatus.value : null,
-    search: currentSearch.value
-  });
+  await Promise.all([
+    loadOpportunities({
+      period: period,
+      status: currentStatus.value !== 'all' ? currentStatus.value : null,
+      search: currentSearch.value
+    }),
+    loadRevenueMetrics()
+  ]);
 };
 
 const handleDateRangeChange = async (dates) => {
@@ -104,12 +134,15 @@ const handleDateRangeChange = async (dates) => {
   currentDateRange.value = dates;
   currentPage.value = 1;
 
-  await loadOpportunities({
-    startDate: dates.startDate,
-    endDate: dates.endDate,
-    status: currentStatus.value !== 'all' ? currentStatus.value : null,
-    search: currentSearch.value
-  });
+  await Promise.all([
+    loadOpportunities({
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+      status: currentStatus.value !== 'all' ? currentStatus.value : null,
+      search: currentSearch.value
+    }),
+    loadRevenueMetrics()
+  ]);
 };
 
 const handleClearFilters = async () => {
@@ -173,12 +206,6 @@ const handleLogout = async () => {
     router.push('/login');
   }
 };
-
-// Botão de suporte
-const handleSupportClick = () => {
-  // adicionar a lógica de redirecionamento para sistema de suporte Ou abrir um chat interno
-  alert('Redirecionando para o suporte...');
-};
 </script>
 
 <template>
@@ -200,6 +227,20 @@ const handleSupportClick = () => {
               Visualize e filtre suas oportunidades de vendas
             </p>
           </div>
+        </div>
+
+        <!-- Novos Cards de Comparação -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <RevenueComparisonCard
+              :platform-revenue="platformRevenue"
+              :recovered-revenue="recoveredRevenue"
+              :loading="revenueLoading || loading"
+          />
+
+          <OpportunityTypesCard
+              :opportunities="opportunities"
+              :loading="loading"
+          />
         </div>
 
         <div class="mb-6">
@@ -273,29 +314,13 @@ const handleSupportClick = () => {
       </div>
     </div>
 
-    <!-- Botão Flutuante de Suporte -->
-    <button
-        @click="handleSupportClick"
-        class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-primary to-primary-dark rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center group hover:scale-110 z-50"
-        title="Falar com Suporte"
-    >
-      <MessageCircle :size="24" class="text-white group-hover:scale-110 transition-transform" />
-      <span class="absolute -top-1 -right-1 w-3 h-3 bg-status-success rounded-full animate-pulse"></span>
-    </button>
+    <SupportButton
+        :whatsapp-number="SUPPORT_WHATSAPP"
+        position="bottom-right"
+        :show-tooltip="true"
+        :show-online-indicator="true"
+        tooltip-text="Falar com Suporte"
+        default-message="Olá! Preciso de ajuda com a plataforma Recupera.ia"
+    />
   </div>
 </template>
-
-<style scoped>
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-</style>

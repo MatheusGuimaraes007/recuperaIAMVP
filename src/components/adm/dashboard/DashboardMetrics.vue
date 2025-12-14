@@ -4,7 +4,6 @@ import MetricCard from '../../../shared/MetricCard.vue';
 import SkeletonText from "../../../shared/Skeleton/SkeletonText.vue";
 import SkeletonMetricCard from "../../../shared/Skeleton/SkeletonMetricCard.vue";
 
-
 defineProps({
   animatedRevenue: {
     type: Number,
@@ -49,6 +48,22 @@ defineProps({
   getTrend: {
     type: Function,
     required: true
+  },
+  filterLabel: {
+    type: String,
+    default: ''
+  },
+  selectedFilter: {
+    type: String,
+    default: '7d'
+  },
+  periodConversionRate: {
+    type: Number,
+    default: null
+  },
+  lowConversionCount: {
+    type: Number,
+    default: 0
   }
 });
 </script>
@@ -68,7 +83,7 @@ defineProps({
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <!-- Skeleton Loading -->
       <template v-if="loading">
-        <SkeletonMetricCard v-for="i in 5" :key="i" />
+        <SkeletonMetricCard v-for="i in 6" :key="i" />
       </template>
 
       <!-- Actual Metrics -->
@@ -108,12 +123,15 @@ defineProps({
             :loading="false"
         />
 
+        <!-- Novo Card: Taxa de Conversão do Período -->
         <MetricCard
-            label="Taxa de Recuperação Média"
-            :value="averageRecoveryRate"
-            icon="percent"
-            variant="primary"
+            v-if="periodConversionRate !== null"
+            :label="`Taxa de Conversão (${filterLabel})`"
+            :value="`${periodConversionRate.toFixed(2)}%`"
+            icon="trending-up"
+            :variant="periodConversionRate < 12 ? 'red' : periodConversionRate < 20 ? 'yellow' : 'green'"
             :loading="false"
+            :subtitle="lowConversionCount > 0 ? `${lowConversionCount} cliente${lowConversionCount !== 1 ? 's' : ''} abaixo de 12%` : ''"
         />
       </template>
     </div>

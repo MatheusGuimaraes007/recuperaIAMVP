@@ -1,10 +1,12 @@
 <script setup>
+import { ref, watch } from 'vue';
 import Button from '../../../shared/Button.vue';
 import Card from '../../../shared/Card.vue';
+import DatePicker from '../../../shared/DatePicker.vue';
 import { Filter } from 'lucide-vue-next';
 import SkeletonFilterBar from "../../../shared/Skeleton/SkeletonFilterBar.vue";
 
-defineProps({
+const props = defineProps({
   filtersList: {
     type: Array,
     required: true
@@ -36,6 +38,37 @@ defineProps({
 });
 
 const emit = defineEmits(['apply-filter', 'apply-custom-filter', 'update:customStartDate', 'update:customEndDate']);
+
+const dateRange = ref({
+  startDate: props.customStartDate || null,
+  endDate: props.customEndDate || null
+});
+
+watch(() => [props.customStartDate, props.customEndDate], ([start, end]) => {
+  dateRange.value = {
+    startDate: start || null,
+    endDate: end || null
+  };
+});
+
+const handleDateRangeApply = (range) => {
+
+  emit('update:customStartDate', range.startDate);
+  emit('update:customEndDate', range.endDate);
+
+  emit('apply-custom-filter');
+};
+
+const handleDateRangeClear = () => {
+
+  dateRange.value = {
+    startDate: null,
+    endDate: null
+  };
+
+  emit('update:customStartDate', '');
+  emit('update:customEndDate', '');
+};
 </script>
 
 <template>
@@ -52,7 +85,6 @@ const emit = defineEmits(['apply-filter', 'apply-custom-filter', 'update:customS
           <p class="text-sm text-gray-400">Selecione um período para visualizar as métricas</p>
         </div>
 
-        <!-- Active Filter Badge -->
         <div v-if="filterLabel" class="px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
           <span class="text-primary text-sm font-medium">{{ filterLabel }}</span>
         </div>
@@ -71,33 +103,43 @@ const emit = defineEmits(['apply-filter', 'apply-custom-filter', 'update:customS
         </Button>
       </div>
 
-      <!-- Custom Date Range -->
-      <div v-if="showCustomInputs" class="flex flex-wrap items-center gap-3 mt-4 p-4 rounded-lg border border-border bg-background-card">
-        <div class="flex items-center gap-2">
-          <label class="text-gray-400 text-sm font-medium">De:</label>
-          <input
-              type="date"
-              :value="customStartDate"
-              @input="emit('update:customStartDate', $event.target.value)"
-              class="bg-background-base text-white text-sm border border-border rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+      <div
+          v-if="showCustomInputs"
+          class="mt-4 p-4 rounded-lg border border-border bg-background-card"
+      >
+        <div class="flex flex-col gap-4">
+          <DatePicker
+              v-model="dateRange"
+              label="Período Personalizado"
+              @apply="handleDateRangeApply"
+              @clear="handleDateRangeClear"
           />
+
+          <div
+              v-if="dateRange.startDate && dateRange.endDate"
+              class="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"
+          >
+            <svg
+                class="w-4 h-4 text-primary flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+              <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div class="text-xs text-gray-300">
+              <p class="font-medium text-primary">Período selecionado aplicado</p>
+              <p class="mt-0.5 text-gray-400">
+                Os dados exibidos correspondem ao intervalo escolhido
+              </p>
+            </div>
+          </div>
         </div>
-
-        <span class="text-gray-400">até</span>
-
-        <div class="flex items-center gap-2">
-          <label class="text-gray-400 text-sm font-medium">Até:</label>
-          <input
-              type="date"
-              :value="customEndDate"
-              @input="emit('update:customEndDate', $event.target.value)"
-              class="bg-background-base text-white text-sm border border-border rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-          />
-        </div>
-
-        <Button variant="primary" size="sm" @click="emit('apply-custom-filter')" :disabled="loading">
-          {{ loading ? 'Filtrando...' : 'Aplicar' }}
-        </Button>
       </div>
     </template>
   </Card>
