@@ -154,34 +154,45 @@ const router = createRouter({
     routes,
 });
 
-// Guard de Navegação Unificado
 router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
 
-    // Inicializa a sessão se ainda não estiver carregada
+    console.log('🔍 Router Guard:', {
+        to: to.name,
+        from: from.name,
+        hasSession: !!authStore.session,
+        loading: authStore.loading
+    });
+
     if (!authStore.session && !authStore.loading) {
+        console.log('⏳ Inicializando autenticação...');
         await authStore.initializeAuth();
+    }
+
+    let timeout = 0;
+    while (authStore.loading && timeout < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        timeout++;
     }
 
     const isAuthenticated = authStore.isAuthenticated;
     const isAdmin = authStore.isAdmin;
 
-    // Rota pública permite acesso direto
     if (to.meta.public) {
+        console.log('✅ Rota pública, permitindo acesso');
         return next();
     }
 
-    // Rota requer Auth e usuário não está logado -> Login
     if (to.meta.requiresAuth && !isAuthenticated) {
+        console.log('🚫 Não autenticado, redirecionando para Login');
         return next({ name: 'Login' });
     }
 
-    // Rota requer Admin e usuário não é Admin -> Redireciona para área do usuário
     if (to.meta.requiresAdmin && !isAdmin) {
+        console.log('🚫 Não é admin, redirecionando para Oportunidades');
         return next({ name: 'Oportunidades' });
     }
 
-    // Rota requer Guest (Login/Register) mas usuário já está logado
     if (to.meta.requiresGuest && isAuthenticated) {
         if (isAdmin) {
             return next({ name: 'AdminDashboard' });

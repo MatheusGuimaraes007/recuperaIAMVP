@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
-import {PAGINATION} from "../utils/constants.js";
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { PAGINATION } from "../utils/constants.js";
 
 const props = defineProps({
   currentPage: {
@@ -70,21 +71,20 @@ const goToNextPage = () => {
 <template>
   <div
       v-if="totalPages > 1"
-      class="px-6 py-4 border-t border-gray-700 flex items-center justify-between"
+      class="pt-4 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4"
   >
     <div class="text-sm text-gray-400">
-      Mostrando {{ showingFrom }} - {{ showingTo }} de {{ totalCount }} oportunidades
+      Mostrando <span class="text-white font-medium">{{ showingFrom }}</span> - <span class="text-white font-medium">{{ showingTo }}</span> de <span class="text-white font-medium">{{ totalCount }}</span> clientes
     </div>
 
     <div class="flex gap-1">
       <button
           @click="goToPreviousPage"
           :disabled="currentPage === 1"
-          class="px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="p-2 rounded-lg border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-700 disabled:hover:text-gray-400"
+          title="Página anterior"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
+        <ChevronLeft :size="20" />
       </button>
 
       <button
@@ -92,12 +92,12 @@ const goToNextPage = () => {
           :key="index"
           @click="handlePageChange(page)"
           :disabled="page === '...'"
-          class="px-4 py-2 rounded-lg border transition-all"
+          class="min-w-[40px] px-3 py-2 rounded-lg border transition-all"
           :class="page === currentPage
-          ? 'border-[#7cba10] text-[#7cba10] bg-[#7cba10]/10'
+          ? 'border-primary text-primary bg-primary/10'
           : page === '...'
           ? 'border-transparent text-gray-600 cursor-default'
-          : 'border-gray-700 text-gray-400 hover:border-gray-600'"
+          : 'border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white'"
       >
         {{ page }}
       </button>
@@ -105,11 +105,10 @@ const goToNextPage = () => {
       <button
           @click="goToNextPage"
           :disabled="currentPage === totalPages"
-          class="px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="p-2 rounded-lg border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-700 disabled:hover:text-gray-400"
+          title="Próxima página"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronRight :size="20" />
       </button>
     </div>
   </div>

@@ -6,7 +6,8 @@ export const OPPORTUNITY_STATUS = {
     ACTIVE: 'active',
     WON: 'won',
     LOST: 'lost',
-    PAUSED: 'paused'
+    PAUSED: 'paused',
+    RECOVERED: 'recovered'
 };
 
 /**
@@ -17,25 +18,34 @@ export const STATUS_OPTIONS = [
     { value: OPPORTUNITY_STATUS.ACTIVE, label: 'Ativas', count: 0, color: 'blue' },
     { value: OPPORTUNITY_STATUS.WON, label: 'Ganhas', count: 0, color: 'green' },
     { value: OPPORTUNITY_STATUS.LOST, label: 'Perdidas', count: 0, color: 'red' },
+    { value: OPPORTUNITY_STATUS.RECOVERED, label: 'Recuperadas', count: 0, color: 'primary' },
     { value: OPPORTUNITY_STATUS.PAUSED, label: 'Pausadas', count: 0, color: 'yellow' }
 ];
 
 /**
  * Tipos de oportunidade
+ * ✅ CORRIGIDO: Baseado nos dados reais do banco
  */
 export const OPPORTUNITY_TYPES = {
-    BOLETO: 'boleto',
-    PIX: 'pix',
-    CART: 'carrinho'
+    BOLETO: 'boleto_emitido',
+    PIX: 'pix_emitido',
+    CART: 'abandono_de_carrinho',
+    REFUSED_CARD: 'cartao_recusado'
 };
 
 /**
  * Labels de tipos de oportunidade
+ * ✅ CORRIGIDO: Mapeamento completo
  */
 export const OPPORTUNITY_TYPE_LABELS = {
-    [OPPORTUNITY_TYPES.BOLETO]: 'Boleto',
-    [OPPORTUNITY_TYPES.PIX]: 'PIX',
-    [OPPORTUNITY_TYPES.CART]: 'Carrinho'
+    'boleto_emitido': 'Boleto emitido',
+    'pix_emitido': 'PIX emitido',
+    'abandono_de_carrinho': 'Abandono de carrinho',
+    'cartao_recusado': 'Cartão recusado',
+    // Fallbacks para valores antigos (se existirem)
+    'boleto': 'Boleto',
+    'pix': 'PIX',
+    'carrinho': 'Carrinho'
 };
 
 /**
@@ -67,6 +77,7 @@ export const STATUS_COLORS = {
     [OPPORTUNITY_STATUS.ACTIVE]: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     [OPPORTUNITY_STATUS.WON]: 'bg-green-500/10 text-green-400 border-green-500/20',
     [OPPORTUNITY_STATUS.LOST]: 'bg-red-500/10 text-red-400 border-red-500/20',
+    [OPPORTUNITY_STATUS.RECOVERED]: 'bg-primary/10 text-primary border-primary/20',
     [OPPORTUNITY_STATUS.PAUSED]: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
 };
 

@@ -1,14 +1,34 @@
 <script setup>
-import { computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuth } from "../composables/useAuth.js";
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from '../composables/useAuth.js'
+import {
+  LayoutDashboard,
+  UserPlus,
+  Settings,
+  Users,
+  ClipboardList,
+  Bot,
+  BookOpen,
+  LogOut,
+  Shield
+} from 'lucide-vue-next'
 
-const router = useRouter();
-const route = useRoute();
-const { user, isAdmin, logout } = useAuth();
+const router = useRouter()
+const route = useRoute()
+const { user, isAdmin, logout } = useAuth()
+
+const ICON_MAP = {
+  'dashboard': LayoutDashboard,
+  'user-plus': UserPlus,
+  'users-cog': Settings,
+  'users': Users,
+  'clipboard': ClipboardList,
+  'robot': Bot,
+  'book': BookOpen
+}
 
 const navItems = computed(() => {
-  // Se for ADMIN - mostrar todas as opções
   if (isAdmin.value) {
     return [
       { name: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard', adminOnly: true },
@@ -27,37 +47,47 @@ const navItems = computed(() => {
   ];
 });
 
-const isActive = (path) => route.path === path;
+const isActive = (path) => route.path === path
 
-const navigate = (path) => router.push(path);
+const navigate = (path) => router.push(path)
 
 const handleLogout = async () => {
-  const result = await logout();
-  if (result.success) router.push('/login');
-};
+  const result = await logout()
+  if (result.success) router.push('/login')
+}
 
 const dashboardPath = computed(() => {
-  return isAdmin.value ? '/adm/dashboard' : '/oportunidades';
-});
+  return isAdmin.value ? '/adm/dashboard' : '/oportunidades'
+})
+
+const getIconComponent = (iconName) => {
+  return ICON_MAP[iconName] || Users
+}
 </script>
 
 <template>
-  <header class="border-b sticky top-0 z-50" style="background-color: var(--color-background4); border-color: var(--color-border1)">
+  <header class="border-b border-border sticky top-0 z-50 bg-background-card backdrop-blur-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
 
         <!-- Logo e Título -->
         <div class="flex items-center">
-          <div class="flex items-center cursor-pointer" @click="navigate(dashboardPath)">
+          <div class="flex items-center cursor-pointer group" @click="navigate(dashboardPath)">
             <h1 class="text-2xl font-bold">
-              <span class="text-white">recupera</span>
-              <span style="color: var(--color-text1)">.ia</span>
+              <span class="text-white group-hover:text-gray-200 transition-colors">recupera</span>
+              <span class="text-primary group-hover:text-primary-hover transition-colors">.ia</span>
             </h1>
           </div>
-          <hr class="mx-4 h-8 border-l border-gray-700 opacity-50 hidden sm:block"/>
+
+          <div class="h-8 w-px bg-gray-700 opacity-50 mx-4 hidden sm:block"></div>
+
           <div class="hidden sm:flex flex-col ml-2">
-            <span class="text-white text-sm">{{ isAdmin ? 'Dashboard Interno' : 'Painel do Cliente' }}</span>
-            <span class="text-xs text-gray-500">{{ isAdmin ? 'Gestão de Clientes' : 'Recuperação de Vendas' }}</span>
+            <span class="text-white text-sm font-medium">
+              {{ isAdmin ? 'Dashboard Interno' : 'Painel do Cliente' }}
+            </span>
+            <span class="text-xs text-gray-500">
+              {{ isAdmin ? 'Gestão de Clientes' : 'Recuperação de Vendas' }}
+            </span>
           </div>
         </div>
 
@@ -69,7 +99,7 @@ const dashboardPath = computed(() => {
               @click="navigate(item.path)"
               class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer"
               :class="isActive(item.path)
-              ? 'bg-[#7cba10]/20 text-[#7cba10] border border-[#7cba10]/30'
+              ? 'bg-primary-200 text-primary border border-primary-300'
               : 'text-gray-400 hover:text-white hover:bg-gray-800'"
           >
             <!-- Dashboard Icon -->
@@ -120,25 +150,24 @@ const dashboardPath = computed(() => {
             <p class="text-sm font-medium text-white">{{ user?.name }}</p>
             <p class="text-xs text-gray-400">{{ user?.email }}</p>
           </div>
+
           <div class="flex items-center space-x-2">
-            <span 
-              v-if="isAdmin" 
-              class="px-2 py-1 rounded text-xs font-medium flex items-center gap-1" 
-              style="background-color: rgba(168, 85, 247, 0.2); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3)"
+            <!-- Admin Badge -->
+            <span
+                v-if="isAdmin"
+                class="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 bg-metric-purple-light text-metric-purple border border-metric-purple-border"
             >
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Admin
+              <Shield :size="12" />
+              <span class="hidden sm:inline">Admin</span>
             </span>
+
+            <!-- Logout Button -->
             <button
                 @click="handleLogout"
                 class="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white cursor-pointer"
                 title="Sair"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <LogOut :size="20" />
             </button>
           </div>
         </div>

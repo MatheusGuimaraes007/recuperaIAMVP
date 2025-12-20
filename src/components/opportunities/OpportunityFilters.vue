@@ -1,10 +1,12 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { STATUS_OPTIONS } from '../../utils/constants';
+import { formatCurrency } from '../../utils/formatters';
 import Card from "../../shared/Card.vue";
 import Input from "../../shared/Input.vue";
 import Button from "../../shared/Button.vue";
 import DatePicker from "../../shared/DatePicker.vue";
+import MetricCard from "../../shared/MetricCard.vue";
 
 const props = defineProps({
   loading: {
@@ -16,12 +18,19 @@ const props = defineProps({
     default: () => ({
       total: 0,
       won: 0,
+      lost: 0,
+      recovered: 0,
       conversionRate: 0,
+      recoveryRate: 0,
       totalValue: 0,
+      lostValue: 0,
       convertedValue: 0,
+      recoveredValue: 0,
       roi: 0,
       averageMessages: 0,
-      averageTime: '0min'
+      averageRecoveryMessages: 0,
+      averageTime: '0min',
+      averageRecoveryTime: '0min'
     })
   }
 });
@@ -31,11 +40,7 @@ const emit = defineEmits(['search', 'clear', 'status-change', 'period-change', '
 const searchTerm = ref('');
 const selectedStatus = ref('all');
 const selectedPeriod = ref('last7days');
-const customDateRange = ref({
-  startDate: null,
-  endDate: null
-});
-
+const customDateRange = ref({ startDate: null, endDate: null });
 let searchTimeout = null;
 
 const periodOptions = [
@@ -45,26 +50,19 @@ const periodOptions = [
   { value: 'all', label: 'Desde o início' }
 ];
 
-const isCustomPeriod = computed(() => selectedPeriod.value === 'custom');
-
-watch(searchTerm, (newValue) => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-
-  searchTimeout = setTimeout(() => {
-    if (newValue.trim() !== '' || newValue === '') {
-      handleSearch();
-    }
-  }, 500);
+const showROI = computed(() => {
+  return props.metrics.roi > 0;
 });
 
-const handleSearch = () => {
-  emit('search', {
-    search: searchTerm.value.trim(),
-    status: selectedStatus.value !== 'all' ? selectedStatus.value : null
-  });
-};
+watch(searchTerm, (newValue) => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    emit('search', {
+      search: newValue.trim(),
+      status: selectedStatus.value !== 'all' ? selectedStatus.value : null
+    });
+  }, 500);
+});
 
 const handleStatusFilter = (status) => {
   selectedStatus.value = status;
@@ -73,40 +71,20 @@ const handleStatusFilter = (status) => {
 
 const handlePeriodChange = (period) => {
   selectedPeriod.value = period;
-  
   if (period !== 'custom') {
     customDateRange.value = { startDate: null, endDate: null };
     emit('period-change', period);
   }
 };
 
-const handleDateRangeApply = (dates) => {
-  emit('date-range-change', dates);
-};
-
-const handleDateRangeClear = () => {
-  selectedPeriod.value = 'last7days';
-  emit('period-change', 'last7days');
-};
+const handleDateRangeApply = (dates) => emit('date-range-change', dates);
 
 const handleClear = () => {
   searchTerm.value = '';
   selectedStatus.value = 'all';
   selectedPeriod.value = 'last7days';
   customDateRange.value = { startDate: null, endDate: null };
-  
-  if (searchTimeout) {
-    clearTimeout(searchTimeout);
-  }
-  
   emit('clear');
-};
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
 };
 </script>
 
@@ -114,110 +92,114 @@ const formatCurrency = (value) => {
   <div class="space-y-6">
     <div class="flex flex-wrap gap-2">
       <button
-        v-for="period in periodOptions"
-        :key="period.value"
-        @click="handlePeriodChange(period.value)"
-        :disabled="loading"
-        class="px-4 py-2 rounded-lg border transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        :class="selectedPeriod === period.value
-          ? 'text-white'
+          v-for="period in periodOptions"
+          :key="period.value"
+          @click="handlePeriodChange(period.value)"
+          :disabled="loading"
+          class="px-4 py-2 rounded-lg border transition-all text-sm font-medium disabled:opacity-50"
+          :class="selectedPeriod === period.value
+          ? 'bg-primary text-background-base border-primary'
           : 'border-gray-700 text-gray-400 hover:border-gray-600'"
-        :style="selectedPeriod === period.value ? 'background-color: var(--color-text1); border-color: var(--color-text1)' : ''"
       >
         {{ period.label }}
       </button>
-      
+
       <div class="w-64">
         <DatePicker
-          v-model="customDateRange"
-          label="Período Personalizado"
-          :disabled="loading"
-          @apply="handleDateRangeApply"
-          @clear="handleDateRangeClear"
+            v-model="customDateRange"
+            label="Período Personalizado"
+            :disabled="loading"
+            @apply="handleDateRangeApply"
+            @clear="() => handlePeriodChange('last7days')"
         />
       </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Oportunidades</p>
-          <p class="text-3xl font-bold text-white">{{ metrics.total }}</p>
-        </div>
-      </Card>
+      <MetricCard
+          label="Oportunidades Perdidas"
+          :value="metrics.lost"
+          icon="x-circle"
+          variant="red"
+          :loading="loading"
+      />
+      <MetricCard
+          label="% Recuperação"
+          :value="`${metrics.recoveryRate}%`"
+          icon="percent"
+          variant="purple"
+          :loading="loading"
+          :trend="{ value: metrics.recoveryRate, direction: metrics.recoveryRate > 0 ? 'up' : 'neutral' }"
+      />
+      <MetricCard
+          label="Valor de Oportunidades Perdidas"
+          :value="formatCurrency(metrics.lostValue)"
+          icon="dollar-sign"
+          variant="red"
+          :loading="loading"
+      />
+      <MetricCard
+          label="Tempo Médio até Recuperação"
+          :value="metrics.averageRecoveryTime"
+          icon="clock"
+          variant="orange"
+          :loading="loading"
+      />
 
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Oportunidades Convertidas</p>
-          <p class="text-3xl font-bold" style="color: var(--color-text1)">{{ metrics.won }}</p>
-        </div>
-      </Card>
+      <MetricCard
+          label="Oportunidades Recuperadas"
+          :value="metrics.recovered"
+          icon="refresh-cw"
+          variant="green"
+          :loading="loading"
+      />
 
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Taxa de Conversão</p>
-          <p class="text-3xl font-bold text-white">{{ metrics.conversionRate }}%</p>
-        </div>
-      </Card>
+      <MetricCard
+          v-if="showROI"
+          label="ROI"
+          :value="metrics.roi"
+          icon="trending-up"
+          variant="green"
+          :loading="loading"
+      />
 
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Valor das Oportunidades</p>
-          <p class="text-3xl font-bold text-white">{{ formatCurrency(metrics.totalValue) }}</p>
-        </div>
-      </Card>
+      <MetricCard
+          :class="{ 'md:col-span-1': showROI, 'md:col-span-2 lg:col-span-1': !showROI }"
+          label="Valor de Oportunidades Recuperadas"
+          :value="formatCurrency(metrics.recoveredValue)"
+          icon="dollar-sign"
+          variant="green"
+          :loading="loading"
+      />
 
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Valor Convertido</p>
-          <p class="text-3xl font-bold" style="color: var(--color-text1)">{{ formatCurrency(metrics.convertedValue) }}</p>
-        </div>
-      </Card>
-
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">ROI</p>
-          <p class="text-3xl font-bold text-white">{{ metrics.roi }}%</p>
-        </div>
-      </Card>
-
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Média de Mensagens (Conversões)</p>
-          <p class="text-3xl font-bold text-white">{{ metrics.averageMessages }}</p>
-        </div>
-      </Card>
-
-      <Card padding="md" class="border-gray-700">
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Tempo Médio até Conversão</p>
-          <p class="text-3xl font-bold text-white">{{ metrics.averageTime }}</p>
-        </div>
-      </Card>
+      <MetricCard
+          label="Mensagens até Recuperação"
+          :value="metrics.averageRecoveryMessages"
+          icon="message-circle"
+          variant="purple"
+          :loading="loading"
+      />
     </div>
 
     <Card padding="md">
       <div class="mb-4">
         <Input
-          v-model="searchTerm"
-          placeholder="Buscar por nome, telefone ou email do contato..."
-          icon="search"
-          :disabled="loading"
+            v-model="searchTerm"
+            placeholder="Buscar por nome, telefone ou email..."
+            icon="search"
+            :disabled="loading"
         />
-        <p class="text-xs text-gray-500 mt-1">
-          A busca é feita automaticamente enquanto você digita
-        </p>
       </div>
 
       <div class="flex flex-wrap gap-2 mb-4">
         <button
-          v-for="status in STATUS_OPTIONS"
-          :key="status.value"
-          @click="handleStatusFilter(status.value)"
-          :disabled="loading"
-          class="px-4 py-2 rounded-lg border transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          :class="selectedStatus === status.value
-            ? 'border-[#7cba10] text-[#7cba10] bg-[#7cba10]/10'
+            v-for="status in STATUS_OPTIONS"
+            :key="status.value"
+            @click="handleStatusFilter(status.value)"
+            :disabled="loading"
+            class="px-4 py-2 rounded-lg border transition-all text-sm font-medium disabled:opacity-50"
+            :class="selectedStatus === status.value
+            ? 'border-primary text-primary bg-primary/10'
             : 'border-gray-700 text-gray-400 hover:border-gray-600'"
         >
           {{ status.label }}
@@ -225,21 +207,9 @@ const formatCurrency = (value) => {
       </div>
 
       <div class="flex gap-2">
-        <Button
-          variant="secondary"
-          :disabled="loading"
-          @click="handleClear"
-        >
+        <Button variant="secondary" :disabled="loading" @click="handleClear">
           Limpar filtros
         </Button>
-        
-        <div v-if="loading" class="flex items-center text-sm text-gray-400 ml-2">
-          <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Carregando...
-        </div>
       </div>
     </Card>
   </div>

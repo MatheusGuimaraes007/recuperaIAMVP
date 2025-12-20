@@ -3,9 +3,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../../composables/useAuth';
 import { useOpportunities } from "../../composables/useOpportunities.js";
+import { useRevenueMetrics } from "../../composables/useRevenueMetrics.js";
 import { PAGINATION } from '../../utils/constants';
 
-// Componentes
 import OpportunityFilters from './OpportunityFilters.vue';
 import OpportunityTable from './OpportunityTable.vue';
 import Card from "../../shared/Card.vue";
@@ -13,7 +13,11 @@ import LoadingState from "../../shared/LoadingState.vue";
 import EmptyState from "../../shared/EmptyState.vue";
 import Pagination from "../../shared/Pagination.vue";
 import GuaranteeCard from "../dashboard/GuaranteeCard.vue";
-import Navbar from '../../shared/Navbar.vue'; // ✅ Import da Navbar
+import RevenueComparisonCard from "../../shared/RevenueComparisonCard.vue";
+import OpportunityTypesCard from "./OpportunityTypesCard.vue";
+import SupportButton from "../../shared/SupportButton.vue";
+import Navbar from '../../shared/Navbar.vue';
+import {SUPPORT_WHATSAPP} from "../../utils/supportButton.js";
 
 const { logout } = useAuth();
 const router = useRouter();
@@ -30,6 +34,13 @@ const {
   getMetricsByDateRange
 } = useOpportunities();
 
+const {
+  platformRevenue,
+  recoveredRevenue,
+  loading: revenueLoading,
+  fetchRevenueMetrics
+} = useRevenueMetrics();
+
 const currentPage = ref(PAGINATION.DEFAULT_PAGE);
 const itemsPerPage = PAGINATION.ITEMS_PER_PAGE;
 const currentPeriod = ref('last7days');
@@ -38,8 +49,24 @@ const currentStatus = ref('all');
 const currentSearch = ref('');
 
 onMounted(async () => {
-  await loadOpportunities();
+  await Promise.all([
+    loadOpportunities(),
+    loadRevenueMetrics()
+  ]);
 });
+
+const loadRevenueMetrics = async () => {
+  const filters = {
+    period: currentPeriod.value
+  };
+
+  if (currentDateRange.value?.startDate && currentDateRange.value?.endDate) {
+    filters.startDate = currentDateRange.value.startDate;
+    filters.endDate = currentDateRange.value.endDate;
+  }
+
+  await fetchRevenueMetrics(filters);
+};
 
 const loadOpportunities = async (filters = {}) => {
   const filterParams = {
@@ -92,11 +119,14 @@ const handlePeriodChange = async (period) => {
   currentDateRange.value = null;
   currentPage.value = 1;
 
-  await loadOpportunities({
-    period: period,
-    status: currentStatus.value !== 'all' ? currentStatus.value : null,
-    search: currentSearch.value
-  });
+  await Promise.all([
+    loadOpportunities({
+      period: period,
+      status: currentStatus.value !== 'all' ? currentStatus.value : null,
+      search: currentSearch.value
+    }),
+    loadRevenueMetrics()
+  ]);
 };
 
 const handleDateRangeChange = async (dates) => {
@@ -104,12 +134,15 @@ const handleDateRangeChange = async (dates) => {
   currentDateRange.value = dates;
   currentPage.value = 1;
 
-  await loadOpportunities({
-    startDate: dates.startDate,
-    endDate: dates.endDate,
-    status: currentStatus.value !== 'all' ? currentStatus.value : null,
-    search: currentSearch.value
-  });
+  await Promise.all([
+    loadOpportunities({
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+      status: currentStatus.value !== 'all' ? currentStatus.value : null,
+      search: currentSearch.value
+    }),
+    loadRevenueMetrics()
+  ]);
 };
 
 const handleClearFilters = async () => {
@@ -137,12 +170,19 @@ const metrics = computed(() => {
     return {
       total: 0,
       won: 0,
+      lost: 0,
+      recovered: 0,
       conversionRate: 0,
+      recoveryRate: 0,
       totalValue: 0,
+      lostValue: 0,
       convertedValue: 0,
+      recoveredValue: 0,
       roi: 0,
       averageMessages: 0,
-      averageTime: '0min'
+      averageRecoveryMessages: 0,
+      averageTime: '0min',
+      averageRecoveryTime: '0min'
     };
   }
 
@@ -187,17 +227,20 @@ const handleLogout = async () => {
               Visualize e filtre suas oportunidades de vendas
             </p>
           </div>
-          <div>
-            <button
-                @click="handleLogout"
-                class="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
-                title="Sair"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
+        </div>
+
+        <!-- Novos Cards de Comparação -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <RevenueComparisonCard
+              :platform-revenue="platformRevenue"
+              :recovered-revenue="recoveredRevenue"
+              :loading="revenueLoading || loading"
+          />
+
+          <OpportunityTypesCard
+              :opportunities="opportunities"
+              :loading="loading"
+          />
         </div>
 
         <div class="mb-6">
@@ -270,8 +313,14 @@ const handleLogout = async () => {
         </OpportunityTable>
       </div>
     </div>
+
+    <SupportButton
+        :whatsapp-number="SUPPORT_WHATSAPP"
+        position="bottom-right"
+        :show-tooltip="true"
+        :show-online-indicator="true"
+        tooltip-text="Falar com Suporte"
+        default-message="Olá! Preciso de ajuda com a plataforma Recupera.ia"
+    />
   </div>
 </template>
-
-<style scoped>
-</style>

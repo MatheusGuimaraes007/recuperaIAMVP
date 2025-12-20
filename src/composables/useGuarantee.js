@@ -18,7 +18,6 @@ export const useGuarantee = () => {
         clearError
     } = guaranteeStore;
 
-
     const guaranteeStatusConfig = computed(() => {
         if (!guarantee.value) return null;
 
@@ -58,7 +57,6 @@ export const useGuarantee = () => {
         return configs[guarantee.value.status] || configs.active;
     });
 
-
     const daysRemaining = computed(() => {
         if (!guarantee.value) return 0;
 
@@ -69,7 +67,6 @@ export const useGuarantee = () => {
         return Math.max(0, days);
     });
 
-
     const totalDays = computed(() => {
         if (!guarantee.value) return 0;
 
@@ -79,12 +76,20 @@ export const useGuarantee = () => {
         return getDaysDifference(startDate.toISOString(), endDate.toISOString());
     });
 
+    const daysSinceStart = computed(() => {
+        if (!guarantee.value) return 0;
+
+        const today = new Date();
+        const startDate = new Date(guarantee.value.start_date);
+        const days = getDaysDifference(startDate.toISOString(), today.toISOString());
+
+        return Math.max(0, days);
+    });
 
     const progressPercentage = computed(() => {
         if (!guarantee.value) return 0;
         return parseFloat(guarantee.value.progress_percentage || 0);
     });
-
 
     const remainingAmount = computed(() => {
         if (!guarantee.value) return 0;
@@ -95,6 +100,18 @@ export const useGuarantee = () => {
         return Math.max(0, goal - recovered);
     });
 
+    const roi = computed(() => {
+        if (!guarantee.value) return 0;
+
+        const recovered = parseFloat(guarantee.value.current_recovered_amount || 0);
+        const investment = parseFloat(guarantee.value.investment_90days || 0);
+
+        if (investment === 0) return 0;
+
+        const roiValue = ((recovered - investment) / investment) * 100;
+
+        return roiValue;
+    });
 
     const isInAlert = computed(() => {
         if (!guarantee.value || guarantee.value.status !== 'active') return false;
@@ -108,12 +125,39 @@ export const useGuarantee = () => {
         return daysRemaining.value <= 15 && progressPercentage.value < 50;
     });
 
+    const isGracePeriod = computed(() => {
+        if (!guarantee.value) return false;
+
+        const daysElapsed = daysSinceStart.value;
+        return daysElapsed > 90 && daysElapsed <= 97;
+    });
+
+    const showGuarantee = computed(() => {
+        if (!guarantee.value) return false;
+
+        const daysElapsed = daysSinceStart.value;
+
+        if (daysElapsed <= 90) return true;
+
+        if (daysElapsed > 90 && daysElapsed <= 97) {
+            return guarantee.value.status === 'achieved' || progressPercentage.value >= 100;
+        }
+
+        return false;
+    });
+
     const statusMessage = computed(() => {
         if (!guarantee.value) return '';
 
         const status = guarantee.value.status;
         const progress = progressPercentage.value;
         const days = daysRemaining.value;
+
+        if (isGracePeriod.value) {
+            if (status === 'achieved' || progress >= 100) {
+                return 'Parabéns! Você atingiu a meta da garantia. Este painel ficará disponível por mais alguns dias.';
+            }
+        }
 
         if (status === 'achieved') {
             return 'Parabéns! Você atingiu a meta da garantia.';
@@ -165,7 +209,6 @@ export const useGuarantee = () => {
         return 'var(--color-primary)';
     });
 
-
     const hasActiveGuarantee = computed(() => {
         return guarantee.value !== null && guarantee.value.status === 'active';
     });
@@ -185,6 +228,9 @@ export const useGuarantee = () => {
         statusMessage,
         progressBarColor,
         hasActiveGuarantee,
+        showGuarantee,
+        isGracePeriod,
+        roi,
 
         fetchActiveGuarantee,
         clearError,
