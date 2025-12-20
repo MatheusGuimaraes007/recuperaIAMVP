@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onUnmounted, onMounted } from 'vue';
 
 const props = defineProps({
   type: {
@@ -18,10 +18,31 @@ const props = defineProps({
   dismissible: {
     type: Boolean,
     default: false
+  },
+  time: {
+    type: Number,
+    default: 0
   }
 });
 
+
 const emit = defineEmits(['dismiss']);
+
+let timerId = null;
+
+onMounted(() => {
+  if (props.time > 0) {
+    timerId = setTimeout(() => {
+      emit('dismiss');
+    }, props.time);
+  }
+});
+
+onUnmounted(() => {
+  if (timerId) {
+    clearTimeout(timerId);
+  }
+});
 
 const alertStyles = computed(() => {
   const styles = {
@@ -69,7 +90,7 @@ const icon = computed(() => {
     }"
   >
     <svg
-        class="w-5 h-5 flex-shrink-0 mt-0.5"
+        class="w-5 h-5 shrink-0 mt-0.5"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -95,7 +116,7 @@ const icon = computed(() => {
     <button
         v-if="dismissible"
         @click="$emit('dismiss')"
-        class="text-gray-400 hover:text-gray-300 transition-colors flex-shrink-0"
+        class="text-gray-400 hover:text-gray-300 transition-colors shrink-0 cursor-pointer"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

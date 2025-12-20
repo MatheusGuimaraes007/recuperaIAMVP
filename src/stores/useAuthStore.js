@@ -325,46 +325,22 @@ export const useAuthStore = defineStore('auth', () => {
         }
     };
 
-
-    const checkSessionValidity = async () => {
-        try {
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-            if (!currentSession) {
-                console.warn('⚠️  Sessão inválida ou expirada');
-                session.value = null;
-                user.value = null;
-                return false;
-            }
-
-            return true;
-        } catch (err) {
-            console.error('Erro ao verificar sessão:', err);
-            return false;
-        }
-    };
-
     const refreshSession = async () => {
         try {
-            console.log('🔄 Renovando sessão...');
-
             const { data, error } = await supabase.auth.refreshSession();
-
+            
             if (error) throw error;
-
+            
             if (data.session) {
                 session.value = data.session;
-                console.log('✅ Sessão renovada com sucesso');
                 return true;
             }
-
             return false;
         } catch (err) {
             console.error('Erro ao renovar sessão:', err);
             return false;
         }
     };
-
 
     return {
         user,

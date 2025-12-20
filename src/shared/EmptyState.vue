@@ -1,8 +1,11 @@
 <script setup>
+import { computed } from 'vue';
 import Button from './Button.vue';
 import Card from './Card.vue';
+// 1. Importamos os ícones da biblioteca
+import { Box, Search, Folder, Bot, Inbox, FileText, Users } from 'lucide-vue-next';
 
-defineProps({
+const props = defineProps({
   title: {
     type: String,
     default: 'Nenhum resultado encontrado'
@@ -14,7 +17,8 @@ defineProps({
   icon: {
     type: String,
     default: 'box',
-    validator: (value) => ['box', 'search', 'folder'].includes(value)
+    // 2. Atualizamos o validador para aceitar 'robot' e outros úteis
+    validator: (value) => ['box', 'search', 'folder', 'robot', 'inbox', 'users', 'document'].includes(value)
   },
   actionLabel: {
     type: String,
@@ -23,47 +27,40 @@ defineProps({
 });
 
 const emit = defineEmits(['action']);
+
+// 3. Mapeamos o nome (string) para o Componente
+const iconComponent = computed(() => {
+  const icons = {
+    box: Box,
+    search: Search,
+    folder: Folder,
+    robot: Bot, // 'robot' vai renderizar o ícone 'Bot'
+    inbox: Inbox,
+    users: Users,
+    document: FileText
+  };
+  // Retorna o ícone correspondente ou Box como fallback
+  return icons[props.icon] || Box;
+});
 </script>
 
 <template>
   <Card padding="lg">
-    <div class="text-center">
-      <svg
-          class="w-16 h-16 mx-auto mb-4 text-gray-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-      >
-        <path
-            v-if="icon === 'box'"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+    <div class="text-center flex flex-col items-center">
+      
+      <div class="mb-4 p-4 rounded-full bg-white/5 border border-white/10 inline-flex">
+        <component 
+          :is="iconComponent" 
+          class="w-8 h-8 text-gray-500" 
+          stroke-width="1.5"
         />
-
-        <path
-            v-else-if="icon === 'search'"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-        />
-
-        <path
-            v-else-if="icon === 'folder'"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-        />
-      </svg>
+      </div>
 
       <h3 class="text-xl font-semibold text-white mb-2">
         {{ title }}
       </h3>
 
-      <p class="text-gray-400 mb-4">
+      <p class="text-gray-400 mb-6 max-w-sm mx-auto">
         {{ message }}
       </p>
 
@@ -71,6 +68,7 @@ const emit = defineEmits(['action']);
           v-if="actionLabel"
           variant="primary"
           @click="$emit('action')"
+          class="cursor-pointer"
       >
         {{ actionLabel }}
       </Button>

@@ -52,19 +52,9 @@ const handleSubmit = async () => {
   const result = await login(formData.value.email, formData.value.password)
 
   if (result.success) {
-
-    await new Promise(resolve => setTimeout(resolve, 100))
-
-    const isUserAdmin = authStore.isAdmin
-
-    console.log('👤 Tipo de usuário:', {
-      isAdmin: isUserAdmin,
-      role: authStore.user?.role,
-      user: authStore.user
-    })
-
+    const isUserAdmin = await isAdminUser();
     if (isUserAdmin) {
-      await router.push({ name: 'AdminDashboard' })
+      router.push('/admin/dashboard');
     } else {
       await router.push({ name: 'Oportunidades' })
     }

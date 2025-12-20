@@ -2,122 +2,151 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "../stores/useAuthStore.js";
 
 const routes = [
-    {
-        path: "/",
-        redirect: "/login",
-    },
-    {
-        path: "/login",
-        name: "Login",
-        component: () => import("../components/all/Login.vue"),
-        meta: { requiresGuest: true },
-    },
-    {
-        path: "/cadastro",
-        name: "Cadastro",
-        component: () => import("../components/all/Cadastro.vue"),
-        meta: { requiresAuth: true, requiresAdmin: true },
-    },
-    {
-        path: "/recuperar-senha",
-        name: "RecuperarSenha",
-        component: () => import("../components/all/RecuperarSenha.vue"),
-        meta: { requiresGuest: true },
-    },
-    {
-        path: "/redefinir-senha",
-        name: "RedefinirSenha",
-        component: () => import("../components/all/RedefinirSenha.vue"),
-        meta: { public: true },
-    },
-    {
-        path: "/reset-password",
-        redirect: "/redefinir-senha",
-    },
+  {
+    path: "/",
+    redirect: "/login",
+  },
+  {
+    path: "/login",
+    name: "Login",
+    component: () => import("../components/all/Login.vue"),
+    meta: { requiresGuest: true },
+  },
+  {
+    path: "/admin/cadastro",
+    name: "Cadastro",
+    component: () => import("../components/all/Cadastro.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: "/recuperar-senha",
+    name: "RecuperarSenha",
+    component: () => import("../components/all/RecuperarSenha.vue"),
+    meta: { requiresGuest: true },
+  },
+  {
+    path: "/redefinir-senha",
+    name: "RedefinirSenha",
+    component: () => import("../components/all/RedefinirSenha.vue"),
+    meta: { public: true },
+  },
+  {
+    path: "/reset-password",
+    redirect: "/redefinir-senha",
+  },
 
-    {
-        path: "/adm/dashboard",
-        name: "AdminDashboard",
-        component: () => import("../components/adm/AdminDashboard.vue"),
-        meta: { requiresAuth: true, requiresAdmin: true },
+  // --- Rotas Administrativas ---
+  {
+    path: "/admin/dashboard",
+    name: "AdminDashboard",
+    component: () => import("../components/adm/AdminDashboard.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  
+  // Rotas Admin - Gestão de Clientes
+  {
+    path: "/admin/clientes",
+    name: "AdminClientes",
+    component: () => import("../components/adm/AdminClientsList.vue"),
+    meta: { 
+      requiresAuth: true, 
+      requiresAdmin: true,
+      title: "Gestão de Clientes"
     },
+  },
+  {
+    path: "/admin/dashboard/:clientId",
+    name: "AdminClientDashboard",
+    component: () => import("../components/adm/AdminClientDashboard.vue"),
+    meta: { 
+      requiresAuth: true, 
+      requiresAdmin: true,
+      title: "Dashboard do Cliente"
+    },
+  },
+  {
+    path: "/admin/oportunidades/:clientId",
+    name: "AdminClientOpportunities",
+    component: () => import("../components/adm/AdminClientOpportunities.vue"),
+    meta: { 
+      requiresAuth: true, 
+      requiresAdmin: true,
+      title: "Oportunidades do Cliente"
+    },
+  },
+  {
+      path: "/admin/conhecimento/:baseId",
+      name: "AdminClientKnowledgeBases",
+      component: () => import("../components/conhecimento/adm/EditarBaseConhecimento.vue"),
+      meta: { 
+      requiresAuth: true, 
+      requiresAdmin: true,
+      title: "Editar Base de Conhecimento"
+    },
+  },
+  {
+      path: "/admin/produtos",
+      name: "AdminProdutos",
+      component: () => import("../components/produtos/adm/AdminProdutos.vue"),
+      meta: { 
+      requiresAuth: true, 
+      requiresAdmin: true,
+      title: "Todos os Produtos"
+    },
+  },
 
-    {
-        path: "/admin/clientes",
-        name: "AdminClientes",
-        component: () => import("../components/adm/AdminClientsList.vue"),
-        meta: {
-            requiresAuth: true,
-            requiresAdmin: true,
-            title: "Gestão de Clientes"
-        },
+  // --- Rotas de Usuário / Plataforma ---
+  {
+    path: "/clientes",
+    name: "Clientes",
+    component: () => import("../components/clientes/ClientesList.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/clientes/:id",
+    name: "ClientDetail",
+    component: () => import("../components/clientes/ClientesDetail.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Detalhes do Cliente",
     },
-    {
-        path: "/admin/dashboard/:clientId",
-        name: "AdminClientDashboard",
-        component: () => import("../components/adm/AdminClientDashboard.vue"),
-        meta: {
-            requiresAuth: true,
-            requiresAdmin: true,
-            title: "Dashboard do Cliente"
-        },
-    },
-    {
-        path: "/admin/oportunidades/:clientId",
-        name: "AdminClientOpportunities",
-        component: () => import("../components/adm/AdminClientOpportunities.vue"),
-        meta: {
-            requiresAuth: true,
-            requiresAdmin: true,
-            title: "Oportunidades do Cliente"
-        },
-    },
-
-    {
-        path: "/clientes",
-        name: "Clientes",
-        component: () => import("../components/clientes/ClientesList.vue"),
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/clientes/:id",
-        name: "ClientDetail",
-        component: () => import("../components/clientes/ClientesDetail.vue"),
-        meta: {
-            requiresAuth: true,
-            title: "Detalhes do Cliente",
-        },
-    },
-    {
-        path: '/agents',
-        name: 'agents',
-        component: () => import('../components/agents/AgentsList.vue'),
-        meta: { requiresAuth: true }
-    },
-    {
-        path: '/agentes/:id',
-        name: 'agent-detail',
-        component: () => import('../components/agents/AgentDetail.vue'),
-        meta: { requiresAuth: true }
-    },
-    {
-        path: "/conhecimento",
-        name: "BaseConhecimento",
-        component: () => import("../components/conhecimento/BaseConhecimento.vue"),
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/oportunidades",
-        name: "Oportunidades",
-        component: () => import("../components/opportunities/OpportunityList.vue"),
-        meta: { requiresAuth: true },
-    },
-    {
-        path: "/oportunidades/:id",
-        name: "OpportunityDetail",
-        component: () => import("../components/opportunities/OpportunityDetail.vue"),
-        meta: { requiresAuth: true },
-    },
+  },
+  {
+    path: '/admin/agents',
+    name: 'agents',
+    component: () => import('../components/agents/AgentsList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/agentes/:id',
+    name: 'agent-detail',
+    component: () => import('../components/agents/AgentDetail.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/admin/conhecimento",
+    name: "BaseConhecimento",
+    component: () => import("../components/conhecimento/adm/BaseConhecimento.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/oportunidades",
+    name: "Oportunidades",
+    component: () => import("../components/opportunities/OpportunityList.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/conhecimento",
+    name: "ClienteBaseConhecimento",
+    component: () => import("../components/conhecimento/cliente/ClienteBaseConhecimento.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/oportunidades/:id",
+    name: "OpportunityDetail",
+    component: () => import("../components/opportunities/OpportunityDetail.vue"),
+    meta: { requiresAuth: true },
+  },
 ];
 
 const router = createRouter({

@@ -220,7 +220,6 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 .eq('user_id', clientId)
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .maybeSingle();
 
             if (subscription) {
                 metrics.subscriptionStatus = subscription.status;
