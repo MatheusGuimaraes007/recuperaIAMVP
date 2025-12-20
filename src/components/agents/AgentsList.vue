@@ -71,11 +71,11 @@ const handlePageChange = async (page) => {
 };
 
 const handleCreateAgent = () => {
-  router.push('/agentes/novo');
+  router.push('/admin/agentes/novo');
 };
 
 const handleEditAgent = (agent) => {
-  router.push(`/agentes/${agent.id}/editar`);
+  router.push(`/admin/agentes/${agent.id}/editar`);
 };
 
 const handleDeleteAgent = async (agent) => {
@@ -149,7 +149,7 @@ const hasActiveFilters = computed(() => {
               style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)"
           >
             <svg
-                class="w-5 h-5 flex-shrink-0 mt-0.5"
+                class="w-5 h-5 shrink-0 mt-0.5"
                 style="color: var(--color-text2)"
                 fill="currentColor"
                 viewBox="0 0 20 20"
@@ -211,5 +211,4 @@ const hasActiveFilters = computed(() => {
 </template>
 
 <style scoped>
-/* Estilos adicionais se necessário */
 </style>

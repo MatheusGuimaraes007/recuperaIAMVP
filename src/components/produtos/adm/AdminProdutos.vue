@@ -3,7 +3,7 @@ import { onMounted, ref, computed } from 'vue';
 import Navbar from '../../../shared/Navbar.vue';
 import Card from '../../../shared/Card.vue';
 import Button from '../../../shared/Button.vue';
-import Alert from '../../../shared/Alert.vue'; // 1. Importar Alert
+import Alert from '../../../shared/Alert.vue';
 import { useProducts } from '../../../composables/useProducts';
 import { useUSers } from '../../../composables/useUsers';
 import { formatDate } from '../../../utils/formatters';

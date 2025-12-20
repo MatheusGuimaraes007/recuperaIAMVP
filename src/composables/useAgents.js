@@ -240,25 +240,15 @@ export const useAgents = () => {
         }
     };
 
-    /**
-     * Label amigável para modelo de IA
-     */
     const getAIModelLabel = (model) => {
         const found = aiModels.find(m => m.value === model);
         return found ? found.label : model;
     };
-
-    /**
-     * Label amigável para tom de voz
-     */
     const getToneOfVoiceLabel = (tone) => {
         const found = toneOfVoiceOptions.find(t => t.value === tone);
         return found ? found.label : tone;
     };
 
-    /**
-     * Formata número WhatsApp para exibição
-     */
     const formatWhatsappNumber = (number) => {
         if (!number) return 'Não configurado';
         return formatPhone(number);
@@ -279,9 +269,6 @@ export const useAgents = () => {
         return ((estimatedReceived / estimatedSent) * 100).toFixed(1);
     };
 
-    /**
-     * Status de saúde do agente baseado em métricas
-     */
     const getAgentHealth = (metrics) => {
         if (!metrics) return { status: 'unknown', label: 'Desconhecido', color: '#6b7280' };
 

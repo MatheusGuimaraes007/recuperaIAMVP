@@ -50,7 +50,7 @@ const getInitials = (name) => {
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="relative">
-          <div class="absolute inset-0 bg-gradient-to-r from-gray-800/50 to-gray-900/50"></div>
+          <div class="absolute inset-0 bg-linear-to-r from-gray-800/50 to-gray-900/50"></div>
           <tr class="border-b-2" style="border-color: var(--color-border1)">
             <th class="relative px-6 py-4 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">
                 <span class="flex items-center gap-2">
@@ -107,7 +107,7 @@ const getInitials = (name) => {
               v-for="agent in agents"
               :key="agent.id"
               @click="handleAgentClick(agent)"
-              class="group hover:bg-gradient-to-r hover:from-gray-800/40 hover:to-transparent transition-all duration-200 cursor-pointer relative"
+              class="group hover:bg-linear-to-r hover:from-gray-800/40 hover:to-transparent transition-all duration-200 cursor-pointer relative"
           >
 
             <td class="px-6 py-4 relative">
@@ -115,7 +115,7 @@ const getInitials = (name) => {
 
               <div class="flex items-center gap-3">
                 <div class="relative">
-                  <div class="absolute -inset-0.5 bg-gradient-to-r from-[#7cba10] to-purple-600 rounded-full blur opacity-0 group-hover:opacity-50 transition duration-300"></div>
+                  <div class="absolute -inset-0.5 bg-linear-to-r from-[#7cba10] to-purple-600 rounded-full blur opacity-0 group-hover:opacity-50 transition duration-300"></div>
                   <div class="relative w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white transition-transform group-hover:scale-110"
                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
                     {{ getInitials(agent.name) }}
@@ -219,7 +219,7 @@ const getInitials = (name) => {
         </table>
       </div>
 
-      <div class="px-6 py-5 border-t bg-gradient-to-r from-gray-800/20 to-transparent" style="border-color: var(--color-border1)">
+      <div class="px-6 py-5 border-t bg-linear-to-r from-gray-800/20 to-transparent" style="border-color: var(--color-border1)">
         <slot name="pagination"></slot>
       </div>
     </Card>
