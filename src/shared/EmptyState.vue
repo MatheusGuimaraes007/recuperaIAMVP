@@ -18,7 +18,7 @@ const props = defineProps({
     type: String,
     default: 'box',
     // 2. Atualizamos o validador para aceitar 'robot' e outros úteis
-    validator: (value) => ['box', 'search', 'folder', 'robot', 'inbox', 'users', 'document'].includes(value)
+    validator: (value) => ['box', 'search', 'folder', 'robot', 'inbox', 'bot', 'users', 'document'].includes(value)
   },
   actionLabel: {
     type: String,

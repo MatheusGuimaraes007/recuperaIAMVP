@@ -360,7 +360,6 @@ export const useAuthStore = defineStore('auth', () => {
         updatePassword,
         clearError,
 
-        checkSessionValidity,
-        refreshSession
+        refreshSession 
     };
 });

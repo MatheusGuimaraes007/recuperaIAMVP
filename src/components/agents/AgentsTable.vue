@@ -19,6 +19,16 @@ const props = defineProps({
 
 const emit = defineEmits(['agent-click', 'edit-agent', 'delete-agent'])
 
+const getInitials = (name) => {
+  if (!name) return 'IA';
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+};
+
 const handleAgentClick = (agent) => {
   router.push(`/admin/agentes/${agent.id}`);
 };

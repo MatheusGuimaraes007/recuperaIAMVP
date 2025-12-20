@@ -22,19 +22,19 @@ defineProps({
     default: 0
   },
   averageRecoveryRate: {
-    type: String,
-    default: '-'
+    type: [ Number, String ],
+    default: '0'
   },
   revenueGrowth: {
-    type: String,
+    type: [ Number, String ],
     default: null
   },
   billingGrowth: {
-    type: String,
+    type: [ Number, String ],
     default: null
   },
   totalGrowth: {
-    type: String,
+    type: [ Number, String ],
     default: null
   },
   loading: {
