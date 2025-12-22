@@ -16,6 +16,7 @@ const {
   loading,
   error,
   clearError,
+  isAdminUser,
 } = useAuth()
 
 const { validateRequired, validateEmail, validateMinLength } = useFormValidation()
