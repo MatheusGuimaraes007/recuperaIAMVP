@@ -72,11 +72,11 @@ const handlePageChange = async (page) => {
 };
 
 const handleCreateAgent = () => {
-  router.push('/admin/agentes/novo');
+  router.push('/admin/agents/novo');
 };
 
 const handleEditAgent = (agent) => {
-  router.push(`/admin/agentes/${agent.id}/editar`);
+  router.push(`/admin/agents/${agent.id}/editar`);
 };
 
 const handleDeleteAgent = async (agent) => {

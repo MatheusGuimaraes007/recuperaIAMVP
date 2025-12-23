@@ -110,16 +110,12 @@ const healthStatus = computed(() => {
           </div>
         </Card>
 
-        <!-- Loading State -->
         <LoadingState v-if="loading" message="Carregando detalhes do agente..." />
 
-        <!-- Content -->
         <div v-else-if="currentAgent" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <!-- Coluna Principal -->
           <div class="lg:col-span-2 space-y-6">
 
-            <!-- Informações Básicas -->
             <Card padding="lg">
               <div class="flex items-center gap-3 mb-6">
                 <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">

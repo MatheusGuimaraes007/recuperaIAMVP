@@ -26,8 +26,7 @@ export const useAgentsStore = defineStore('agents', () => {
 
     /**
      * Busca agentes com filtros
-     * ✅ COM CACHE: Segunda chamada é ~100x mais rápida
-     * ✅ COM ERROR HANDLER: Mensagens amigáveis para usuário
+     * Inclui dados do usuário (dono) e do número de WhatsApp
      */
     const fetchAgents = async (filters = {}) => {
         loading.value = true;
@@ -41,21 +40,17 @@ export const useAgentsStore = defineStore('agents', () => {
                 throw new Error('Usuário não autenticado');
             }
 
-            // ✅ CRIAR CHAVE DE CACHE baseada em filtros
             const cacheKey = createCacheKey('agents', userId, filters);
 
-            // ✅ TENTAR BUSCAR DO CACHE PRIMEIRO
             const cached = storeCache.get(cacheKey);
             if (cached) {
                 agents.value = cached.data;
                 totalCount.value = cached.count;
                 loading.value = false;
-
                 console.log('✅ Dados carregados do CACHE:', cacheKey);
                 return { success: true, data: cached.data, count: cached.count, fromCache: true };
             }
 
-            // ❌ NÃO ESTAVA NO CACHE, fazer query
             console.log('⏳ Cache MISS, buscando do banco...', cacheKey);
 
             const {
@@ -67,7 +62,6 @@ export const useAgentsStore = defineStore('agents', () => {
             const from = (page - 1) * limit;
             const to = from + limit - 1;
 
-            // Query otimizada com índices
             let query = supabase
                 .from('agents')
                 .select(`
@@ -80,6 +74,8 @@ export const useAgentsStore = defineStore('agents', () => {
                     token_used,
                     created_at,
                     updated_at,
+                    user_id,
+                    user:users(id, name, email),
                     whatsapp_number:official_whatsapp_numbers(
                         id,
                         phone_number,
@@ -87,7 +83,6 @@ export const useAgentsStore = defineStore('agents', () => {
                         status
                     )
                 `, { count: 'exact' })
-                .eq('user_id', userId)
                 .is('deleted_at', null)
                 .order('created_at', { ascending: false });
 
@@ -109,14 +104,12 @@ export const useAgentsStore = defineStore('agents', () => {
             agents.value = data || [];
             totalCount.value = count || 0;
 
-            // ✅ SALVAR NO CACHE (TTL: 5 minutos)
             storeCache.set(cacheKey, { data, count }, CacheTTL.MEDIUM);
             console.log('💾 Dados salvos no CACHE:', cacheKey);
 
             return { success: true, data, count, fromCache: false };
 
         } catch (err) {
-            // ✅ ERROR HANDLER - Mensagem amigável
             const friendlyMessage = ErrorHandler.handle(err, 'fetchAgents', { filters });
             setError(friendlyMessage);
             return { success: false, error: err };
@@ -125,13 +118,8 @@ export const useAgentsStore = defineStore('agents', () => {
         }
     };
 
-    // ============================================================
-    // FETCH AGENT BY ID COM CACHE
-    // ============================================================
-
     /**
      * Busca detalhes completos de um agente
-     * ✅ COM CACHE individual por agente
      */
     const fetchAgentById = async (agentId) => {
         loading.value = true;
@@ -145,10 +133,8 @@ export const useAgentsStore = defineStore('agents', () => {
                 throw new Error('Usuário não autenticado');
             }
 
-            // ✅ CACHE KEY específica do agente
             const cacheKey = `agents:${userId}:detail:${agentId}`;
 
-            // ✅ TENTAR BUSCAR DO CACHE
             const cached = storeCache.get(cacheKey);
             if (cached) {
                 currentAgent.value = cached;
@@ -156,11 +142,11 @@ export const useAgentsStore = defineStore('agents', () => {
                 return { success: true, data: cached, fromCache: true };
             }
 
-            // Busca principal do agente
             const { data: agentData, error: agentError } = await supabase
                 .from('agents')
                 .select(`
                     *,
+                    user:users(id, name, email),
                     whatsapp_number:official_whatsapp_numbers(
                         id,
                         phone_number,
@@ -170,13 +156,11 @@ export const useAgentsStore = defineStore('agents', () => {
                     )
                 `)
                 .eq('id', agentId)
-                .eq('user_id', userId)
                 .is('deleted_at', null)
                 .single();
 
             if (agentError) throw agentError;
 
-            // ✅ QUERIES EM PARALELO (otimização!)
             const [
                 { data: knowledgeBases, error: kbError },
                 { data: recentContacts, error: contactsError },
@@ -211,7 +195,6 @@ export const useAgentsStore = defineStore('agents', () => {
             if (contactsError) throw contactsError;
             if (oppError) throw oppError;
 
-            // Montar objeto completo
             const fullAgent = {
                 ...agentData,
                 knowledge_bases: knowledgeBases?.map(kb => kb.knowledge_base) || [],
@@ -221,7 +204,6 @@ export const useAgentsStore = defineStore('agents', () => {
 
             currentAgent.value = fullAgent;
 
-            // ✅ SALVAR NO CACHE (TTL: 3 minutos - dados mais voláteis)
             storeCache.set(cacheKey, fullAgent, CacheTTL.SHORT);
 
             return { success: true, data: fullAgent, fromCache: false };
@@ -235,18 +217,11 @@ export const useAgentsStore = defineStore('agents', () => {
         }
     };
 
-    // ============================================================
-    // FETCH AGENT METRICS COM RPC (SEM CACHE - dados dinâmicos)
-    // ============================================================
-
     /**
      * Busca métricas agregadas de um agente
-     * ✅ USA RPC OTIMIZADO: 9 queries → 1 query
-     * ❌ SEM CACHE: métricas mudam frequentemente
      */
     const fetchAgentMetrics = async (agentId) => {
         try {
-            // ✅ USAR RPC (função SQL otimizada)
             const { data, error } = await supabase.rpc('get_agent_metrics', {
                 p_agent_id: agentId
             });
@@ -261,38 +236,78 @@ export const useAgentsStore = defineStore('agents', () => {
         }
     };
 
+    /**
+     * Cria um novo agente
+     */
     const createAgent = async (agentData) => {
         loading.value = true;
         clearError();
 
         try {
             const authStore = useAuthStore();
-            const userId = authStore.user?.id;
+            const targetUserId = agentData.user_id || authStore.user?.id;
 
-            if (!userId) {
-                throw new Error('Usuário não autenticado');
+            if (!targetUserId) {
+                throw new Error('Usuário proprietário não identificado');
             }
 
-            const { data, error: createError } = await supabase
+            // Separar dados do WhatsApp para não dar erro na tabela agents
+            const { whatsapp_number, ...agentPayload } = agentData;
+
+            const { data: newAgent, error: createError } = await supabase
                 .from('agents')
                 .insert({
-                    user_id: userId,
-                    ...agentData
+                    ...agentPayload,
+                    user_id: targetUserId
                 })
                 .select()
                 .single();
 
             if (createError) throw createError;
 
-            // Adicionar à lista local
-            agents.value.unshift(data);
+            // Se houver dados de WhatsApp, tenta criar (mas não falha se der erro)
+            let createdNumber = null;
+            if (whatsapp_number && whatsapp_number.phone_number) {
+                try {
+                    const { data: numData, error: numError } = await supabase
+                        .from('official_whatsapp_numbers')
+                        .insert({
+                            id: newAgent.id,
+                            user_id: targetUserId,
+                            phone_number: whatsapp_number.phone_number,
+                            display_name: whatsapp_number.display_name,
+                            waba_id: whatsapp_number.waba_id,
+                            status: 'pending',
+                            updated_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+
+                    if (!numError) {
+                        createdNumber = numData;
+                        // Vincula o ID na tabela agents
+                        await supabase
+                            .from('agents')
+                            .update({ official_whatsapp_number_id: numData.id })
+                            .eq('id', newAgent.id);
+                    }
+                } catch (wppErr) {
+                    console.error('Erro ao criar número automático:', wppErr);
+                }
+            }
+
+            const finalAgent = {
+                ...newAgent,
+                whatsapp_number: createdNumber
+            };
+
+            agents.value.unshift(finalAgent);
             totalCount.value++;
 
-            const pattern = createInvalidationPattern('agents', userId);
-            const invalidated = storeCache.invalidatePattern(pattern);
-            console.log(`🗑️  Cache invalidado: ${invalidated} itens removidos`);
-
-            return { success: true, data };
+            const pattern = createInvalidationPattern('agents', targetUserId);
+            storeCache.invalidatePattern(pattern);
+            
+            return { success: true, data: finalAgent };
 
         } catch (err) {
             const friendlyMessage = ErrorHandler.handle(err, 'createAgent', { agentData });
@@ -303,6 +318,9 @@ export const useAgentsStore = defineStore('agents', () => {
         }
     };
 
+    /**
+     * Atualiza um agente existente
+     */
     const updateAgent = async (agentId, updates) => {
         loading.value = true;
         clearError();
@@ -311,10 +329,13 @@ export const useAgentsStore = defineStore('agents', () => {
             const authStore = useAuthStore();
             const userId = authStore.user?.id;
 
-            const { data, error: updateError } = await supabase
+            // Remove whatsapp_number para o update em agents
+            const { whatsapp_number, ...agentUpdates } = updates;
+
+            const { data: updatedAgent, error: updateError } = await supabase
                 .from('agents')
                 .update({
-                    ...updates,
+                    ...agentUpdates,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', agentId)
@@ -323,21 +344,44 @@ export const useAgentsStore = defineStore('agents', () => {
 
             if (updateError) throw updateError;
 
+            // Se houver update de whatsapp via este método
+            let updatedNumber = null;
+            if (whatsapp_number && whatsapp_number.id) {
+                const { data: numData, error: numError } = await supabase
+                    .from('official_whatsapp_numbers')
+                    .update({
+                        phone_number: whatsapp_number.phone_number,
+                        display_name: whatsapp_number.display_name,
+                        status: whatsapp_number.status,
+                        waba_id: whatsapp_number.waba_id,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', whatsapp_number.id)
+                    .select()
+                    .single();
+                
+                if (!numError) updatedNumber = numData;
+            }
+
+            const finalData = { 
+                ...updatedAgent, 
+                whatsapp_number: updatedNumber || whatsapp_number 
+            };
+
             const index = agents.value.findIndex(a => a.id === agentId);
             if (index !== -1) {
-                agents.value[index] = { ...agents.value[index], ...data };
+                agents.value[index] = { ...agents.value[index], ...finalData };
             }
 
             if (currentAgent.value?.id === agentId) {
-                currentAgent.value = { ...currentAgent.value, ...data };
+                currentAgent.value = { ...currentAgent.value, ...finalData };
             }
 
             const pattern = createInvalidationPattern('agents', userId);
             storeCache.invalidatePattern(pattern);
             storeCache.delete(`agents:${userId}:detail:${agentId}`);
-            console.log('🗑️  Cache invalidado após update');
 
-            return { success: true, data };
+            return { success: true, data: finalData };
 
         } catch (err) {
             const friendlyMessage = ErrorHandler.handle(err, 'updateAgent', { agentId, updates });
@@ -347,7 +391,6 @@ export const useAgentsStore = defineStore('agents', () => {
             loading.value = false;
         }
     };
-
 
     const deleteAgent = async (agentId) => {
         loading.value = true;
@@ -375,7 +418,6 @@ export const useAgentsStore = defineStore('agents', () => {
 
             const pattern = createInvalidationPattern('agents', userId);
             storeCache.invalidatePattern(pattern);
-            console.log('🗑️  Cache invalidado após delete');
 
             return { success: true };
 

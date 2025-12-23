@@ -1,9 +1,8 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { Bot, Smartphone, Zap, Calendar, Edit2, Trash2, ChevronRight } from 'lucide-vue-next'
+import { Bot, Smartphone, Zap, Calendar, Edit2, Trash2, ChevronRight, User } from 'lucide-vue-next'
 import Card from '../../shared/Card.vue'
 import StatusBadge from '../../shared/StatusBadge.vue'
-import UserAvatar from '../../shared/UserAvatar.vue'
 import { formatDate } from '../../utils/formatters'
 import { useAgents } from '../../composables/useAgents'
 
@@ -30,7 +29,7 @@ const getInitials = (name) => {
 };
 
 const handleAgentClick = (agent) => {
-  router.push(`/admin/agentes/${agent.id}`);
+  router.push(`/admin/agents/${agent.id}`);
 };
 
 const handleEditAgent = (agent, event) => {
@@ -58,6 +57,14 @@ const handleDeleteAgent = (agent, event) => {
                   Agente
                 </span>
             </th>
+            
+            <th class="relative px-6 py-4 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">
+                <span class="flex items-center gap-2">
+                  <User :size="16" />
+                  Cliente
+                </span>
+            </th>
+
             <th class="relative px-6 py-4 text-left text-xs font-bold text-gray-300 uppercase tracking-wider">
                 <span class="flex items-center gap-2">
                   <Smartphone :size="16" />
@@ -119,6 +126,14 @@ const handleDeleteAgent = (agent, event) => {
                   </p>
                 </div>
               </div>
+            </td>
+
+            <td class="px-6 py-4">
+              <div v-if="agent.user" class="flex flex-col">
+                <span class="text-sm text-white font-medium">{{ agent.user.name || 'Sem nome' }}</span>
+                <span class="text-xs text-gray-500">{{ agent.user.email }}</span>
+              </div>
+              <span v-else class="text-sm text-gray-500 italic">Desconhecido</span>
             </td>
 
             <td class="px-6 py-4">

@@ -118,16 +118,28 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/agentes/:id',
+    path: '/admin/agents/:id',
     name: 'agent-detail',
     component: () => import('../components/agents/AgentDetail.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/agents/novo', 
+    name: 'AdminAgentCreate',
+    component: () => import('../components/agents/AgentCreate.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/agents/:id/editar', // Rota com parâmetro ID
+    name: 'AdminAgentEdit',
+    component: () => import('../components/agents/AgentEdit.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: "/admin/conhecimento",
     name: "BaseConhecimento",
     component: () => import("../components/conhecimento/adm/BaseConhecimento.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: "/oportunidades",
@@ -139,13 +151,13 @@ const routes = [
     path: "/conhecimento",
     name: "ClienteBaseConhecimento",
     component: () => import("../components/conhecimento/cliente/ClienteBaseConhecimento.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: "/oportunidades/:id",
     name: "OpportunityDetail",
     component: () => import("../components/opportunities/OpportunityDetail.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
 ];
 
