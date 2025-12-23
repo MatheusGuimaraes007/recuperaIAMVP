@@ -86,7 +86,7 @@ const healthStatus = computed(() => {
         <!-- Header -->
         <Card padding="lg" class="mb-8 relative overflow-hidden">
           <div class="absolute inset-0 opacity-5">
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,_white_1px,_transparent_0)] bg-[length:40px_40px]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,white_1px,transparent_0)]"></div>
           </div>
 
           <div class="relative flex items-center justify-between">
@@ -125,25 +125,6 @@ const healthStatus = computed(() => {
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-1">
-                  <p class="text-sm font-medium text-gray-400">Nome</p>
-                  <p class="text-white font-semibold">{{ currentAgent.name }}</p>
-                </div>
-
-                <div class="space-y-1">
-                  <p class="text-sm font-medium text-gray-400">Função</p>
-                  <p class="text-white font-semibold">{{ currentAgent.function || 'Não definida' }}</p>
-                </div>
-
-                <div class="space-y-1">
-                  <p class="text-sm font-medium text-gray-400">Modelo IA</p>
-                  <p class="text-white font-semibold">{{ getAIModelLabel(currentAgent.ai_model) }}</p>
-                </div>
-
-                <div class="space-y-1">
-                  <p class="text-sm font-medium text-gray-400">Tom de Voz</p>
-                  <p class="text-white font-semibold">{{ getToneOfVoiceLabel(currentAgent.tone_of_voice) }}</p>
-                </div>
 
                 <div class="space-y-1">
                   <p class="text-sm font-medium text-gray-400">Tokens Usados</p>
@@ -186,8 +167,8 @@ const healthStatus = computed(() => {
               <div v-if="currentAgent.whatsapp_number" class="space-y-4">
                 <div class="flex items-center justify-between p-4 rounded-lg border border-border bg-background-base">
                   <div>
-                    <p class="text-white font-semibold text-lg">{{ currentAgent.whatsapp_number.display_name }}</p>
-                    <p class="text-gray-400 text-sm mt-1">{{ formatWhatsappNumber(currentAgent.whatsapp_number.phone_number) }}</p>
+                    <p class="text-white font-semibold text-lg">Nome de Exibição: {{ currentAgent.whatsapp_number.display_name }}</p>
+                    <p class="text-gray-400 text-sm mt-1">Número Cadastrado: {{ formatWhatsappNumber(currentAgent.whatsapp_number.phone_number) }}</p>
                   </div>
                   <span
                       class="px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2"
@@ -298,7 +279,7 @@ const healthStatus = computed(() => {
                     class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-background-base transition-colors border border-transparent hover:border-border"
                     @click="router.push(`/clientes/${contact.id}`)"
                 >
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                  <div class="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
                     {{ contact.name?.charAt(0).toUpperCase() || '?' }}
                   </div>
                   <div class="flex-1 min-w-0 text-left">
