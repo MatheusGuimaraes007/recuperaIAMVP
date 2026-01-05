@@ -23,4 +23,11 @@ onUnmounted(() => {
 
 <template>
   <router-view />
+  <Toaster
+      position="top-right"
+      :duration="4000"
+      :close-button="true"
+      rich-colors
+      :theme="'dark'"
+  />
 </template>

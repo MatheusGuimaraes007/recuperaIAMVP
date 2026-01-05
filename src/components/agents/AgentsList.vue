@@ -1,107 +1,95 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAgents } from '../../composables/useAgents';
-import AgentsFilters from './AgentsFilters.vue';
-import AgentsTable from './AgentsTable.vue';
-import Card from '../../shared/Card.vue';
-import LoadingState from '../../shared/LoadingState.vue';
-import EmptyState from '../../shared/EmptyState.vue';
-import Pagination from '../../shared/Pagination.vue';
-import Navbar from '../../shared/Navbar.vue';
-import Button from '../../shared/Button.vue';
-import { PAGINATION } from '../../utils/constants';
-import { Bot, Plus, AlertCircle } from 'lucide-vue-next';
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { Bot, Plus, Edit2, Trash2 } from 'lucide-vue-next'
+import {useListManagement} from "../../composables/lists/useListManagement.js";
+import {useAgents} from "../../composables/useAgents.js";
+import {Navbar} from "../organisms/Navigation/index.js";
+import Button from "../atoms/Button/Button.vue";
+import {BaseFilters} from "../organisms/Filters/index.js";
+import {DataTable} from "../organisms/Tables/index.js";
+import Pagination from "../atoms/Pagination/Pagination.vue";
 
-const router = useRouter();
+const router = useRouter()
+const { fetchAgents, deleteAgent, getAgentsMetrics, formatTokens, getAIModelLabel } = useAgents()
 
+// ✅ Código de lista, paginação, busca agora é 1 linha!
 const {
-  agents,
+  items: agents,
   loading,
-  error,
   totalCount,
-  hasAgents,
-  getAgentsMetrics,
-  fetchAgents,
-  deleteAgent,
-  clearAgents,
-} = useAgents();
+  currentPage,
+  totalPages,
+  itemsPerPage,
+  isEmpty,
+  handleSearch,
+  handlePageChange,
+  clearFilters,
+  refresh
+} = useListManagement({
+  fetchFn: fetchAgents,
+  itemsPerPage: 12
+})
 
-const currentPage = ref(PAGINATION.DEFAULT_PAGE);
-const itemsPerPage = PAGINATION.ITEMS_PER_PAGE;
-const currentSearch = ref('');
+// ✅ Métricas formatadas para o BaseFilters
+const metricsArray = computed(() => {
+  const metrics = getAgentsMetrics.value
+  return [
+    {
+      label: 'Total de Agentes',
+      value: metrics.total || 0,
+      icon: 'users',
+      variant: 'blue'
+    },
+    {
+      label: 'Agentes Ativos',
+      value: metrics.activeAgents || 0,
+      icon: 'check-circle',
+      variant: 'green'
+    },
+    {
+      label: 'Tokens Usados',
+      value: formatTokens(metrics.totalTokens || 0),
+      icon: 'zap',
+      variant: 'purple'
+    },
+    {
+      label: 'Custo Total',
+      value: `$${metrics.totalCost || 0}`,
+      icon: 'dollar-sign',
+      variant: 'orange'
+    }
+  ]
+})
 
-onMounted(async () => {
-  await loadAgents();
-});
+// ✅ Configuração de busca
+const searchConfig = {
+  enabled: true,
+  placeholder: 'Buscar por nome do agente...',
+  debounce: 500
+}
 
-const loadAgents = async (filters = {}) => {
-  const filterParams = {
-    page: currentPage.value,
-    limit: itemsPerPage,
-    ...filters
-  };
+// ✅ Configuração das colunas da tabela
+const columns = [
+  { key: 'name', label: 'Agente', sortable: true, icon: Bot },
+  { key: 'user.name', label: 'Cliente', sortable: false },
+  { key: 'whatsapp_number.status', label: 'WhatsApp', sortable: false },
+  { key: 'ai_model', label: 'Modelo IA', sortable: false },
+  { key: 'token_used', label: 'Tokens', sortable: true },
+  { key: 'created_at', label: 'Criado em', sortable: true },
+  { key: 'actions', label: 'Ações', align: 'right' }
+]
 
-  if (currentSearch.value && currentSearch.value.trim() !== '') {
-    filterParams.search = currentSearch.value.trim();
-  }
-
-  await fetchAgents(filterParams);
-};
-
-const handleSearch = async (searchTerm) => {
-  currentPage.value = 1;
-  currentSearch.value = searchTerm || '';
-
-  await loadAgents({
-    search: searchTerm
-  });
-};
-
-const handleClearFilters = async () => {
-  currentPage.value = 1;
-  currentSearch.value = '';
-
-  clearAgents();
-  await loadAgents();
-};
-
-const handlePageChange = async (page) => {
-  currentPage.value = page;
-  await loadAgents();
-};
-
-const handleCreateAgent = () => {
-  router.push('/admin/agents/novo');
-};
-
-const handleEditAgent = (agent) => {
-  router.push(`/admin/agents/${agent.id}/editar`);
-};
+// ✅ Handlers
+const handleCreateAgent = () => router.push('/admin/agents/novo')
+const handleEditAgent = (agent) => router.push(`/admin/agents/${agent.id}/editar`)
+const handleRowClick = (agent) => router.push(`/admin/agents/${agent.id}`)
 
 const handleDeleteAgent = async (agent) => {
-  if (!confirm(`Tem certeza que deseja deletar o agente "${agent.name}"?`)) {
-    return;
-  }
-
-  const result = await deleteAgent(agent.id);
-
-  if (result.success) {
-    await loadAgents();
-  }
-};
-
-const totalPages = computed(() => {
-  return Math.ceil(totalCount.value / itemsPerPage);
-});
-
-const showEmptyState = computed(() => {
-  return !loading.value && !hasAgents.value;
-});
-
-const hasActiveFilters = computed(() => {
-  return currentSearch.value !== '';
-});
+  if (!confirm(`Deletar "${agent.name}"?`)) return
+  const result = await deleteAgent(agent.id)
+  if (result.success) refresh()
+}
 </script>
 
 <template>
@@ -112,102 +100,96 @@ const hasActiveFilters = computed(() => {
       <div class="max-w-[1600px] mx-auto">
 
         <!-- Header -->
-        <Card padding="lg" class="mb-8 relative overflow-hidden">
-          <div class="absolute inset-0 opacity-5">
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,_white_1px,_transparent_0)] bg-[length:40px_40px]"></div>
+        <div class="flex items-center justify-between mb-8 p-6 rounded-xl bg-background-card border border-border">
+          <div>
+            <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+              <Bot :size="32" class="text-primary" />
+              Gestão de Agentes IA
+            </h1>
+            <p class="text-gray-400 text-sm mt-2">
+              Configure e gerencie seus assistentes virtuais
+            </p>
           </div>
-
-          <div class="relative flex items-center justify-between">
-            <div>
-              <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <Bot :size="24" class="text-white" />
-                </div>
-                <h1 class="text-3xl font-bold text-white">
-                  Gestão de Agentes IA
-                </h1>
-              </div>
-              <p class="text-gray-400 text-sm ml-15">
-                Configure e gerencie seus assistentes virtuais
-              </p>
-            </div>
-
-            <Button
-                @click="handleCreateAgent"
-                variant="primary"
-                class="flex items-center gap-2"
-            >
-              <Plus :size="20" />
-              <span>Novo Agente</span>
-            </Button>
-          </div>
-        </Card>
-
-        <!-- Filtros -->
-        <div class="mb-6">
-          <AgentsFilters
-              :loading="loading"
-              :metrics="getAgentsMetrics"
-              @search="handleSearch"
-              @clear="handleClearFilters"
-          />
+          <Button variant="primary" @click="handleCreateAgent">
+            <Plus :size="20" />
+            <span>Novo Agente</span>
+          </Button>
         </div>
 
-        <!-- Error State -->
-        <Card v-if="error" padding="md" class="mb-6">
-          <div
-              class="p-4 rounded-lg border flex items-start gap-3"
-              style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)"
-          >
-            <svg
-                class="w-5 h-5 shrink-0 mt-0.5"
-                style="color: var(--color-text2)"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-            >
-              <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clip-rule="evenodd"
-              />
-            </svg>
-            <div>
-              <p class="text-sm font-medium text-status-error">
-                Erro ao carregar dados
-              </p>
-              <p class="text-sm mt-1 text-status-error opacity-80">
-                {{ error }}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <!-- Loading State -->
-        <LoadingState
-            v-if="loading && !hasAgents"
-            message="Carregando agentes..."
+        <!-- ✅ BaseFilters -->
+        <BaseFilters
+            :loading="loading"
+            :metrics="metricsArray"
+            :search-config="searchConfig"
+            @search="handleSearch"
+            @clear="clearFilters"
         />
 
-        <!-- Empty State -->
-        <EmptyState
-            v-else-if="showEmptyState"
-            :title="hasActiveFilters ? 'Nenhum agente encontrado' : 'Nenhum agente cadastrado'"
-            :message="hasActiveFilters ? 'Tente ajustar os filtros ou a busca' : 'Crie seu primeiro agente IA para começar'"
-            icon="bot"
-            :action-label="hasActiveFilters ? 'Limpar filtros' : 'Criar Agente'"
-            @action="hasActiveFilters ? handleClearFilters() : handleCreateAgent()"
-        />
-
-        <!-- Table -->
-        <AgentsTable
-            v-else
-            :agents="agents"
-            @agent-click="(agent) => router.push(`/agentes/${agent.id}`)"
-            @edit-agent="handleEditAgent"
-            @delete-agent="handleDeleteAgent"
+        <!-- ✅ DataTable -->
+        <DataTable
+            :data="agents"
+            :columns="columns"
+            :loading="loading"
+            :empty-message="isEmpty ? 'Nenhum agente encontrado' : ''"
+            @row-click="handleRowClick"
         >
-          <template #pagination>
+          <!-- Custom cells -->
+          <template #cell-name="{ row }">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold">
+                {{ row.name?.charAt(0) }}
+              </div>
+              <div>
+                <p class="text-white font-semibold">{{ row.name }}</p>
+                <p v-if="row.function" class="text-xs text-gray-400">{{ row.function }}</p>
+              </div>
+            </div>
+          </template>
+
+          <template #cell-user.name="{ row }">
+            <span class="text-sm text-white">{{ row.user?.name || '-' }}</span>
+          </template>
+
+          <template #cell-whatsapp_number.status="{ row }">
+            <span v-if="row.whatsapp_number" class="px-2 py-1 rounded text-xs font-medium bg-green-500/10 text-green-400">
+              {{ row.whatsapp_number.display_name }}
+            </span>
+            <span v-else class="text-sm text-gray-500">-</span>
+          </template>
+
+          <template #cell-ai_model="{ row }">
+            <span class="text-sm text-white">{{ getAIModelLabel(row.ai_model) }}</span>
+          </template>
+
+          <template #cell-token_used="{ row }">
+            <span class="text-sm text-white">{{ formatTokens(row.token_used) }}</span>
+          </template>
+
+          <template #cell-created_at="{ row }">
+            <span class="text-sm text-gray-400">{{ new Date(row.created_at).toLocaleDateString() }}</span>
+          </template>
+
+          <template #cell-actions="{ row }">
+            <div class="flex items-center justify-end gap-2">
+              <button
+                  @click.stop="handleEditAgent(row)"
+                  class="p-2 rounded-lg hover:bg-primary/10 text-primary transition-colors"
+              >
+                <Edit2 :size="16" />
+              </button>
+              <button
+                  @click.stop="handleDeleteAgent(row)"
+                  class="p-2 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors"
+              >
+                <Trash2 :size="16" />
+              </button>
+            </div>
+          </template>
+
+          <!-- Pagination -->
+          <template #footer>
             <Pagination
+                v-if="!isEmpty"
                 :current-page="currentPage"
                 :total-pages="totalPages"
                 :total-count="totalCount"
@@ -215,11 +197,8 @@ const hasActiveFilters = computed(() => {
                 @page-change="handlePageChange"
             />
           </template>
-        </AgentsTable>
+        </DataTable>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-</style>
