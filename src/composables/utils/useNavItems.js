@@ -4,64 +4,59 @@ import {useAuth} from "../useAuth.js";
 export function useNavItems() {
     const { isAdmin } = useAuth()
 
-    const adminNavItems = [
-        {
-            name: 'Dashboard',
-            path: '/admin/dashboard',
-            icon: 'LayoutDashboard'
-        },
-        {
-            name: 'Clientes',
-            path: '/admin/clientes',
-            icon: 'Users'
-        },
-        {
-            name: 'Oportunidades',
-            path: '/admin/oportunidades',
-            icon: 'Briefcase'
-        },
-        {
-            name: 'Agentes IA',
-            path: '/admin/agents',
-            icon: 'Bot'
-        },
-        {
-            name: 'Produtos',
-            path: '/admin/produtos',
-            icon: 'Package'
-        },
-        {
-            name: 'Base de Conhecimento',
-            path: '/admin/conhecimento',
-            icon: 'BookOpen'
-        }
-    ]
-
-    const clientNavItems = [
-        {
-            name: 'Dashboard',
-            path: '/dashboard',
-            icon: 'LayoutDashboard'
-        },
-        {
-            name: 'Oportunidades',
-            path: '/oportunidades',
-            icon: 'Briefcase'
-        },
-        {
-            name: 'Clientes',
-            path: '/clientes',
-            icon: 'Users'
-        },
-        {
-            name: 'Base de Conhecimento',
-            path: '/conhecimento',
-            icon: 'BookOpen'
-        }
-    ]
-
     const navItems = computed(() => {
-        return isAdmin.value ? adminNavItems : clientNavItems
+        if (isAdmin.value) {
+            return [
+                {
+                    name: 'Dashboard',
+                    path: '/admin/dashboard',
+                    icon: 'dashboard'
+                },
+                {
+                    name: 'Cadastro',
+                    path: '/admin/cadastro',
+                    icon: 'user-plus'
+                },
+                {
+                    name: 'Clientes',
+                    path: '/admin/clientes',
+                    icon: 'users-cog'
+                },
+                {
+                    name: 'Agents',
+                    path: '/admin/agents',
+                    icon: 'robot'
+                },
+                {
+                    name: 'Produtos',
+                    path: '/admin/produtos',
+                    icon: 'box'
+                },
+                {
+                    name: 'Conhecimento',
+                    path: '/admin/conhecimento',
+                    icon: 'book'
+                }
+            ]
+        }
+
+        return [
+            {
+                name: 'Oportunidades',
+                path: '/oportunidades',
+                icon: 'clipboard'
+            },
+            {
+                name: 'Clientes',
+                path: '/clientes',
+                icon: 'users'
+            },
+            {
+                name: 'Base de Conhecimento',
+                path: '/conhecimento',
+                icon: 'book'
+            }
+        ]
     })
 
     return {
