@@ -1,0 +1,215 @@
+/* =============================================================================
+   RECUPERA.IA - ESTILOS GLOBAIS
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   TAILWIND BASE
+   ----------------------------------------------------------------------------- */
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* -----------------------------------------------------------------------------
+   CUSTOM CSS VARIABLES (Conectadas ao Tailwind Config)
+   ----------------------------------------------------------------------------- */
+:root {
+  /* Cores Primárias - Puxando do tailwind.config.js */
+  --color-primary: theme('colors.primary.DEFAULT');
+  --color-primary-dark: theme('colors.primary.700');
+  --color-primary-light: theme('colors.primary.50');
+
+  /* Cores de Texto */
+  --color-text-primary: theme('colors.gray.900');
+  --color-text-secondary: theme('colors.gray.600');
+  --color-text-tertiary: theme('colors.gray.400');
+  --color-white: #FFFFFF;
+
+  /* Cores Semânticas */
+  --color-success: theme('colors.success.DEFAULT');
+  --color-success-dark: theme('colors.success.700');
+  --color-warning: theme('colors.warning.DEFAULT');
+  --color-error: theme('colors.error.DEFAULT');
+  --color-error-600: theme('colors.error.600');
+  --color-info: theme('colors.info.DEFAULT');
+
+  /* Backgrounds */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: theme('colors.gray.50');
+  --color-bg-tertiary: theme('colors.gray.100');
+  --color-gray-200: theme('colors.gray.200');
+
+  /* Borders */
+  --color-border-light: theme('colors.gray.100');
+  --color-border-medium: theme('colors.gray.200');
+  --color-border-dark: theme('colors.gray.300');
+
+  /* Espaçamentos (Spacing) */
+  --spacing-1: theme('spacing.1');
+  --spacing-2: theme('spacing.2');
+  --spacing-3: theme('spacing.3');
+  --spacing-4: theme('spacing.4');
+  --spacing-6: theme('spacing.6');
+  --spacing-8: theme('spacing.8');
+  --spacing-12: theme('spacing.12');
+  --spacing-16: theme('spacing.16');
+
+  /* Sombras */
+  --shadow-sm: theme('boxShadow.sm');
+  --shadow-md: theme('boxShadow.md');
+  --shadow-lg: theme('boxShadow.lg');
+  --shadow-xl: theme('boxShadow.xl');
+  --shadow-focus: 0 0 0 2px theme('colors.primary.100');
+
+  /* Border Radius */
+  --radius-sm: theme('borderRadius.sm');
+  --radius-md: theme('borderRadius.md');
+  --radius-lg: theme('borderRadius.lg');
+  --radius-full: theme('borderRadius.full');
+
+  /* Tipografia */
+  --font-size-sm: theme('fontSize.sm[0]');
+  --font-size-base: theme('fontSize.base[0]');
+  --font-size-lg: theme('fontSize.lg[0]');
+  --font-size-xl: theme('fontSize.xl[0]');
+
+  /* Transitions */
+  --transition-fast: theme('transitionDuration.fast');
+  --transition-normal: theme('transitionDuration.normal');
+  --transition-slow: theme('transitionDuration.slow');
+
+  /* Z-index layers */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal: 1050;
+  --z-tooltip: 1070;
+}
+
+/* -----------------------------------------------------------------------------
+   RESET E BASE STYLES
+   ----------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  /* Fontes e Tamanhos puxados do Tema */
+  font-family: theme('fontFamily.sans');
+  font-size: theme('fontSize.base[0]');
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+}
+
+/* -----------------------------------------------------------------------------
+   TYPOGRAPHY
+   ----------------------------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast) ease;
+  cursor: pointer;
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* -----------------------------------------------------------------------------
+   SCROLLBAR CUSTOMIZATION (Webkit)
+   ----------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-medium);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-dark);
+}
+
+/* -----------------------------------------------------------------------------
+   FOCUS STYLES (Acessibilidade)
+   ----------------------------------------------------------------------------- */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   UTILITIES & ANIMATIONS
+   ----------------------------------------------------------------------------- */
+
+/* Containers Responsivos (Opcional, pois o Tailwind já tem a classe .container) */
+.r-container-fluid {
+  width: 100%;
+  padding-right: var(--spacing-4);
+  padding-left: var(--spacing-4);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* Utilitários de Transição */
+.smooth-transition {
+  transition: all var(--transition-normal) ease;
+}
+
+/* Animações (Baseadas no tailwind config ou personalizadas) */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-normal) ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp var(--transition-normal) ease-out;
+}
+
+/* -----------------------------------------------------------------------------
+   PRINT STYLES
+   ----------------------------------------------------------------------------- */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
