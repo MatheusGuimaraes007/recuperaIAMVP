@@ -6,7 +6,6 @@ import RIconButton from '@components/atoms/buttons/RIconButton.vue'
 const props = defineProps({
   modelValue: { type: String, default: '' },
   placeholder: { type: String, default: 'Buscar...' },
-  loading: { type: Boolean, default: false },
   debounce: { type: Number, default: 300 }
 })
 
@@ -18,7 +17,6 @@ let timeout = null
 const handleInput = (val) => {
   internalValue.value = val
 
-  // Debounce logic
   if (timeout) clearTimeout(timeout)
   timeout = setTimeout(() => {
     emit('update:modelValue', val)
@@ -26,38 +24,33 @@ const handleInput = (val) => {
   }, props.debounce)
 }
 
-const clearSearch = () => {
+const clear = () => {
   internalValue.value = ''
   emit('update:modelValue', '')
   emit('search', '')
 }
 
-// Sync external changes
 watch(() => props.modelValue, (newVal) => {
-  if (newVal !== internalValue.value) {
-    internalValue.value = newVal
-  }
+  if (newVal !== internalValue.value) internalValue.value = newVal
 })
 </script>
 
 <template>
-  <div class="r-search-bar">
+  <div class="r-search-filter">
     <RInput
       :model-value="internalValue"
       :placeholder="placeholder"
       icon-left="search"
-      :loading="loading"
-      class="r-search-bar__input"
+      class="r-search-filter__input"
       @update:model-value="handleInput"
     >
       <template #icon-right>
         <RIconButton
-          v-if="internalValue && !loading"
+          v-if="internalValue"
           icon="x"
           variant="ghost"
           size="sm"
-          @click="clearSearch"
-          aria-label="Limpar busca"
+          @click="clear"
         />
       </template>
     </RInput>
@@ -65,8 +58,5 @@ watch(() => props.modelValue, (newVal) => {
 </template>
 
 <style scoped>
-.r-search-bar {
-  width: 100%;
-  max-width: 400px; /* Opcional: limitar largura */
-}
+.r-search-filter { width: 100%; min-width: 200px; }
 </style>

@@ -1,71 +1,56 @@
 <script setup>
-/**
- * RPasswordInput - Input de senha com botão show/hide
- */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import RInput from '@components/atoms/inputs/RInput.vue'
 import RIconButton from '@components/atoms/buttons/RIconButton.vue'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
-  label: { type: String, default: 'Senha' },
+  label: { type: String, default: null },
   placeholder: { type: String, default: '••••••••' },
-  error: { type: String, default: null },
-  required: { type: Boolean, default: false }
+  error: { type: [Boolean, String], default: false },
+  disabled: { type: Boolean, default: false },
+  required: { type: Boolean, default: false },
+  name: { type: String, default: 'password' }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'blur'])
 
 const showPassword = ref(false)
 
-const togglePassword = () => {
-  showPassword.value = !showPassword.value
-}
+const inputType = computed(() => showPassword.value ? 'text' : 'password')
+const toggleIcon = computed(() => showPassword.value ? 'eye-off' : 'eye')
 
-const handleInput = (value) => {
-  emit('update:modelValue', value)
+const toggleVisibility = () => {
+  if (!props.disabled) {
+    showPassword.value = !showPassword.value
+  }
 }
 </script>
 
 <template>
-  <div class="r-password-input">
-    <RInput
-      :model-value="modelValue"
-      :type="showPassword ? 'text' : 'password'"
-      :label="label"
-      :placeholder="placeholder"
-      :error="error"
-      :required="required"
-      @update:model-value="handleInput"
-    >
-      <template #icon-right>
-        <button
-          type="button"
-          class="r-password-input__toggle"
-          @click="togglePassword"
-        >
-          {{ showPassword ? '👁️' : '👁️‍🗨️' }}
-        </button>
-      </template>
-    </RInput>
-  </div>
+  <RInput
+    :model-value="modelValue"
+    :type="inputType"
+    :label="label"
+    :placeholder="placeholder"
+    :error="error"
+    :disabled="disabled"
+    :required="required"
+    :name="name"
+    icon-left="lock"
+    @update:model-value="$emit('update:modelValue', $event)"
+    @blur="$emit('blur', $event)"
+  >
+    <template #icon-right>
+      <RIconButton
+        :icon="toggleIcon"
+        variant="ghost"
+        size="sm"
+        :disabled="disabled"
+        tabindex="-1"
+        @click="toggleVisibility"
+        aria-label="Alternar visibilidade da senha"
+      />
+    </template>
+  </RInput>
 </template>
-
-<style scoped>
-.r-password-input {
-  width: 100%;
-}
-
-.r-password-input__toggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  font-size: 18px;
-  transition: opacity var(--duration-fast);
-}
-
-.r-password-input__toggle:hover {
-  opacity: 0.7;
-}
-</style>

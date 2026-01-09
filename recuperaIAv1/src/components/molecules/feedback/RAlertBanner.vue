@@ -1,108 +1,101 @@
 <script setup>
-/**
- * RAlertBanner - Banner de alerta
- */
+import { computed } from 'vue'
+import RIcon from '@components/atoms/icons/RIcon.vue'
 import RText from '@components/atoms/typography/RText.vue'
-import RButton from '@components/atoms/buttons/RButton.vue'
 import RIconButton from '@components/atoms/buttons/RIconButton.vue'
 
 const props = defineProps({
-  message: { type: String, required: true },
   variant: {
     type: String,
     default: 'info',
-    validator: (v) => ['info', 'success', 'warning', 'error'].includes(v)
+    validator: v => ['info', 'success', 'warning', 'error'].includes(v)
   },
-  closeable: { type: Boolean, default: true },
-  actionLabel: { type: String, default: null }
+  title: { type: String, default: null },
+  closable: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['close', 'action'])
+const emit = defineEmits(['close'])
 
-const iconMap = {
-  info: 'ℹ️',
-  success: '✅',
-  warning: '⚠️',
-  error: '❌'
+const icons = {
+  info: 'info',
+  success: 'check-circle',
+  warning: 'alert-triangle',
+  error: 'alert-circle'
 }
+
+const alertClasses = computed(() => [
+  'r-alert',
+  `r-alert--${props.variant}`
+])
 </script>
 
 <template>
-  <div :class="['r-alert-banner', `r-alert-banner--${variant}`]">
-    <span class="r-alert-banner__icon">{{ iconMap[variant] }}</span>
+  <div :class="alertClasses" role="alert">
+    <div class="r-alert__icon">
+      <RIcon :name="icons[variant]" size="20" />
+    </div>
 
-    <RText size="sm" class="r-alert-banner__message">{{ message }}</RText>
+    <div class="r-alert__content">
+      <RText v-if="title" weight="semibold" class="r-alert__title">{{ title }}</RText>
+      <div class="r-alert__description">
+        <slot />
+      </div>
+    </div>
 
-    <div class="r-alert-banner__actions">
-      <RButton
-        v-if="actionLabel"
-        size="sm"
-        variant="ghost"
-        @click="emit('action')"
-      >
-        {{ actionLabel }}
-      </RButton>
-
+    <div v-if="closable" class="r-alert__action">
       <RIconButton
-        v-if="closeable"
+        icon="x"
         variant="ghost"
         size="sm"
-        aria-label="Fechar"
-        @click="emit('close')"
-      >
-        ✕
-      </RIconButton>
+        @click="$emit('close')"
+      />
     </div>
   </div>
 </template>
 
 <style scoped>
-.r-alert-banner {
+.r-alert {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-3);
-  padding: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
   border-radius: var(--radius-md);
-  border-left: 4px solid;
+  border: 1px solid transparent;
+  margin-bottom: var(--spacing-4);
 }
 
-.r-alert-banner--info {
-  background-color: var(--color-info-bg);
-  border-left-color: var(--color-info);
-  color: var(--color-info-700);
-}
-
-.r-alert-banner--success {
-  background-color: var(--color-success-bg);
-  border-left-color: var(--color-success);
-  color: var(--color-success-700);
-}
-
-.r-alert-banner--warning {
-  background-color: var(--color-warning-bg);
-  border-left-color: var(--color-warning);
-  color: var(--color-warning-700);
-}
-
-.r-alert-banner--error {
-  background-color: var(--color-error-bg);
-  border-left-color: var(--color-error);
-  color: var(--color-error-700);
-}
-
-.r-alert-banner__icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.r-alert-banner__message {
+.r-alert__content {
   flex: 1;
+  font-size: var(--font-size-sm);
+  color: inherit;
 }
 
-.r-alert-banner__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  margin-left: auto;
+.r-alert__title {
+  margin-bottom: var(--spacing-1);
+}
+
+/* Variants */
+.r-alert--info {
+  background-color: var(--color-info-50, #EFF6FF);
+  border-color: var(--color-info-200, #BFDBFE);
+  color: var(--color-info-800, #1E40AF);
+}
+
+.r-alert--success {
+  background-color: var(--color-success-50, #ECFDF5);
+  border-color: var(--color-success-200, #A7F3D0);
+  color: var(--color-success-800, #065F46);
+}
+
+.r-alert--warning {
+  background-color: var(--color-warning-50, #FFFBEB);
+  border-color: var(--color-warning-200, #FDE68A);
+  color: var(--color-warning-800, #92400E);
+}
+
+.r-alert--error {
+  background-color: var(--color-error-50, #FEF2F2);
+  border-color: var(--color-error-200, #FECACA);
+  color: var(--color-error-800, #991B1B);
 }
 </style>

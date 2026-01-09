@@ -1,36 +1,36 @@
 <script setup>
-/**
- * REmptyState - Estado vazio
- */
+import RIcon from '@components/atoms/icons/RIcon.vue'
 import RHeading from '@components/atoms/typography/RHeading.vue'
 import RText from '@components/atoms/typography/RText.vue'
 import RButton from '@components/atoms/buttons/RButton.vue'
 
-const props = defineProps({
-  icon: { type: String, default: '📭' },
+defineProps({
+  icon: { type: String, default: 'inbox' },
   title: { type: String, required: true },
   description: { type: String, default: null },
   actionLabel: { type: String, default: null }
 })
 
-const emit = defineEmits(['action'])
+defineEmits(['action'])
 </script>
 
 <template>
   <div class="r-empty-state">
-    <div class="r-empty-state__icon">{{ icon }}</div>
-    <RHeading level="3" align="center">{{ title }}</RHeading>
-    <RText v-if="description" color="secondary" align="center" class="r-empty-state__description">
+    <div class="r-empty-state__icon-wrapper">
+      <RIcon :name="icon" size="48" class="r-empty-state__icon" />
+    </div>
+
+    <RHeading level="4" class="r-empty-state__title">{{ title }}</RHeading>
+
+    <RText v-if="description" color="secondary" align="center" class="r-empty-state__desc">
       {{ description }}
     </RText>
-    <RButton
-      v-if="actionLabel"
-      variant="primary"
-      @click="emit('action')"
-      class="r-empty-state__action"
-    >
-      {{ actionLabel }}
-    </RButton>
+
+    <div v-if="actionLabel" class="r-empty-state__action">
+      <RButton variant="primary" @click="$emit('action')">
+        {{ actionLabel }}
+      </RButton>
+    </div>
   </div>
 </template>
 
@@ -40,18 +40,28 @@ const emit = defineEmits(['action'])
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-12);
+  padding: var(--spacing-8) var(--spacing-4);
   text-align: center;
 }
 
-.r-empty-state__icon {
-  font-size: 64px;
+.r-empty-state__icon-wrapper {
+  width: 80px;
+  height: 80px;
+  background-color: var(--bg-secondary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: var(--spacing-4);
 }
 
-.r-empty-state__description {
-  margin-top: var(--spacing-2);
+.r-empty-state__icon {
+  color: var(--text-tertiary);
+}
+
+.r-empty-state__desc {
   max-width: 400px;
+  margin-top: var(--spacing-2);
 }
 
 .r-empty-state__action {
