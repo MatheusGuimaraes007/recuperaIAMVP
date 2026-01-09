@@ -40,7 +40,7 @@ const columns = [
         size="sm"
         class="cursor-pointer"
         @click.stop="$emit('toggle-status', item)"
-      />
+        label=""/>
     </template>
 
     <template #cell-actions="{ item }">

@@ -1,41 +1,64 @@
 <script setup>
 /**
- * RIcon - Wrapper para ícones Lucide
- * Requer: lucide-vue-next
+ * RLogo - Logo da aplicação
  */
-import { computed } from 'vue'
-import * as icons from 'lucide-vue-next'
+import { computed } from 'vue' // ✅ Import corrigido
 
 const props = defineProps({
-  name: { type: String, required: true },
   size: {
-    type: [String, Number],
-    default: 24
+    type: String,
+    default: 'md',
+    validator: (v) => ['sm', 'md', 'lg', 'xl'].includes(v)
   },
-  color: { type: String, default: 'currentColor' },
-  strokeWidth: { type: [String, Number], default: 2 }
+  variant: {
+    type: String,
+    default: 'full',
+    validator: (v) => ['full', 'icon', 'text'].includes(v)
+  }
 })
 
-const component = computed(() => {
-  const iconName = props.name.charAt(0).toUpperCase() + props.name.slice(1)
-  return icons[iconName] || icons.HelpCircle
-})
+const sizeMap = {
+  sm: { height: 24, width: 100 },
+  md: { height: 32, width: 140 },
+  lg: { height: 48, width: 200 },
+  xl: { height: 64, width: 280 }
+}
+
+const dimensions = computed(() => sizeMap[props.size])
 </script>
 
 <template>
-  <component
-    :is="component"
-    :size="size"
-    :color="color"
-    :stroke-width="strokeWidth"
-    class="r-icon"
-  />
+  <div class="r-logo" :style="{ height: `${dimensions.height}px` }">
+    <svg
+        v-if="variant !== 'text'"
+        :width="dimensions.height"
+        :height="dimensions.height"
+        viewBox="0 0 32 32"
+        fill="none"
+    >
+      <rect width="32" height="32" rx="8" fill="var(--color-primary)" />
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="20" font-weight="bold">
+        R
+      </text>
+    </svg>
+
+    <span v-if="variant !== 'icon'" class="r-logo__text">
+      Recupera.IA
+    </span>
+  </div>
 </template>
 
 <style scoped>
-.r-icon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
+.r-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.r-logo__text {
+  font-size: calc(var(--font-size-base) * 1.2);
 }
 </style>

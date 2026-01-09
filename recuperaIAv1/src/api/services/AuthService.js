@@ -1,8 +1,11 @@
 /**
  * AuthService - Serviço de Autenticação
  *
- * Gerencia autenticação de usuários usando Supabase Auth.
+ * Gerencia autenticação de usuários usando adapter pattern.
  * Integrado com TanStack Query para cache e state management.
+ *
+ * @version 3.0.0
+ * @architecture Atomic Design + TanStack Query
  */
 
 import { getAdapter } from '../adapters'
@@ -10,8 +13,12 @@ import { getAdapter } from '../adapters'
 export class AuthService {
     constructor() {
         this.adapter = null
+        this.authStateListeners = []
     }
 
+    /**
+     * Garante que o adapter está inicializado
+     */
     async ensureAdapter() {
         if (!this.adapter) {
             this.adapter = await getAdapter()
@@ -25,35 +32,48 @@ export class AuthService {
 
     /**
      * Login com email e senha
+     *
+     * @param {string} email - Email do usuário
+     * @param {string} password - Senha do usuário
+     * @returns {Promise<{success: boolean, session?: object, user?: object, error?: string}>}
      */
     async login(email, password) {
         const adapter = await this.ensureAdapter()
 
         try {
-            const result = await adapter.auth.signIn(email, password)
+            console.log('🔐 Iniciando login...')
 
-            if (result.error) {
-                throw result.error
+            // 1. Autenticar no Supabase Auth
+            const authResult = await adapter.auth.signIn(email, password)
+
+            if (authResult.error) {
+                throw authResult.error
             }
 
-            // Buscar dados do usuário na tabela users
-            if (result.data?.user) {
-                const userData = await this.fetchUserData(result.data.user.id)
-
-                return {
-                    success: true,
-                    session: result.data.session,
-                    user: userData
-                }
+            if (!authResult.data?.session) {
+                throw new Error('Sessão não foi criada')
             }
+
+            console.log('✅ Autenticação realizada')
+
+            // 2. Buscar dados do usuário na tabela users
+            const userData = await this.fetchUserData(authResult.data.user.id)
+
+            if (!userData) {
+                console.warn('⚠️ Usuário autenticado mas não encontrado na tabela users')
+            }
+
+            console.log('✅ Login completo')
 
             return {
                 success: true,
-                session: result.data.session,
-                user: null
+                session: authResult.data.session,
+                user: userData
             }
 
         } catch (error) {
+            console.error('❌ Erro no login:', error)
+
             return {
                 success: false,
                 error: this.normalizeAuthError(error)
@@ -63,11 +83,30 @@ export class AuthService {
 
     /**
      * Registrar novo usuário
+     *
+     * @param {object} userData - Dados do usuário
+     * @param {string} userData.email - Email
+     * @param {string} userData.password - Senha
+     * @param {string} userData.name - Nome completo
+     * @param {string} [userData.phone] - Telefone (opcional)
+     * @param {string} [userData.role] - Role (default: 'user')
+     * @returns {Promise<{success: boolean, user?: object, error?: string}>}
      */
     async register(userData) {
         const adapter = await this.ensureAdapter()
 
         try {
+            console.log('📝 Iniciando registro...')
+
+            // Validações básicas
+            if (!userData.email || !userData.password || !userData.name) {
+                throw new Error('Email, senha e nome são obrigatórios')
+            }
+
+            if (userData.password.length < 6) {
+                throw new Error('A senha deve ter no mínimo 6 caracteres')
+            }
+
             // 1. Criar usuário no Supabase Auth
             const authResult = await adapter.auth.signUp(
                 userData.email,
@@ -84,19 +123,30 @@ export class AuthService {
                 throw authResult.error
             }
 
+            if (!authResult.data?.user) {
+                throw new Error('Usuário não foi criado no Auth')
+            }
+
+            console.log('✅ Usuário criado no Auth')
+
             // 2. Criar registro na tabela users
             const userRecord = await adapter.create('users', {
                 auth_uuid: authResult.data.user.id,
                 email: userData.email,
                 name: userData.name,
-                phone: userData.phone,
+                phone: userData.phone || null,
                 role: userData.role || 'user',
                 status: 'trial'
             })
 
             if (userRecord.error) {
+                // Se falhar ao criar na tabela, tentar deletar do Auth
+                console.error('❌ Erro ao criar na tabela users, limpando Auth...')
+                // TODO: Implementar rollback
                 throw userRecord.error
             }
+
+            console.log('✅ Registro completo')
 
             return {
                 success: true,
@@ -104,6 +154,8 @@ export class AuthService {
             }
 
         } catch (error) {
+            console.error('❌ Erro no registro:', error)
+
             return {
                 success: false,
                 error: this.normalizeAuthError(error)
@@ -113,18 +165,30 @@ export class AuthService {
 
     /**
      * Logout
+     *
+     * @returns {Promise<{success: boolean, error?: string}>}
      */
     async logout() {
         const adapter = await this.ensureAdapter()
 
         try {
+            console.log('🚪 Fazendo logout...')
+
             const result = await adapter.auth.signOut()
 
-            return {
-                success: !result.error,
-                error: result.error || null
+            if (result.error) {
+                throw result.error
             }
+
+            console.log('✅ Logout realizado')
+
+            return {
+                success: true
+            }
+
         } catch (error) {
+            console.error('❌ Erro no logout:', error)
+
             return {
                 success: false,
                 error: this.normalizeAuthError(error)
@@ -133,19 +197,32 @@ export class AuthService {
     }
 
     /**
-     * Recuperar senha
+     * Recuperar senha (enviar email)
+     *
+     * @param {string} email - Email para recuperação
+     * @returns {Promise<{success: boolean, message?: string, error?: string}>}
      */
     async resetPassword(email) {
         const adapter = await this.ensureAdapter()
 
         try {
+            console.log('📧 Enviando email de recuperação...')
+
+            if (!email) {
+                throw new Error('Email é obrigatório')
+            }
+
+            const redirectTo = `${window.location.origin}/reset-password`
+
             const result = await adapter.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`
+                redirectTo
             })
 
             if (result.error) {
                 throw result.error
             }
+
+            console.log('✅ Email enviado')
 
             return {
                 success: true,
@@ -153,6 +230,8 @@ export class AuthService {
             }
 
         } catch (error) {
+            console.error('❌ Erro ao resetar senha:', error)
+
             return {
                 success: false,
                 error: this.normalizeAuthError(error)
@@ -161,14 +240,23 @@ export class AuthService {
     }
 
     /**
-     * Atualizar senha
+     * Atualizar senha (com token de reset)
+     *
+     * @param {string} newPassword - Nova senha
+     * @returns {Promise<{success: boolean, message?: string, error?: string}>}
      */
     async updatePassword(newPassword) {
         const adapter = await this.ensureAdapter()
 
         try {
+            console.log('🔑 Atualizando senha...')
+
+            if (!newPassword) {
+                throw new Error('Nova senha é obrigatória')
+            }
+
             if (newPassword.length < 6) {
-                throw new Error('A senha deve ter no mínimo 6 caracteres.')
+                throw new Error('A senha deve ter no mínimo 6 caracteres')
             }
 
             const result = await adapter.auth.updateUser({
@@ -179,12 +267,16 @@ export class AuthService {
                 throw result.error
             }
 
+            console.log('✅ Senha atualizada')
+
             return {
                 success: true,
                 message: 'Senha atualizada com sucesso!'
             }
 
         } catch (error) {
+            console.error('❌ Erro ao atualizar senha:', error)
+
             return {
                 success: false,
                 error: this.normalizeAuthError(error)
@@ -192,8 +284,14 @@ export class AuthService {
         }
     }
 
+    // ============================================================================
+    // SESSÃO
+    // ============================================================================
+
     /**
      * Obter sessão atual
+     *
+     * @returns {Promise<{success: boolean, session?: object, error?: string}>}
      */
     async getSession() {
         const adapter = await this.ensureAdapter()
@@ -205,7 +303,10 @@ export class AuthService {
                 success: true,
                 session: result.data?.session || null
             }
+
         } catch (error) {
+            console.error('❌ Erro ao obter sessão:', error)
+
             return {
                 success: false,
                 session: null,
@@ -216,18 +317,31 @@ export class AuthService {
 
     /**
      * Renovar sessão
+     *
+     * @returns {Promise<{success: boolean, session?: object, error?: string}>}
      */
     async refreshSession() {
         const adapter = await this.ensureAdapter()
 
         try {
+            console.log('🔄 Renovando sessão...')
+
             const result = await adapter.auth.refreshSession()
+
+            if (result.error) {
+                throw result.error
+            }
+
+            console.log('✅ Sessão renovada')
 
             return {
                 success: true,
                 session: result.data?.session || null
             }
+
         } catch (error) {
+            console.error('❌ Erro ao renovar sessão:', error)
+
             return {
                 success: false,
                 session: null,
@@ -242,11 +356,19 @@ export class AuthService {
 
     /**
      * Buscar dados do usuário na tabela users
+     *
+     * @param {string} authUuid - UUID do usuário no Auth
+     * @returns {Promise<object|null>}
      */
     async fetchUserData(authUuid) {
         const adapter = await this.ensureAdapter()
 
         try {
+            if (!authUuid) {
+                console.warn('⚠️ authUuid não fornecido')
+                return null
+            }
+
             const result = await adapter.findOne('users', {
                 filters: { auth_uuid: authUuid }
             })
@@ -255,31 +377,50 @@ export class AuthService {
                 throw result.error
             }
 
-            return result.data
+            return result.data || null
+
         } catch (error) {
-            console.error('Erro ao buscar dados do usuário:', error)
+            console.error('❌ Erro ao buscar dados do usuário:', error)
             return null
         }
     }
 
     /**
      * Atualizar perfil do usuário
+     *
+     * @param {number} userId - ID do usuário na tabela users
+     * @param {object} data - Dados para atualizar
+     * @returns {Promise<{success: boolean, user?: object, error?: string}>}
      */
     async updateProfile(userId, data) {
         const adapter = await this.ensureAdapter()
 
         try {
-            const result = await adapter.update('users', userId, data)
+            console.log('✏️ Atualizando perfil...')
+
+            if (!userId) {
+                throw new Error('ID do usuário é obrigatório')
+            }
+
+            // Remover campos que não devem ser atualizados diretamente
+            const { id, auth_uuid, email, created_at, ...updateData } = data
+
+            const result = await adapter.update('users', userId, updateData)
 
             if (result.error) {
                 throw result.error
             }
 
+            console.log('✅ Perfil atualizado')
+
             return {
                 success: true,
                 user: result.data
             }
+
         } catch (error) {
+            console.error('❌ Erro ao atualizar perfil:', error)
+
             return {
                 success: false,
                 error: this.normalizeAuthError(error)
@@ -293,25 +434,50 @@ export class AuthService {
 
     /**
      * Verificar se email já existe
+     *
+     * @param {string} email - Email para verificar
+     * @returns {Promise<{exists: boolean, user?: object}>}
      */
     async checkEmailExists(email) {
         const adapter = await this.ensureAdapter()
 
         try {
+            if (!email) {
+                return { exists: false, user: null }
+            }
+
             const result = await adapter.findOne('users', {
                 filters: { email }
             })
 
             return {
                 exists: !!result.data,
-                user: result.data
+                user: result.data || null
             }
+
         } catch (error) {
-            return {
-                exists: false,
-                user: null
-            }
+            console.error('❌ Erro ao verificar email:', error)
+            return { exists: false, user: null }
         }
+    }
+
+    // ============================================================================
+    // AUTH STATE LISTENER
+    // ============================================================================
+
+    /**
+     * Escutar mudanças de autenticação
+     *
+     * @param {Function} callback - Callback (event, session) => void
+     * @returns {Function} Unsubscribe function
+     */
+    onAuthStateChange(callback) {
+        if (!this.adapter?.auth?.onAuthStateChange) {
+            console.warn('⚠️ onAuthStateChange não disponível no adapter')
+            return () => {}
+        }
+
+        return this.adapter.auth.onAuthStateChange(callback)
     }
 
     // ============================================================================
@@ -320,19 +486,20 @@ export class AuthService {
 
     /**
      * Normalizar erros de autenticação para mensagens amigáveis
+     *
+     * @param {Error|object} error - Erro original
+     * @returns {string} Mensagem amigável
      */
     normalizeAuthError(error) {
         const errorMessage = error?.message || error?.toString() || 'Erro desconhecido'
 
-        // Erros comuns de login
+        // Erros de login
         if (errorMessage.includes('Invalid login credentials')) {
             return 'Email ou senha incorretos. Tente novamente.'
         }
-
         if (errorMessage.includes('Email not confirmed')) {
             return 'Email não confirmado. Verifique sua caixa de entrada.'
         }
-
         if (errorMessage.includes('User not found')) {
             return 'Usuário não encontrado. Verifique o email digitado.'
         }
@@ -341,11 +508,9 @@ export class AuthService {
         if (error.code === '23505' || errorMessage.includes('already registered')) {
             return 'Este email já está cadastrado. Tente fazer login.'
         }
-
         if (errorMessage.includes('Password should be at least')) {
             return 'A senha deve ter no mínimo 6 caracteres.'
         }
-
         if (errorMessage.includes('Invalid email')) {
             return 'Email inválido. Verifique o formato.'
         }
@@ -355,26 +520,20 @@ export class AuthService {
             return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
         }
 
+        // Erros de sessão
+        if (errorMessage.includes('JWT expired') || errorMessage.includes('refresh_token')) {
+            return 'Sessão expirada. Faça login novamente.'
+        }
+
         // Erro genérico
         return errorMessage
     }
-
-    /**
-     * Setup de listener para mudanças de autenticação
-     */
-    onAuthStateChange(callback) {
-        const adapter = this.adapter
-
-        if (!adapter?.auth?.onAuthStateChange) {
-            console.warn('onAuthStateChange não disponível no adapter')
-            return () => {}
-        }
-
-        return adapter.auth.onAuthStateChange(callback)
-    }
 }
 
-// Export singleton
+// ============================================================================
+// EXPORT SINGLETON
+// ============================================================================
+
 export const authService = new AuthService()
 
 export default authService

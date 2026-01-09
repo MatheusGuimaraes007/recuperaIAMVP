@@ -134,8 +134,4 @@ const emit = defineEmits(['row-click', 'selection-change'])
   padding: var(--spacing-4);
   background-color: var(--bg-secondary);
 }
-
-.text-left { text-align: left; }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
 </style>

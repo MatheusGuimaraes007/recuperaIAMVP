@@ -62,7 +62,7 @@ const getStatusLabel = (status) => {
         :status="getStatusLabel(item.status)"
         :variant="getStatusType(item.status)"
         size="sm"
-      />
+        label=""/>
     </template>
 
     <template #cell-metrics="{ item }">

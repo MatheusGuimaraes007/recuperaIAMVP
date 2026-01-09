@@ -1,23 +1,41 @@
 /**
  * Guest Guard - Navigation Guard
  *
+ * Protege rotas que são apenas para visitantes (não autenticados).
  * Redireciona usuários autenticados para dashboard.
- * Usado em páginas de login/register.
+ *
+ * @version 3.0.0
+ * @architecture Atomic Design + TanStack Query
  */
 
 import { useAuthStore } from '@/stores/modules/auth.store'
 
+/**
+ * Guard para visitantes
+ * Redireciona usuários autenticados para dashboard
+ *
+ * @param {object} to - Rota de destino
+ * @param {object} from - Rota de origem
+ * @param {Function} next - Função de navegação
+ */
 export const guestGuard = (to, from, next) => {
     const authStore = useAuthStore()
 
-    // Verificar se a rota é apenas para guests
+    // Verificar se a rota é apenas para visitantes
     if (to.meta.guestOnly) {
         if (authStore.isAuthenticated) {
-            console.log('ℹ️ Usuário já autenticado, redirecionando para dashboard')
+            console.log('🔄 Usuário já autenticado, redirecionando...')
 
-            next({ name: 'dashboard' })
+            // Redirecionar baseado em role
+            const destination = authStore.isAdmin
+                ? '/admin/dashboard'
+                : '/dashboard'
+
+            next({ path: destination })
             return
         }
+
+        console.log('✅ Acesso permitido: visitante')
     }
 
     next()

@@ -60,7 +60,7 @@ const getStatusColor = (status) => {
         :status="item.status"
         :variant="getStatusColor(item.status)"
         size="sm"
-      />
+        label=""/>
     </template>
 
     <template #cell-messages="{ item }">

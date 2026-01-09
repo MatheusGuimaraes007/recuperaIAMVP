@@ -51,7 +51,7 @@ watch(() => props.modelValue, (newVal) => {
           variant="ghost"
           size="sm"
           @click="clear"
-        />
+          aria-label=""/>
       </template>
     </RInput>
   </div>

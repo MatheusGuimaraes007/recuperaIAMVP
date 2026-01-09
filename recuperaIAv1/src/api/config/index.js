@@ -11,10 +11,11 @@ export const API_MODE = import.meta.env.VITE_API_MODE || 'supabase'
 
 /**
  * Configuração Supabase
+ * Nota: Adicionado fallback para VITE_SUPABASE_KEY para compatibilidade com o .env
  */
 export const SUPABASE_CONFIG = {
     url: import.meta.env.VITE_SUPABASE_URL,
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_KEY,
     serviceRoleKey: import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
 }
 
@@ -77,7 +78,7 @@ export function validateConfig() {
             throw new Error('VITE_SUPABASE_URL não configurado')
         }
         if (!SUPABASE_CONFIG.anonKey) {
-            throw new Error('VITE_SUPABASE_ANON_KEY não configurado')
+            throw new Error('VITE_SUPABASE_KEY ou VITE_SUPABASE_ANON_KEY não configurado')
         }
     }
 

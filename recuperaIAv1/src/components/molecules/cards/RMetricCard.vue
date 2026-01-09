@@ -2,10 +2,11 @@
 /**
  * RMetricCard - Card de métrica com gráfico
  */
-import RCard from './RCard.vue'
+
 import RHeading from '@components/atoms/typography/RHeading.vue'
 import RText from '@components/atoms/typography/RText.vue'
 import RProgress from '@components/atoms/feedback/RProgress.vue'
+import RCard from "@components/atoms/layout/RCard.vue";
 
 const props = defineProps({
   label: { type: String, required: true },

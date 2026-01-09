@@ -19,7 +19,7 @@ const emit = defineEmits(['toggle-sidebar', 'logout'])
         variant="ghost"
         class="lg:hidden"
         @click="$emit('toggle-sidebar')"
-      />
+        aria-label=""/>
       <div class="r-navbar__brand lg:hidden">
         <RLogo />
       </div>

@@ -2,12 +2,13 @@
 /**
  * RUserCard - Card de perfil de usuário
  */
-import RCard from './RCard.vue'
+
 import RAvatar from '@components/atoms/feedback/RAvatar.vue'
 import RHeading from '@components/atoms/typography/RHeading.vue'
 import RText from '@components/atoms/typography/RText.vue'
 import RBadge from '@components/atoms/feedback/RBadge.vue'
 import RButton from '@components/atoms/buttons/RButton.vue'
+import RCard from "@components/atoms/layout/RCard.vue";
 
 const props = defineProps({
   name: { type: String, required: true },

@@ -1,38 +1,35 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <!-- Logo -->
-      <div class="text-center">
-        <RLogo class="mx-auto h-12 w-auto" />
-        <RHeading level="2" class="mt-6 text-center">
-          Recuperar senha
-        </RHeading>
-        <RText class="mt-2 text-center text-sm text-gray-600">
-          Digite seu email e enviaremos um link para resetar sua senha
-        </RText>
-      </div>
+  <RAuthLayout show-back-button>
+    <!-- Header Slot -->
+    <template #header>
+      <RHeading level="2" class="auth-title">
+        Recuperar senha
+      </RHeading>
+      <RText class="auth-subtitle">
+        Digite seu e-mail e enviaremos um link para redefinir sua senha
+      </RText>
+    </template>
 
-      <!-- Mensagem de sucesso -->
-      <RAlertBanner
-          v-if="resetSuccess"
-          variant="success"
-          message="Email de recuperação enviado! Verifique sua caixa de entrada."
-      />
+    <!-- Content Slot -->
+    <template #content>
+      <!-- Estado: Formulário -->
+      <div v-if="!resetSuccess" class="forgot-form-container">
+        <!-- Alert de erro -->
+        <RAlertBanner
+            v-if="resetError"
+            variant="error"
+            :message="resetError"
+            dismissible
+            @close="resetError = null"
+            class="auth-alert"
+        />
 
-      <!-- Mensagem de erro -->
-      <RAlertBanner
-          v-if="resetError"
-          variant="error"
-          :message="resetError"
-          @close="resetError = null"
-      />
-
-      <!-- Formulário -->
-      <form v-if="!resetSuccess" class="mt-8 space-y-6" @submit.prevent="handleSubmit">
-        <div class="space-y-4">
+        <!-- Formulário -->
+        <form @submit.prevent="handleSubmit" class="auth-form">
+          <!-- Email -->
           <RFormField
               v-model="email"
-              label="Email"
+              label="E-mail"
               type="email"
               name="email"
               autocomplete="email"
@@ -41,125 +38,197 @@
               :disabled="isLoading"
               required
           />
+
+          <!-- Botões -->
+          <div class="button-group">
+            <RButton
+                type="submit"
+                variant="primary"
+                size="lg"
+                full-width
+                :loading="isLoading"
+                :disabled="isLoading || !isFormValid"
+            >
+              {{ isLoading ? 'Enviando...' : 'Enviar link de recuperação' }}
+            </RButton>
+
+            <RButton
+                variant="ghost"
+                size="md"
+                full-width
+                :disabled="isLoading"
+                @click="router.push({ name: 'login' })"
+            >
+              Voltar para login
+            </RButton>
+          </div>
+        </form>
+      </div>
+
+      <!-- Estado: Sucesso -->
+      <div v-else class="success-container">
+        <!-- Alert de sucesso -->
+        <RAlertBanner
+            variant="success"
+            dismissible
+            class="auth-alert"
+        >
+          <template #default>
+            <div class="success-content">
+              <RHeading level="6" class="success-title">
+                E-mail enviado com sucesso!
+              </RHeading>
+              <RText size="sm" class="success-text">
+                Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+                Se não receber em alguns minutos, verifique sua pasta de spam.
+              </RText>
+            </div>
+          </template>
+        </RAlertBanner>
+
+        <!-- Info adicional -->
+        <div class="success-info">
+          <RText size="sm" class="info-text">
+            E-mail enviado para: <strong>{{ email }}</strong>
+          </RText>
         </div>
 
-        <div class="space-y-4">
+        <!-- Botões -->
+        <div class="button-group">
           <RButton
-              type="submit"
               variant="primary"
               size="lg"
-              class="w-full"
-              :loading="isLoading"
-              :disabled="isLoading || !isFormValid"
+              full-width
+              @click="router.push({ name: 'login' })"
           >
-            Enviar link de recuperação
+            Ir para login
           </RButton>
 
           <RButton
               variant="ghost"
               size="md"
-              class="w-full"
-              :disabled="isLoading"
-              @click="router.push({ name: 'login' })"
+              full-width
+              @click="resetForm"
           >
-            Voltar para login
+            Enviar para outro e-mail
           </RButton>
         </div>
-      </form>
-
-      <!-- Após sucesso -->
-      <div v-if="resetSuccess" class="space-y-4">
-        <RButton
-            variant="primary"
-            size="lg"
-            class="w-full"
-            @click="router.push({ name: 'login' })"
-        >
-          Ir para login
-        </RButton>
-
-        <RButton
-            variant="ghost"
-            size="md"
-            class="w-full"
-            @click="resetForm"
-        >
-          Enviar para outro email
-        </RButton>
       </div>
-    </div>
-  </div>
+    </template>
+
+    <!-- Footer Slot -->
+    <template #footer>
+      <div class="auth-footer-text">
+        <RText size="sm" class="footer-text">
+          Lembrou sua senha?
+          <RLink :to="{ name: 'login' }" class="footer-link">
+            Fazer login
+          </RLink>
+        </RText>
+      </div>
+    </template>
+  </RAuthLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-
 import { toast } from 'vue-sonner'
 
-// Components
-import RLogo from '@/components/atoms/icons/RLogo.vue'
+// Composables
+import { useAuth } from '@/composables/core/useAuth'
+
+// Components - Layout
+import RAuthLayout from '@/components/templates/layouts/RAuthLayout.vue'
+
+// Components - Atoms
 import RHeading from '@/components/atoms/typography/RHeading.vue'
 import RText from '@/components/atoms/typography/RText.vue'
+import RLink from '@/components/atoms/typography/RLink.vue'
 import RButton from '@/components/atoms/buttons/RButton.vue'
+
+// Components - Molecules
 import RFormField from '@/components/molecules/forms/RFormField.vue'
 import RAlertBanner from '@/components/molecules/feedback/RAlertBanner.vue'
-import {useResetPassword} from "@api/queries/auth.js";
 
-// Router
+// ============================================================================
+// SETUP
+// ============================================================================
+
 const router = useRouter()
+const { resetPassword, isLoading } = useAuth()
 
-// Form state
+// ============================================================================
+// STATE
+// ============================================================================
+
 const email = ref('')
 const errors = ref({})
 const resetError = ref(null)
 const resetSuccess = ref(false)
 
-// TanStack Query mutation
-const resetPasswordMutation = useResetPassword()
-
-// Computed
-const isLoading = computed(() => resetPasswordMutation.isPending.value)
+// ============================================================================
+// COMPUTED
+// ============================================================================
 
 const isFormValid = computed(() => {
   return email.value.length > 0 && /\S+@\S+\.\S+/.test(email.value)
 })
 
-// Methods
+// ============================================================================
+// METHODS
+// ============================================================================
+
+/**
+ * Validar formulário
+ */
 const validateForm = () => {
   errors.value = {}
 
   if (!email.value) {
-    errors.value.email = 'Email é obrigatório'
+    errors.value.email = 'E-mail é obrigatório'
   } else if (!/\S+@\S+\.\S+/.test(email.value)) {
-    errors.value.email = 'Email inválido'
+    errors.value.email = 'E-mail inválido'
   }
 
   return Object.keys(errors.value).length === 0
 }
 
+/**
+ * Submeter formulário
+ */
 const handleSubmit = async () => {
   resetError.value = null
 
+  // Validar
   if (!validateForm()) {
     return
   }
 
   try {
-    const result = await resetPasswordMutation.mutateAsync(email.value)
+    // Enviar email de recuperação
+    const result = await resetPassword(email.value, {
+      showToast: false // Vamos mostrar feedback customizado
+    })
 
     if (result.success) {
       resetSuccess.value = true
-      toast.success('Email enviado com sucesso! 📧')
+
+      toast.success('E-mail enviado! 📧', {
+        description: 'Verifique sua caixa de entrada'
+      })
     } else {
-      resetError.value = result.error || 'Erro ao enviar email. Tente novamente.'
+      resetError.value = result.error || 'Erro ao enviar e-mail. Tente novamente.'
     }
   } catch (error) {
-    console.error('Erro ao resetar senha:', error)
-    resetError.value = 'Erro ao enviar email. Tente novamente.'
+    console.error('❌ Erro ao resetar senha:', error)
+    resetError.value = 'Erro inesperado ao enviar e-mail. Tente novamente.'
   }
 }
 
+/**
+ * Resetar formulário para novo envio
+ */
 const resetForm = () => {
   email.value = ''
   resetSuccess.value = false
@@ -167,3 +236,118 @@ const resetForm = () => {
   errors.value = {}
 }
 </script>
+
+<style scoped>
+/* =============================================================================
+   AUTH PAGE STYLES
+   ============================================================================= */
+
+/* Títulos */
+.auth-title {
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.auth-subtitle {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Alert */
+.auth-alert {
+  margin-bottom: var(--spacing-6);
+}
+
+/* Formulário */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-2);
+}
+
+/* =============================================================================
+   SUCCESS STATE
+   ============================================================================= */
+
+.success-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.success-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.success-title {
+  color: var(--color-success-700);
+  font-weight: var(--font-weight-semibold);
+}
+
+.success-text {
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.success-info {
+  padding: var(--spacing-4);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.info-text {
+  color: var(--text-secondary);
+}
+
+.info-text strong {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* =============================================================================
+   FOOTER
+   ============================================================================= */
+
+.auth-footer-text {
+  text-align: center;
+  margin-top: var(--spacing-6);
+}
+
+.footer-text {
+  color: var(--text-secondary);
+}
+
+.footer-link {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  margin-left: var(--spacing-1);
+  transition: var(--transition-fast);
+}
+
+.footer-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .success-info {
+    padding: var(--spacing-3);
+  }
+}
+</style>

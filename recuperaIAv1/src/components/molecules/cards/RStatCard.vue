@@ -2,10 +2,11 @@
 /**
  * RStatCard - Card de estatística
  */
-import RCard from './RCard.vue'
 import RHeading from '@components/atoms/typography/RHeading.vue'
 import RText from '@components/atoms/typography/RText.vue'
 import RBadge from '@components/atoms/feedback/RBadge.vue'
+import {computed} from "vue";
+import RCard from "@components/atoms/layout/RCard.vue";
 
 const props = defineProps({
   title: { type: String, required: true },

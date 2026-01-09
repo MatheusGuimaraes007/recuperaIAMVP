@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from 'vue'
 import RLabel from '@components/atoms/typography/RLabel.vue'
 import RIcon from '@components/atoms/icons/RIcon.vue'
 

@@ -48,7 +48,7 @@ const alertClasses = computed(() => [
         variant="ghost"
         size="sm"
         @click="$emit('close')"
-      />
+        aria-label=""/>
     </div>
   </div>
 </template>
@@ -77,25 +77,25 @@ const alertClasses = computed(() => [
 /* Variants */
 .r-alert--info {
   background-color: var(--color-info-50, #EFF6FF);
-  border-color: var(--color-info-200, #BFDBFE);
-  color: var(--color-info-800, #1E40AF);
+  border-color: var( #BFDBFE);
+  color: var( #1E40AF);
 }
 
 .r-alert--success {
   background-color: var(--color-success-50, #ECFDF5);
-  border-color: var(--color-success-200, #A7F3D0);
-  color: var(--color-success-800, #065F46);
+  border-color: var( #A7F3D0);
+  color: var( #065F46);
 }
 
 .r-alert--warning {
   background-color: var(--color-warning-50, #FFFBEB);
-  border-color: var(--color-warning-200, #FDE68A);
-  color: var(--color-warning-800, #92400E);
+  border-color: var( #FDE68A);
+  color: var( #92400E);
 }
 
 .r-alert--error {
   background-color: var(--color-error-50, #FEF2F2);
-  border-color: var(--color-error-200, #FECACA);
-  color: var(--color-error-800, #991B1B);
+  border-color: var(#FECACA);
+  color: var( #991B1B);
 }
 </style>

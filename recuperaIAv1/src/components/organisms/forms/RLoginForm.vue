@@ -1,5 +1,4 @@
 <script setup>
-import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
 import RFormField from '@components/molecules/forms/RFormField.vue'

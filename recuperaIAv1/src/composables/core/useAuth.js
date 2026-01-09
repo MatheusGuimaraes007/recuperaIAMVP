@@ -1,37 +1,44 @@
-/**
- * useAuth Composable
- *
- * Composable para facilitar uso de autenticação em componentes.
- * Wrapper sobre TanStack Query mutations e Auth Store.
- */
-
-import { computed } from 'vue'
+import { computed } from 'vue' // ✅ Import corrigido
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
+
+// Store
 import { useAuthStore } from '@/stores/modules/auth.store'
+
+// TanStack Query mutations
 import {
     useLogin,
     useLogout,
     useRegister,
     useResetPassword,
     useUpdatePassword,
-    useUpdateProfile
-} from '@/api/queries/auth.queries'
-import { toast } from 'vue-sonner'
+    useUpdateProfile,
+    useRefreshSession
+} from '@/api/queries/auth'
 
+/**
+ * Composable useAuth
+ *
+ * @returns {object} Auth state e methods
+ */
 export function useAuth() {
     const router = useRouter()
     const authStore = useAuthStore()
 
-    // Mutations
+    // ============================================================================
+    // MUTATIONS
+    // ============================================================================
+
     const loginMutation = useLogin()
     const logoutMutation = useLogout()
     const registerMutation = useRegister()
     const resetPasswordMutation = useResetPassword()
     const updatePasswordMutation = useUpdatePassword()
     const updateProfileMutation = useUpdateProfile()
+    const refreshSessionMutation = useRefreshSession()
 
     // ============================================================================
-    // STATE
+    // STATE (do Store)
     // ============================================================================
 
     const user = computed(() => authStore.user)
@@ -40,157 +47,176 @@ export function useAuth() {
     const isAdmin = computed(() => authStore.isAdmin)
     const userRole = computed(() => authStore.userRole)
     const userStatus = computed(() => authStore.userStatus)
+    const isTrial = computed(() => authStore.isTrial)
+    const isActive = computed(() => authStore.isActive)
+    const userInitials = computed(() => authStore.userInitials)
+    const displayName = computed(() => authStore.displayName)
+
+    /**
+     * Verifica se alguma mutation está em andamento
+     */
     const isLoading = computed(() =>
         loginMutation.isPending.value ||
-        logoutMutation.isPending.value
+        logoutMutation.isPending.value ||
+        registerMutation.isPending.value
     )
 
     // ============================================================================
-    // ACTIONS
+    // ACTIONS - Login
     // ============================================================================
 
-    /**
-     * Login
-     */
-    const login = async (email, password) => {
+    const login = async (email, password, options = {}) => {
+        const { redirectTo, showToast = true } = options
+
         try {
             const result = await loginMutation.mutateAsync({ email, password })
 
             if (result.success) {
+                if (showToast) {
+                    toast.success(`Bem-vindo, ${result.user?.name || 'Usuário'}! 🎉`)
+                }
+
+                if (redirectTo) {
+                    router.push(redirectTo)
+                } else {
+                    const destination = result.user?.role === 'admin'
+                        ? '/admin/dashboard'
+                        : '/dashboard'
+                    router.push(destination)
+                }
                 return { success: true }
             }
 
-            return {
-                success: false,
-                error: result.error
+            if (showToast) {
+                toast.error(result.error || 'Erro ao fazer login')
             }
+            return { success: false, error: result.error }
+
         } catch (error) {
-            return {
-                success: false,
-                error: 'Erro ao fazer login'
+            if (showToast) {
+                toast.error('Erro ao fazer login. Tente novamente.')
             }
+            return { success: false, error: 'Erro ao fazer login' }
         }
     }
 
-    /**
-     * Logout
-     */
-    const logout = async () => {
+    // ============================================================================
+    // ACTIONS - Logout
+    // ============================================================================
+
+    const logout = async (options = {}) => {
+        const { redirectTo = '/login', showToast = true } = options
+
         try {
             await logoutMutation.mutateAsync()
-
-            toast.success('Logout realizado com sucesso!')
-
-            // Redirecionar para login
-            router.push({ name: 'login' })
-
+            if (showToast) {
+                toast.success('Logout realizado com sucesso!')
+            }
+            router.push(redirectTo)
             return { success: true }
         } catch (error) {
-            toast.error('Erro ao fazer logout')
+            if (showToast) {
+                toast.error('Erro ao fazer logout')
+            }
+            authStore.clearAuth()
             return { success: false, error }
         }
     }
 
-    /**
-     * Register
-     */
-    const register = async (userData) => {
+    // ============================================================================
+    // ACTIONS - Register
+    // ============================================================================
+
+    const register = async (userData, options = {}) => {
+        const { redirectTo = '/login', showToast = true } = options
+
         try {
             const result = await registerMutation.mutateAsync(userData)
 
             if (result.success) {
+                if (showToast) {
+                    toast.success('Conta criada com sucesso! 🎉 Faça login para continuar.')
+                }
+                router.push(redirectTo)
                 return { success: true }
             }
 
-            return {
-                success: false,
-                error: result.error
+            if (showToast) {
+                toast.error(result.error || 'Erro ao criar conta')
             }
+            return { success: false, error: result.error }
+
         } catch (error) {
-            return {
-                success: false,
-                error: 'Erro ao registrar usuário'
+            if (showToast) {
+                toast.error('Erro ao criar conta. Tente novamente.')
             }
+            return { success: false, error: 'Erro ao criar conta' }
         }
     }
 
-    /**
-     * Reset Password
-     */
-    const resetPassword = async (email) => {
+    // ============================================================================
+    // ACTIONS - Password & Profile
+    // ============================================================================
+
+    const resetPassword = async (email, options = {}) => {
+        const { showToast = true } = options
         try {
             const result = await resetPasswordMutation.mutateAsync(email)
-
             if (result.success) {
+                if (showToast) toast.success(result.message || 'Email enviado com sucesso!')
                 return { success: true, message: result.message }
             }
-
-            return {
-                success: false,
-                error: result.error
-            }
+            if (showToast) toast.error(result.error || 'Erro ao enviar email')
+            return { success: false, error: result.error }
         } catch (error) {
-            return {
-                success: false,
-                error: 'Erro ao resetar senha'
-            }
+            if (showToast) toast.error('Erro ao enviar email de recuperação')
+            return { success: false, error: 'Erro ao enviar email' }
         }
     }
 
-    /**
-     * Update Password
-     */
-    const updatePassword = async (newPassword) => {
+    const updatePassword = async (newPassword, options = {}) => {
+        const { showToast = true } = options
         try {
             const result = await updatePasswordMutation.mutateAsync(newPassword)
-
             if (result.success) {
-                toast.success('Senha atualizada com sucesso!')
+                if (showToast) toast.success('Senha atualizada com sucesso!')
                 return { success: true }
             }
-
-            return {
-                success: false,
-                error: result.error
-            }
+            if (showToast) toast.error(result.error || 'Erro ao atualizar senha')
+            return { success: false, error: result.error }
         } catch (error) {
-            toast.error('Erro ao atualizar senha')
-            return {
-                success: false,
-                error: 'Erro ao atualizar senha'
-            }
+            if (showToast) toast.error('Erro ao atualizar senha')
+            return { success: false, error: 'Erro ao atualizar senha' }
         }
     }
 
-    /**
-     * Update Profile
-     */
-    const updateProfile = async (data) => {
+    const updateProfile = async (data, options = {}) => {
+        const { showToast = true } = options
         try {
-            if (!user.value?.id) {
-                throw new Error('Usuário não encontrado')
-            }
-
+            if (!user.value?.id) throw new Error('Usuário não encontrado')
             const result = await updateProfileMutation.mutateAsync({
                 userId: user.value.id,
                 data
             })
-
             if (result.success) {
-                toast.success('Perfil atualizado com sucesso!')
+                if (showToast) toast.success('Perfil atualizado com sucesso!')
                 return { success: true }
             }
-
-            return {
-                success: false,
-                error: result.error
-            }
+            if (showToast) toast.error(result.error || 'Erro ao atualizar perfil')
+            return { success: false, error: result.error }
         } catch (error) {
-            toast.error('Erro ao atualizar perfil')
-            return {
-                success: false,
-                error: 'Erro ao atualizar perfil'
-            }
+            if (showToast) toast.error('Erro ao atualizar perfil')
+            return { success: false, error: 'Erro ao atualizar perfil' }
+        }
+    }
+
+    const refreshSession = async () => {
+        try {
+            const result = await refreshSessionMutation.mutateAsync()
+            return result.success
+        } catch (error) {
+            console.error('Erro ao renovar sessão:', error)
+            return false
         }
     }
 
@@ -198,23 +224,10 @@ export function useAuth() {
     // UTILITIES
     // ============================================================================
 
-    /**
-     * Verificar se usuário tem permissão
-     */
-    const hasPermission = (permission) => {
-        return authStore.hasPermission(permission)
-    }
+    const hasPermission = (permission) => authStore.hasPermission(permission)
+    const hasRole = (roles) => authStore.hasRole(roles)
+    const canAccessRoute = (routeMeta) => authStore.canAccessRoute(routeMeta)
 
-    /**
-     * Verificar se pode acessar rota
-     */
-    const canAccessRoute = (routeMeta) => {
-        return authStore.canAccessRoute(routeMeta)
-    }
-
-    /**
-     * Redirecionar se não autenticado
-     */
     const requireAuth = () => {
         if (!isAuthenticated.value) {
             router.push({
@@ -226,43 +239,37 @@ export function useAuth() {
         return true
     }
 
-    /**
-     * Redirecionar se não for admin
-     */
     const requireAdmin = () => {
         if (!requireAuth()) return false
-
         if (!isAdmin.value) {
             router.push({ name: 'forbidden' })
+            toast.error('Você não tem permissão para acessar esta página')
             return false
         }
         return true
     }
 
-    // ============================================================================
-    // RETURN
-    // ============================================================================
-
     return {
-        // State
         user,
         session,
         isAuthenticated,
         isAdmin,
         userRole,
         userStatus,
+        isTrial,
+        isActive,
+        userInitials,
+        displayName,
         isLoading,
-
-        // Actions
         login,
         logout,
         register,
         resetPassword,
         updatePassword,
         updateProfile,
-
-        // Utilities
+        refreshSession,
         hasPermission,
+        hasRole,
         canAccessRoute,
         requireAuth,
         requireAdmin
