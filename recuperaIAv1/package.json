@@ -22,6 +22,7 @@
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^0.556.0",
     "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
     "vee-validate": "^4.15.1",
     "vue": "^3.5.21",
     "vue-router": "^4.5.1",
