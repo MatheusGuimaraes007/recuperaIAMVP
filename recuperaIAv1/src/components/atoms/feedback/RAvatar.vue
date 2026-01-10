@@ -1,7 +1,4 @@
 <script setup>
-/**
- * RAvatar - Avatar de usuário
- */
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -58,14 +55,13 @@ const initials = computed(() => {
   justify-content: center;
   background-color: var(--color-primary);
   color: var(--color-white);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans),sans-serif;
   font-weight: var(--font-weight-semibold);
   overflow: hidden;
   flex-shrink: 0;
   user-select: none;
 }
 
-/* Sizes */
 .r-avatar--xs {
   width: 24px;
   height: 24px;
@@ -102,7 +98,6 @@ const initials = computed(() => {
   font-size: var(--font-size-3xl);
 }
 
-/* Shapes */
 .r-avatar--circle {
   border-radius: var(--radius-full);
 }
@@ -111,7 +106,6 @@ const initials = computed(() => {
   border-radius: var(--radius-md);
 }
 
-/* Elements */
 .r-avatar__image {
   width: 100%;
   height: 100%;

@@ -1,11 +1,11 @@
 <script setup>
-import { computed } from 'vue' // CORRIGIDO: faltava import
+import { computed } from 'vue'
 
 const props = defineProps({
-  variant: { 
-    type: String, 
-    default: 'text', 
-    validator: (v) => ['text','circular','rectangular'].includes(v) 
+  variant: {
+    type: String,
+    default: 'text',
+    validator: (v) => ['text', 'circular', 'rectangular'].includes(v)
   },
   width: { type: [String, Number], default: null },
   height: { type: [String, Number], default: null },
@@ -21,50 +21,47 @@ const styles = computed(() => {
 </script>
 
 <template>
-  <div 
-    :class="[
-      'r-skeleton', 
-      `r-skeleton--${variant}`, 
+  <div
+      :class="[
+      'r-skeleton',
+      `r-skeleton--${variant}`,
       { 'r-skeleton--rounded': rounded }
-    ]" 
-    :style="styles"
+    ]"
+      :style="styles"
   />
 </template>
 
 <style scoped>
-.r-skeleton { 
-  /* CORRIGIDO: cores do gradiente */
+.r-skeleton {
   background: linear-gradient(
-    90deg, 
-    var(--color-gray-200) 25%, 
-    var(--color-gray-100) 50%, 
-    var(--color-gray-200) 75%
+      90deg,
+      var(--color-gray-200) 25%,
+      var(--color-gray-100) 50%,
+      var(--color-gray-200) 75%
   );
-  background-size: 200% 100%; 
-  animation: shimmer 1.5s ease-in-out infinite; /* CORRIGIDO: adicionar easing */
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
-.r-skeleton--text { 
-  height: 1em; 
-  border-radius: var(--radius-sm); 
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-.r-skeleton--circular { 
-  border-radius: var(--radius-full); 
-  width: 40px; 
-  height: 40px; 
+.r-skeleton--text {
+  height: 1em;
+  border-radius: var(--radius-sm);
 }
 
-.r-skeleton--rectangular { 
-  border-radius: var(--radius-md); 
+.r-skeleton--circular {
+  border-radius: var(--radius-full);
 }
 
-.r-skeleton--rounded { 
-  border-radius: var(--radius-lg); 
+.r-skeleton--rectangular {
+  border-radius: var(--radius-md);
 }
 
-@keyframes shimmer { 
-  0% { background-position: 200% 0; } 
-  100% { background-position: -200% 0; } 
+.r-skeleton--rounded {
+  border-radius: var(--radius-lg);
 }
 </style>

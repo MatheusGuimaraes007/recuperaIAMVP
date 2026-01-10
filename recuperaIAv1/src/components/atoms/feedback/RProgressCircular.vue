@@ -19,17 +19,57 @@ const offset = computed(() => circumference.value - (percent.value / 100) * circ
 <template>
   <div class="r-progress-circular" :style="{ width: `${size}px`, height: `${size}px` }">
     <svg :width="size" :height="size" class="r-progress-circular__svg">
-      <circle class="r-progress-circular__track" :cx="size / 2" :cy="size / 2" :r="radius" :stroke-width="thickness" />
-      <circle class="r-progress-circular__fill" :cx="size / 2" :cy="size / 2" :r="radius" :stroke-width="thickness" :stroke-dasharray="circumference" :stroke-dashoffset="offset" :stroke="color || 'var(--color-primary)'" />
+      <circle
+          class="r-progress-circular__track"
+          :cx="size / 2"
+          :cy="size / 2"
+          :r="radius"
+          :stroke-width="thickness"
+      />
+      <circle
+          class="r-progress-circular__fill"
+          :cx="size / 2"
+          :cy="size / 2"
+          :r="radius"
+          :stroke-width="thickness"
+          :stroke-dasharray="circumference"
+          :stroke-dashoffset="offset"
+          :stroke="color || 'var(--color-primary-600)'"
+      />
     </svg>
-    <div v-if="showValue" class="r-progress-circular__value">{{ Math.round(percent) }}%</div>
+    <div v-if="showValue" class="r-progress-circular__value">
+      {{ Math.round(percent) }}%
+    </div>
   </div>
 </template>
 
 <style scoped>
-.r-progress-circular { position: relative; display: inline-flex; align-items: center; justify-content: center; }
-.r-progress-circular__svg { transform: rotate(-90deg); }
-.r-progress-circular__track { fill: none; stroke: var(--bg-tertiary); }
-.r-progress-circular__fill { fill: none; transition: stroke-dashoffset 0.3s ease; }
-.r-progress-circular__value { position: absolute; font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); color: var(--text-primary); }
+.r-progress-circular {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.r-progress-circular__svg {
+  transform: rotate(-90deg);
+}
+
+.r-progress-circular__track {
+  fill: none;
+  stroke: var(--color-gray-200);
+}
+
+.r-progress-circular__fill {
+  fill: none;
+  transition: stroke-dashoffset var(--duration-normal) var(--easing-out);
+}
+
+.r-progress-circular__value {
+  position: absolute;
+  font-family: var(--font-sans),sans-serif;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
 </style>

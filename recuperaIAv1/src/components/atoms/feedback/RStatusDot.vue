@@ -1,7 +1,4 @@
 <script setup>
-/**
- * RStatusDot - Indicador de status (dot)
- */
 const props = defineProps({
   status: {
     type: String,
@@ -19,7 +16,7 @@ const props = defineProps({
 
 <template>
   <span
-    :class="[
+      :class="[
       'r-status-dot',
       `r-status-dot--${status}`,
       `r-status-dot--${size}`,
@@ -35,19 +32,35 @@ const props = defineProps({
   flex-shrink: 0;
 }
 
-/* Sizes */
-.r-status-dot--sm { width: 8px; height: 8px; }
-.r-status-dot--md { width: 12px; height: 12px; }
-.r-status-dot--lg { width: 16px; height: 16px; }
+.r-status-dot--sm {
+  width: var(--spacing-2);
+  height: var(--spacing-2);
+}
+.r-status-dot--md {
+  width: var(--spacing-3);
+  height: var(--spacing-3);
+}
+.r-status-dot--lg {
+  width: var(--spacing-4);
+  height: var(--spacing-4);
+}
 
-/* Status */
-.r-status-dot--default { background-color: var(--color-gray-400); }
-.r-status-dot--success { background-color: var(--color-success); }
-.r-status-dot--warning { background-color: var(--color-warning); }
-.r-status-dot--error { background-color: var(--color-error); }
-.r-status-dot--info { background-color: var(--color-info); }
+.r-status-dot--default {
+  background-color: var(--color-gray-400);
+}
+.r-status-dot--success {
+  background-color: var(--color-success-500);
+}
+.r-status-dot--warning {
+  background-color: var(--color-warning-500);
+}
+.r-status-dot--error {
+  background-color: var(--color-error-500);
+}
+.r-status-dot--info {
+  background-color: var(--color-info-500);
+}
 
-/* Pulse */
 .r-status-dot--pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -58,6 +71,30 @@ const props = defineProps({
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+.r-status-dot--pulse::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background-color: inherit;
+  opacity: 0.75;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
   }
 }
 </style>
