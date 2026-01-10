@@ -10,22 +10,21 @@ import { useUIStore } from '@/stores/modules/ui.store'
 
 // Guards
 import authGuard from './guards/auth.guard'
-
 import subscriptionGuard from './guards/subscription.guard'
 import guestGuard from './guards/guest.guard'
+import adminGuard from './guards/admin.guard'
 
 // Routes
 import authRoutes from './routes/auth.routes'
-// import dashboardRoutes from './routes/dashboard.routes'
+import dashboardRoutes from './routes/dashboard.routes'
 // import clientsRoutes from './routes/clients.routes'
 // import opportunitiesRoutes from './routes/opportunities.routes'
-// import agentsRoutes from './routes/agents.routes'
+import agentsRoutes from './routes/agents.routes'
 // import productsRoutes from './routes/products.routes'
 // import adminRoutes from './routes/admin.routes'
 // import profileRoutes from './routes/profile.routes'
 // import knowledgeBaseRoutes from "@router/routes/knowledgeBase.routes.js";
-// import errorRoutes from "@router/routes/error.routes.js";
-import adminGuard from "@router/guards/admin.guard.js";
+//import errorRoutes from "@router/routes/error.routes.js";
 
 // ============================================================================
 // CONFIGURAÇÃO DO ROUTER
@@ -41,13 +40,13 @@ const routes = [
   // Auth routes
   ...authRoutes,
 
-  // // Dashboard routes
-  // ...dashboardRoutes,
-  //
+  // Dashboard routes
+  ...dashboardRoutes,
+
   // // Feature routes
   // ...clientsRoutes,
   // ...opportunitiesRoutes,
-  // ...agentsRoutes,
+   ...agentsRoutes,
   // ...productsRoutes,
   // ...knowledgeBaseRoutes,
   //
@@ -58,17 +57,17 @@ const routes = [
   // ...profileRoutes,
   //
   // // Error routes
-  // ...errorRoutes,
+//  ...errorRoutes,
 
   // 404 - Deve ser a última rota
-  // {
-  //   path: '/:pathMatch(.*)*',
-  //   name: 'not-found',
-  //   component: () => import('@/pages/errors/NotFoundPage.vue'),
-  //   meta: {
-  //     title: 'Página Não Encontrada'
-  //   }
-  // }
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('@/pages/errors/NotFoundPage.vue'),
+    meta: {
+      title: 'Página Não Encontrada'
+    }
+  }
 ]
 
 const router = createRouter({
@@ -139,6 +138,7 @@ router.afterEach((to) => {
   // Atualizar page title
   const title = to.meta.title || 'Recupera.IA'
   uiStore.setPageTitle(title)
+  document.title = title
 
   // Atualizar breadcrumbs se definido
   if (to.meta.breadcrumb) {
@@ -162,11 +162,13 @@ router.afterEach((to) => {
 router.onError((error) => {
   console.error('Router Error:', error)
 
-  // Navegar para página de erro
-  router.push({
-    name: 'server-error',
-    params: { message: error.message }
-  })
+  // Navegar para página de erro se existir
+  if (router.hasRoute('server-error')) {
+    router.push({
+      name: 'server-error',
+      params: { message: error.message }
+    })
+  }
 })
 
 export default router

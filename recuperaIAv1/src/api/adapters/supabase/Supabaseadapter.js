@@ -1,12 +1,12 @@
 /**
- * SupabaseAdapter - Implementação para Supabase
+ * SupabaseAdapter - Implementação para Supabase (CORRIGIDO)
  *
  * Implementa todos os métodos do BaseAdapter usando Supabase.
+ * CORREÇÃO: Expõe objeto `auth` com métodos de autenticação
  */
 
 import { createClient } from '@supabase/supabase-js'
 import BaseAdapter from "@api/adapters/base/Baseadapter.js";
-
 
 export class SupabaseAdapter extends BaseAdapter {
     constructor(config = {}) {
@@ -18,6 +18,9 @@ export class SupabaseAdapter extends BaseAdapter {
         if (!this.supabaseUrl || !this.supabaseKey) {
             throw new Error('Supabase URL e Key são obrigatórios')
         }
+
+        // ⭐ NOVO: Objeto auth será inicializado após o client
+        this.auth = null
     }
 
     // ============================================================================
@@ -39,7 +42,142 @@ export class SupabaseAdapter extends BaseAdapter {
                 }
             })
 
-            console.log('✅ SupabaseAdapter inicializado')
+            // ⭐ CORREÇÃO PRINCIPAL: Criar objeto auth com métodos wrapper
+            this.auth = {
+                /**
+                 * SignIn - Login com email e senha
+                 */
+                signIn: async (email, password) => {
+                    try {
+                        const { data, error } = await this.client.auth.signInWithPassword({
+                            email,
+                            password
+                        })
+
+                        if (error) {
+                            return { data: null, error }
+                        }
+
+                        return { data, error: null }
+                    } catch (err) {
+                        return { data: null, error: err }
+                    }
+                },
+
+                /**
+                 * SignUp - Registro de novo usuário
+                 */
+                signUp: async (email, password, options = {}) => {
+                    try {
+                        const { data, error } = await this.client.auth.signUp({
+                            email,
+                            password,
+                            options
+                        })
+
+                        if (error) {
+                            return { data: null, error }
+                        }
+
+                        return { data, error: null }
+                    } catch (err) {
+                        return { data: null, error: err }
+                    }
+                },
+
+                /**
+                 * SignOut - Logout
+                 */
+                signOut: async () => {
+                    try {
+                        const { error } = await this.client.auth.signOut()
+                        return { error }
+                    } catch (err) {
+                        return { error: err }
+                    }
+                },
+
+                /**
+                 * GetSession - Obter sessão atual
+                 */
+                getSession: async () => {
+                    try {
+                        const { data, error } = await this.client.auth.getSession()
+                        return { data, error }
+                    } catch (err) {
+                        return { data: null, error: err }
+                    }
+                },
+
+                /**
+                 * GetUser - Obter usuário atual
+                 */
+                getUser: async () => {
+                    try {
+                        const { data, error } = await this.client.auth.getUser()
+                        return { data, error }
+                    } catch (err) {
+                        return { data: null, error: err }
+                    }
+                },
+
+                /**
+                 * RefreshSession - Renovar sessão
+                 */
+                refreshSession: async () => {
+                    try {
+                        const { data, error } = await this.client.auth.refreshSession()
+                        return { data, error }
+                    } catch (err) {
+                        return { data: null, error: err }
+                    }
+                },
+
+                /**
+                 * ResetPasswordForEmail - Enviar email de recuperação
+                 */
+                resetPasswordForEmail: async (email, options = {}) => {
+                    try {
+                        const { data, error } = await this.client.auth.resetPasswordForEmail(
+                            email,
+                            options
+                        )
+                        return { data, error }
+                    } catch (err) {
+                        return { data: null, error: err }
+                    }
+                },
+
+                /**
+                 * UpdateUser - Atualizar usuário (incluindo senha)
+                 */
+                updateUser: async (attributes) => {
+                    try {
+                        const { data, error } = await this.client.auth.updateUser(attributes)
+                        return { data, error }
+                    } catch (err) {
+                        return { data: null, error: err }
+                    }
+                },
+
+                /**
+                 * OnAuthStateChange - Listener de mudanças de autenticação
+                 */
+                onAuthStateChange: (callback) => {
+                    const { data: { subscription } } = this.client.auth.onAuthStateChange(
+                        (event, session) => {
+                            callback(event, session)
+                        }
+                    )
+
+                    // Retorna função para cancelar inscrição
+                    return () => {
+                        subscription?.unsubscribe()
+                    }
+                }
+            }
+
+            console.log('✅ SupabaseAdapter inicializado com auth wrapper')
         } catch (error) {
             console.error('❌ Erro ao inicializar SupabaseAdapter:', error)
             throw error
@@ -59,9 +197,6 @@ export class SupabaseAdapter extends BaseAdapter {
 
     /**
      * Busca múltiplos registros
-     * @param {string} resource - Nome da tabela
-     * @param {Object} options - { filters, order, limit, offset, select }
-     * @returns {Promise<Array>}
      */
     async findMany(resource, options = {}) {
         this.validateResource(resource)
@@ -83,10 +218,8 @@ export class SupabaseAdapter extends BaseAdapter {
             Object.entries(filters).forEach(([key, value]) => {
                 if (value !== undefined && value !== null) {
                     if (typeof value === 'object' && value.operator) {
-                        // Filtro avançado: { operator: 'gte', value: 10 }
                         query = query[value.operator](key, value.value)
                     } else {
-                        // Filtro simples: { status: 'active' }
                         query = query.eq(key, value)
                     }
                 }
@@ -107,12 +240,14 @@ export class SupabaseAdapter extends BaseAdapter {
 
             const { data, error } = await query
 
-            if (error) throw error
+            if (error) {
+                return { data: null, error }
+            }
 
-            return data || []
+            return { data: data || [], error: null }
         } catch (error) {
             console.error(`Erro ao buscar ${resource}:`, error)
-            throw error
+            return { data: null, error }
         }
     }
 
@@ -132,26 +267,27 @@ export class SupabaseAdapter extends BaseAdapter {
 
             if (error) {
                 if (error.code === 'PGRST116') {
-                    // Nenhum registro encontrado
-                    return null
+                    return { data: null, error: null }
                 }
-                throw error
+                return { data: null, error }
             }
 
-            return data
+            return { data, error: null }
         } catch (error) {
             console.error(`Erro ao buscar ${resource} por ID:`, error)
-            throw error
+            return { data: null, error }
         }
     }
 
     /**
      * Busca um único registro com filtros
      */
-    async findOne(resource, filters = {}) {
+    async findOne(resource, options = {}) {
         this.validateResource(resource)
 
         try {
+            const { filters = {} } = options
+
             let query = this.client
                 .from(resource)
                 .select('*')
@@ -167,15 +303,15 @@ export class SupabaseAdapter extends BaseAdapter {
 
             if (error) {
                 if (error.code === 'PGRST116') {
-                    return null
+                    return { data: null, error: null }
                 }
-                throw error
+                return { data: null, error }
             }
 
-            return data
+            return { data, error: null }
         } catch (error) {
             console.error(`Erro ao buscar ${resource}:`, error)
-            throw error
+            return { data: null, error }
         }
     }
 
@@ -196,12 +332,14 @@ export class SupabaseAdapter extends BaseAdapter {
                 .select()
                 .single()
 
-            if (error) throw error
+            if (error) {
+                return { data: null, error }
+            }
 
-            return result
+            return { data: result, error: null }
         } catch (error) {
             console.error(`Erro ao criar ${resource}:`, error)
-            throw error
+            return { data: null, error }
         }
     }
 
@@ -224,12 +362,14 @@ export class SupabaseAdapter extends BaseAdapter {
                 .select()
                 .single()
 
-            if (error) throw error
+            if (error) {
+                return { data: null, error }
+            }
 
-            return result
+            return { data: result, error: null }
         } catch (error) {
             console.error(`Erro ao atualizar ${resource}:`, error)
-            throw error
+            return { data: null, error }
         }
     }
 
@@ -246,101 +386,48 @@ export class SupabaseAdapter extends BaseAdapter {
                 .delete()
                 .eq('id', id)
 
-            if (error) throw error
+            if (error) {
+                return { error }
+            }
+
+            return { error: null }
         } catch (error) {
             console.error(`Erro ao deletar ${resource}:`, error)
-            throw error
+            return { error }
         }
     }
 
     // ============================================================================
-    // AUTENTICAÇÃO
+    // MÉTODOS LEGADOS (Mantidos para compatibilidade)
     // ============================================================================
 
     async login({ email, password }) {
-        try {
-            const { data, error } = await this.client.auth.signInWithPassword({
-                email,
-                password
-            })
-
-            if (error) throw error
-
-            return {
-                user: data.user,
-                session: data.session
-            }
-        } catch (error) {
-            console.error('Erro ao fazer login:', error)
-            throw error
-        }
+        return await this.auth.signIn(email, password)
     }
 
     async logout() {
-        try {
-            const { error } = await this.client.auth.signOut()
-            if (error) throw error
-        } catch (error) {
-            console.error('Erro ao fazer logout:', error)
-            throw error
-        }
+        return await this.auth.signOut()
     }
 
     async register({ email, password, ...metadata }) {
-        try {
-            const { data, error } = await this.client.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: metadata
-                }
-            })
-
-            if (error) throw error
-
-            return {
-                user: data.user,
-                session: data.session
-            }
-        } catch (error) {
-            console.error('Erro ao registrar usuário:', error)
-            throw error
-        }
+        return await this.auth.signUp(email, password, {
+            data: metadata
+        })
     }
 
     async getCurrentUser() {
-        try {
-            const { data: { user }, error } = await this.client.auth.getUser()
-
-            if (error) throw error
-
-            return user
-        } catch (error) {
-            console.error('Erro ao buscar usuário atual:', error)
-            return null
-        }
+        const result = await this.auth.getUser()
+        return result.data?.user || null
     }
 
     async resetPassword(email) {
-        try {
-            const { error } = await this.client.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`
-            })
-
-            if (error) throw error
-        } catch (error) {
-            console.error('Erro ao resetar senha:', error)
-            throw error
-        }
+        return await this.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`
+        })
     }
 
-    /**
-     * Listener para mudanças no estado de autenticação
-     */
     onAuthStateChange(callback) {
-        return this.client.auth.onAuthStateChange((event, session) => {
-            callback(event, session)
-        })
+        return this.auth.onAuthStateChange(callback)
     }
 
     // ============================================================================
@@ -356,17 +443,22 @@ export class SupabaseAdapter extends BaseAdapter {
                     upsert: false
                 })
 
-            if (error) throw error
+            if (error) {
+                return { data: null, error }
+            }
 
             const publicUrl = this.getPublicUrl(bucket, path)
 
             return {
-                path: data.path,
-                url: publicUrl
+                data: {
+                    path: data.path,
+                    url: publicUrl
+                },
+                error: null
             }
         } catch (error) {
             console.error('Erro ao fazer upload:', error)
-            throw error
+            return { data: null, error }
         }
     }
 
@@ -376,10 +468,10 @@ export class SupabaseAdapter extends BaseAdapter {
                 .from(bucket)
                 .remove([path])
 
-            if (error) throw error
+            return { error }
         } catch (error) {
             console.error('Erro ao deletar arquivo:', error)
-            throw error
+            return { error }
         }
     }
 
@@ -411,7 +503,6 @@ export class SupabaseAdapter extends BaseAdapter {
             )
             .subscribe()
 
-        // Retorna função para cancelar inscrição
         return () => {
             this.client.removeChannel(channel)
         }
@@ -421,19 +512,18 @@ export class SupabaseAdapter extends BaseAdapter {
     // RPC (Remote Procedure Call)
     // ============================================================================
 
-    /**
-     * Chama função do banco de dados
-     */
     async rpc(functionName, params = {}) {
         try {
             const { data, error } = await this.client.rpc(functionName, params)
 
-            if (error) throw error
+            if (error) {
+                return { data: null, error }
+            }
 
-            return data
+            return { data, error: null }
         } catch (error) {
             console.error(`Erro ao chamar função ${functionName}:`, error)
-            throw error
+            return { data: null, error }
         }
     }
 }
