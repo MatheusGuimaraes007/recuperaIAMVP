@@ -1,7 +1,6 @@
 <script setup>
-/**
- * RSpacer - Espaçamento flexível
- */
+import { computed } from 'vue' // CORRIGIDO: faltava import
+
 const props = defineProps({
   size: {
     type: [String, Number],

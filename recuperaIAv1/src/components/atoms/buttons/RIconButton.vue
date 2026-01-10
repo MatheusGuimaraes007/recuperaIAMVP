@@ -1,16 +1,12 @@
 <script setup>
-/**
- * RIconButton - Botão apenas com ícone
- */
 import { computed } from 'vue'
-// Importação adicionada para corrigir o erro "Failed to resolve component: RSpinner"
 import RSpinner from '../feedback/RSpinner.vue'
 
 const props = defineProps({
   variant: {
     type: String,
     default: 'ghost',
-    validator: (v) => ['primary', 'secondary', 'ghost', 'danger'].includes(v)
+    validator: (v) => ['primary', 'secondary', 'outline', 'ghost', 'danger'].includes(v) // CORRIGIDO: +outline
   },
   size: {
     type: String,
@@ -54,7 +50,8 @@ const buttonClasses = computed(() => {
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-normal);
+  transition: background-color var(--duration-normal) var(--easing-out),
+              box-shadow var(--duration-normal) var(--easing-out);
   flex-shrink: 0;
 }
 
@@ -62,23 +59,23 @@ const buttonClasses = computed(() => {
   box-shadow: var(--shadow-focus);
 }
 
-/* Sizes */
+/* Sizes - CORRIGIDO: usar CSS variables */
 .r-icon-button--sm {
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
+  width: var(--spacing-8);   /* 32px */
+  height: var(--spacing-8);
+  font-size: var(--font-size-base);
 }
 
 .r-icon-button--md {
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
+  width: var(--spacing-10);  /* 40px */
+  height: var(--spacing-10);
+  font-size: var(--font-size-xl);
 }
 
 .r-icon-button--lg {
-  width: 48px;
-  height: 48px;
-  font-size: 24px;
+  width: var(--spacing-12);  /* 48px */
+  height: var(--spacing-12);
+  font-size: var(--font-size-2xl);
 }
 
 /* Variants */
@@ -88,16 +85,28 @@ const buttonClasses = computed(() => {
 }
 
 .r-icon-button--primary:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-700); /* CORRIGIDO */
 }
 
 .r-icon-button--secondary {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-100); /* CORRIGIDO: era bg-tertiary */
   color: var(--text-primary);
 }
 
 .r-icon-button--secondary:hover:not(:disabled) {
   background-color: var(--color-gray-200);
+}
+
+/* NOVO: Variante outline */
+.r-icon-button--outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: var(--border-width-default) solid var(--color-primary);
+}
+
+.r-icon-button--outline:hover:not(:disabled) {
+  background-color: var(--color-primary-50);
+  border-color: var(--color-primary-700);
 }
 
 .r-icon-button--ghost {
@@ -106,7 +115,7 @@ const buttonClasses = computed(() => {
 }
 
 .r-icon-button--ghost:hover:not(:disabled) {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-100); /* CORRIGIDO */
 }
 
 .r-icon-button--danger {

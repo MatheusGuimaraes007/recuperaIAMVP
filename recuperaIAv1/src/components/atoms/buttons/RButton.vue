@@ -202,8 +202,10 @@ const handleBlur = (event) => {
   border: var(--border-width-default) solid transparent;
   border-radius: var(--radius-md);
   
-  /* Transition */
-  transition: var(--transition-normal);
+  /* Transition - CORRIGIDO: especificar propriedades */
+  transition: background-color var(--duration-normal) var(--easing-out),
+              box-shadow var(--duration-normal) var(--easing-out),
+              border-color var(--duration-normal) var(--easing-out);
   
   /* Cursor */
   cursor: pointer;
@@ -233,18 +235,18 @@ const handleBlur = (event) => {
 }
 
 .r-button--primary:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-700); /* CORRIGIDO: era primary-dark */
   box-shadow: var(--shadow-md);
 }
 
 .r-button--primary:active:not(:disabled) {
-  background-color: var(--color-primary-800);
-  box-shadow: var(--shadow-sm);
+  background-color: var(--color-primary-700); /* CORRIGIDO: era 800 */
+  box-shadow: none; /* CORRIGIDO: adicionar */
 }
 
 /* Secondary */
 .r-button--secondary {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-100); /* CORRIGIDO: era bg-tertiary */
   color: var(--text-primary);
   border-color: var(--border-medium);
 }
@@ -267,8 +269,8 @@ const handleBlur = (event) => {
 
 .r-button--outline:hover:not(:disabled) {
   background-color: var(--color-primary-50);
-  border-color: var(--color-primary-dark);
-  color: var(--color-primary-dark);
+  border-color: var(--color-primary-700); /* CORRIGIDO */
+  color: var(--color-primary-700);
 }
 
 .r-button--outline:active:not(:disabled) {
@@ -282,7 +284,7 @@ const handleBlur = (event) => {
 }
 
 .r-button--ghost:hover:not(:disabled) {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-100); /* CORRIGIDO: era bg-tertiary */
 }
 
 .r-button--ghost:active:not(:disabled) {
@@ -303,7 +305,7 @@ const handleBlur = (event) => {
 
 .r-button--danger:active:not(:disabled) {
   background-color: var(--color-error-700);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none; /* CORRIGIDO: adicionar */
 }
 
 /* ============================================================================

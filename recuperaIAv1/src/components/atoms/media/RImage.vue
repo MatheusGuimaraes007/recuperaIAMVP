@@ -1,8 +1,6 @@
 <script setup>
-/**
- * RImage - Imagem com lazy loading e fallback
- */
 import { ref, computed } from 'vue'
+import RSpinner from '../feedback/RSpinner.vue' // CORRIGIDO: faltava import
 
 const props = defineProps({
   src: { type: String, required: true },
@@ -85,6 +83,6 @@ const displaySrc = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-100); /* CORRIGIDO: era bg-tertiary */
 }
 </style>

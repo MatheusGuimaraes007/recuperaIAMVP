@@ -1,7 +1,6 @@
 <script setup>
-/**
- * RLogo - Logo da aplicação
- */
+import { computed } from 'vue' // CORRIGIDO: faltava import
+
 const props = defineProps({
   size: {
     type: String,
@@ -15,18 +14,19 @@ const props = defineProps({
   }
 })
 
+// MELHORADO: usar CSS variables nos tamanhos
 const sizeMap = {
-  sm: { height: 24, width: 100 },
-  md: { height: 32, width: 140 },
-  lg: { height: 48, width: 200 },
-  xl: { height: 64, width: 280 }
+  sm: { height: 'var(--spacing-6)', width: '100px' },   // 24px
+  md: { height: 'var(--spacing-8)', width: '140px' },   // 32px
+  lg: { height: 'var(--spacing-12)', width: '200px' },  // 48px
+  xl: { height: 'var(--spacing-16)', width: '280px' }   // 64px
 }
 
 const dimensions = computed(() => sizeMap[props.size])
 </script>
 
 <template>
-  <div class="r-logo" :style="{ height: `${dimensions.height}px` }">
+  <div class="r-logo" :style="{ height: dimensions.height }">
     <svg
       v-if="variant !== 'text'"
       :width="dimensions.height"
@@ -34,9 +34,17 @@ const dimensions = computed(() => sizeMap[props.size])
       viewBox="0 0 32 32"
       fill="none"
     >
-      <!-- Logo Icon (customize com seu logo SVG) -->
+      <!-- Logo Icon - NOTA: Substituir por logo real dos assets -->
       <rect width="32" height="32" rx="8" fill="var(--color-primary)" />
-      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="20" font-weight="bold">
+      <text
+        x="50%"
+        y="50%"
+        dominant-baseline="middle"
+        text-anchor="middle"
+        fill="white"
+        font-size="20"
+        font-weight="bold"
+      >
         R
       </text>
     </svg>

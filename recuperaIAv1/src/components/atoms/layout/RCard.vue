@@ -1,62 +1,38 @@
 <script setup>
-/**
- * RCard - Card Genérico
- * 
- * Container de conteúdo com header, body e footer
- */
-
 import { computed } from 'vue'
-import RHeading from '@components/atoms/typography/RHeading.vue'
-import RDivider from '@components/atoms/layout/RDivider.vue'
+import RHeading from '../typography/RHeading.vue' // CORRIGIDO: era @components
+import RDivider from './RDivider.vue'             // CORRIGIDO: era @components
+import RSkeleton from '../feedback/RSkeleton.vue' // NOVO: para loading
 
 const props = defineProps({
-  /**
-   * Título do card
-   */
   title: {
     type: String,
     default: null
   },
-
-  /**
-   * Subtítulo
-   */
   subtitle: {
     type: String,
     default: null
   },
-
-  /**
-   * Padding do card
-   */
   padding: {
     type: String,
     default: 'md',
     validator: (v) => ['none', 'sm', 'md', 'lg'].includes(v)
   },
-
-  /**
-   * Se tem hover effect
-   */
   hoverable: {
     type: Boolean,
     default: false
   },
-
-  /**
-   * Se é clicável
-   */
   clickable: {
     type: Boolean,
     default: false
   },
-
-  /**
-   * Se tem borda
-   */
   bordered: {
     type: Boolean,
     default: true
+  },
+  loading: { // NOVO
+    type: Boolean,
+    default: false
   }
 })
 
@@ -75,10 +51,19 @@ const cardClasses = computed(() => {
 })
 
 const handleClick = (event) => {
-  if (props.clickable) {
+  if (props.clickable && !props.loading) {
     emit('click', event)
   }
 }
+
+// NOVO: verificar se tem conteúdo real
+const hasHeader = computed(() => {
+  return props.title || props.subtitle || !!props.$slots.header
+})
+
+const hasBody = computed(() => {
+  return !!props.$slots.default
+})
 </script>
 
 <template>
@@ -86,36 +71,44 @@ const handleClick = (event) => {
     :class="cardClasses"
     @click="handleClick"
   >
-    <!-- Header -->
-    <div v-if="title || subtitle || $slots.header" class="r-card__header">
-      <slot name="header">
-        <div v-if="title || subtitle" class="r-card__header-content">
-          <RHeading v-if="title" level="4" class="r-card__title">
-            {{ title }}
-          </RHeading>
-          <p v-if="subtitle" class="r-card__subtitle">
-            {{ subtitle }}
-          </p>
+    <!-- NOVO: Loading State -->
+    <template v-if="loading">
+      <RSkeleton variant="rectangular" height="200px" />
+    </template>
+
+    <template v-else>
+      <!-- Header -->
+      <div v-if="hasHeader" class="r-card__header">
+        <slot name="header">
+          <div v-if="title || subtitle" class="r-card__header-content">
+            <RHeading v-if="title" level="4" class="r-card__title">
+              {{ title }}
+            </RHeading>
+            <p v-if="subtitle" class="r-card__subtitle">
+              {{ subtitle }}
+            </p>
+          </div>
+        </slot>
+        <div v-if="$slots.actions" class="r-card__actions">
+          <slot name="actions" />
         </div>
-      </slot>
-      <div v-if="$slots.actions" class="r-card__actions">
-        <slot name="actions" />
       </div>
-    </div>
 
-    <RDivider v-if="(title || subtitle || $slots.header) && ($slots.default || $slots.footer)" />
+      <!-- CORRIGIDO: só mostrar divider se há header E body -->
+      <RDivider v-if="hasHeader && (hasBody || $slots.footer)" />
 
-    <!-- Body -->
-    <div v-if="$slots.default" class="r-card__body">
-      <slot />
-    </div>
-
-    <!-- Footer -->
-    <template v-if="$slots.footer">
-      <RDivider />
-      <div class="r-card__footer">
-        <slot name="footer" />
+      <!-- Body -->
+      <div v-if="hasBody" class="r-card__body">
+        <slot />
       </div>
+
+      <!-- Footer -->
+      <template v-if="$slots.footer">
+        <RDivider />
+        <div class="r-card__footer">
+          <slot name="footer" />
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -125,7 +118,8 @@ const handleClick = (event) => {
   background-color: var(--bg-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  transition: var(--transition-normal);
+  transition: box-shadow var(--duration-normal) var(--easing-out),
+              transform var(--duration-normal) var(--easing-out);
   display: flex;
   flex-direction: column;
 }
