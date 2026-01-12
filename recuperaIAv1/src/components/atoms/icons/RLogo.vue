@@ -14,7 +14,6 @@ const props = defineProps({
   }
 })
 
-// MELHORADO: usar CSS variables nos tamanhos
 const sizeMap = {
   sm: { height: 'var(--spacing-6)', width: '100px' },   // 24px
   md: { height: 'var(--spacing-8)', width: '140px' },   // 32px
@@ -34,7 +33,6 @@ const dimensions = computed(() => sizeMap[props.size])
       viewBox="0 0 32 32"
       fill="none"
     >
-      <!-- Logo Icon - NOTA: Substituir por logo real dos assets -->
       <rect width="32" height="32" rx="8" fill="var(--color-primary)" />
       <text
         x="50%"

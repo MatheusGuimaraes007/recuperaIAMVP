@@ -15,37 +15,30 @@ const props = defineProps({
     type: Array,
     default: () => [0, 100]
   },
-
   min: {
     type: Number,
     default: 0
   },
-
   max: {
     type: Number,
     default: 100
   },
-
   step: {
     type: Number,
     default: 1
   },
-
   showValue: {
     type: Boolean,
     default: true
   },
-
   disabled: {
     type: Boolean,
     default: false
   },
-
   label: {
     type: String,
     default: null
   },
-
   formatValue: {
     type: Function,
     default: (value) => value.toString()
@@ -55,9 +48,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change'])
 
 const sliderRef = ref(null)
-const isDragging = ref(false)
-const activeThumb = ref(null)
-
 const minValue = ref(props.modelValue[0] || props.min)
 const maxValue = ref(props.modelValue[1] || props.max)
 
@@ -80,6 +70,15 @@ const rangeStyle = computed(() => {
     width: `${maxPercent.value - minPercent.value}%`
   }
 })
+
+// NOVO: Z-index computed em vez de inline
+const minThumbZIndex = computed(() => ({
+  zIndex: minValue.value > props.max - (props.max - props.min) / 2 ? 5 : 3
+}))
+
+const maxThumbZIndex = computed(() => ({
+  zIndex: maxValue.value > props.max - (props.max - props.min) / 2 ? 3 : 5
+}))
 
 const updateValue = () => {
   emit('update:modelValue', [minValue.value, maxValue.value])
@@ -107,12 +106,13 @@ const handleMaxChange = (event) => {
         {{ formatValue(minValue) }} - {{ formatValue(maxValue) }}
       </span>
     </div>
-    
+
     <div ref="sliderRef" class="r-range-slider__track-container">
       <div class="r-range-slider__track">
         <div class="r-range-slider__range" :style="rangeStyle"></div>
       </div>
-      
+
+      <!-- CORRIGIDO: z-index agora é computed -->
       <input
         type="range"
         :min="min"
@@ -121,10 +121,10 @@ const handleMaxChange = (event) => {
         :value="minValue"
         :disabled="disabled"
         class="r-range-slider__input r-range-slider__input--min"
-        :style="{ zIndex: minValue > max - (max - min) / 2 ? 5 : 3 }"
+        :style="minThumbZIndex"
         @input="handleMinChange"
       />
-      
+
       <input
         type="range"
         :min="min"
@@ -133,7 +133,7 @@ const handleMaxChange = (event) => {
         :value="maxValue"
         :disabled="disabled"
         class="r-range-slider__input r-range-slider__input--max"
-        :style="{ zIndex: maxValue > max - (max - min) / 2 ? 3 : 5 }"
+        :style="maxThumbZIndex"
         @input="handleMaxChange"
       />
     </div>
@@ -175,7 +175,7 @@ const handleMaxChange = (event) => {
   position: absolute;
   width: 100%;
   height: 6px;
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-200); /* CORRIGIDO: era bg-tertiary */
   border-radius: var(--radius-full);
 }
 
@@ -207,7 +207,8 @@ const handleMaxChange = (event) => {
   cursor: pointer;
   pointer-events: all;
   box-shadow: var(--shadow-sm);
-  transition: var(--transition-normal);
+  transition: transform var(--duration-normal) var(--easing-out),
+              box-shadow var(--duration-normal) var(--easing-out);
 }
 
 .r-range-slider__input::-webkit-slider-thumb:hover {
@@ -228,7 +229,8 @@ const handleMaxChange = (event) => {
   cursor: pointer;
   pointer-events: all;
   box-shadow: var(--shadow-sm);
-  transition: var(--transition-normal);
+  transition: transform var(--duration-normal) var(--easing-out),
+              box-shadow var(--duration-normal) var(--easing-out);
 }
 
 .r-range-slider__input::-moz-range-thumb:hover {

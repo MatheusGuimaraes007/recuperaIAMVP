@@ -1,8 +1,12 @@
 <script setup>
 /**
- * RMenuItem - Item de menu
+ * RMenuItem - Item de Menu
+ *
+ * Componente para itens de menu com ícone, label e badge.
  */
-import RText from '@components/atoms/typography/RText.vue'
+
+import { computed } from 'vue'
+import RIcon from '@components/atoms/icons/RIcon.vue'
 import RBadge from '@components/atoms/feedback/RBadge.vue'
 
 const props = defineProps({
@@ -15,27 +19,31 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['click'])
+
+const classes = computed(() => [
+  'r-menu-item',
+  { 'r-menu-item--active': props.active },
+  { 'r-menu-item--disabled': props.disabled }
+])
+
+const handleClick = (event) => {
+  if (!props.disabled) {
+    emit('click', event)
+  }
+}
 </script>
 
 <template>
   <component
     :is="to ? 'router-link' : 'button'"
     :to="to"
-    :class="[
-      'r-menu-item',
-      { 'r-menu-item--active': active },
-      { 'r-menu-item--disabled': disabled }
-    ]"
+    :class="classes"
     :disabled="disabled"
-    @click="!disabled && emit('click')"
+    @click="handleClick"
   >
-    <span v-if="icon" class="r-menu-item__icon">{{ icon }}</span>
-    <RText size="sm" weight="medium" class="r-menu-item__label">
-      {{ label }}
-    </RText>
-    <RBadge v-if="badge" size="sm" variant="primary" class="r-menu-item__badge">
-      {{ badge }}
-    </RBadge>
+    <RIcon v-if="icon" :name="icon" size="18" class="r-menu-item__icon" />
+    <span class="r-menu-item__label">{{ label }}</span>
+    <RBadge v-if="badge" :label="String(badge)" size="sm" class="r-menu-item__badge" />
   </component>
 </template>
 
@@ -44,24 +52,29 @@ const emit = defineEmits(['click'])
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  width: 100%;
   padding: var(--spacing-3) var(--spacing-4);
+  background: none;
   border: none;
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-primary);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
   text-decoration: none;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: left;
 }
 
 .r-menu-item:hover:not(.r-menu-item--disabled) {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .r-menu-item--active {
   background-color: var(--color-primary-50);
   color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 .r-menu-item--disabled {
@@ -69,14 +82,8 @@ const emit = defineEmits(['click'])
   cursor: not-allowed;
 }
 
-.r-menu-item__icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
 .r-menu-item__label {
   flex: 1;
-  text-align: left;
 }
 
 .r-menu-item__badge {

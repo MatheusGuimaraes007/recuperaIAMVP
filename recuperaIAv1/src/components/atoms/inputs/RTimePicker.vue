@@ -8,7 +8,7 @@
  * <RTimePicker v-model="time" label="Hora do Evento" />
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import RIcon from '../icons/RIcon.vue'
 
 const props = defineProps({
@@ -16,34 +16,28 @@ const props = defineProps({
     type: String,
     default: ''
   },
-
   label: {
     type: String,
     default: null
   },
-
   format: {
     type: String,
     default: '24h',
     validator: (v) => ['12h', '24h'].includes(v)
   },
-
   minuteStep: {
     type: Number,
     default: 15,
     validator: (v) => [1, 5, 10, 15, 30].includes(v)
   },
-
   disabled: {
     type: Boolean,
     default: false
   },
-
   error: {
     type: Boolean,
     default: false
   },
-
   errorMessage: {
     type: String,
     default: null
@@ -56,6 +50,7 @@ const isOpen = ref(false)
 const selectedHour = ref(12)
 const selectedMinute = ref(0)
 const selectedPeriod = ref('AM')
+const pickerRef = ref(null) // NOVO: para click outside
 
 const hours = computed(() => {
   if (props.format === '24h') {
@@ -75,7 +70,7 @@ const displayValue = computed(() => {
 
 const formatTime = () => {
   let hour = selectedHour.value
-  
+
   if (props.format === '12h') {
     const period = selectedPeriod.value
     const formattedHour = hour.toString().padStart(2, '0')
@@ -99,18 +94,34 @@ const togglePicker = () => {
     isOpen.value = !isOpen.value
   }
 }
+
+// NOVO: Click outside handler
+const handleClickOutside = (event) => {
+  if (pickerRef.value && !pickerRef.value.contains(event.target)) {
+    isOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <template>
-  <div class="r-timepicker-wrapper">
+  <div ref="pickerRef" class="r-timepicker-wrapper">
     <label v-if="label" class="r-timepicker-label">{{ label }}</label>
-    
+
     <div :class="['r-timepicker', { 'r-timepicker--error': error, 'r-timepicker--disabled': disabled }]">
       <div class="r-timepicker__trigger" @click="togglePicker">
         <span class="r-timepicker__value">{{ displayValue }}</span>
         <RIcon name="clock" :size="20" class="r-timepicker__icon" />
       </div>
-      
+
+      <!-- CORRIGIDO: adicionar animation -->
       <div v-if="isOpen" class="r-timepicker__popup">
         <div class="r-timepicker__selectors">
           <!-- Hours -->
@@ -128,7 +139,7 @@ const togglePicker = () => {
               </button>
             </div>
           </div>
-          
+
           <!-- Minutes -->
           <div class="r-timepicker__selector">
             <div class="r-timepicker__selector-label">Minuto</div>
@@ -144,7 +155,7 @@ const togglePicker = () => {
               </button>
             </div>
           </div>
-          
+
           <!-- Period (12h format) -->
           <div v-if="format === '12h'" class="r-timepicker__selector">
             <div class="r-timepicker__selector-label">Período</div>
@@ -166,7 +177,7 @@ const togglePicker = () => {
             </div>
           </div>
         </div>
-        
+
         <div class="r-timepicker__actions">
           <button type="button" class="r-timepicker__button r-timepicker__button--cancel" @click="isOpen = false">
             Cancelar
@@ -177,7 +188,7 @@ const togglePicker = () => {
         </div>
       </div>
     </div>
-    
+
     <span v-if="errorMessage && error" class="r-timepicker-error">{{ errorMessage }}</span>
   </div>
 </template>
@@ -208,7 +219,7 @@ const togglePicker = () => {
   border: var(--border-width-default) solid var(--border-medium);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-normal);
+  transition: border-color var(--duration-normal) var(--easing-out);
 }
 
 .r-timepicker__trigger:hover:not(.r-timepicker--disabled *) {
@@ -237,12 +248,26 @@ const togglePicker = () => {
   position: absolute;
   top: calc(100% + var(--spacing-2));
   left: 0;
-  z-index: 50;
+  z-index: var(--z-index-dropdown); /* CORRIGIDO: era 50 */
   background-color: var(--bg-primary);
   border: var(--border-width-default) solid var(--border-medium);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   padding: var(--spacing-4);
+  /* NOVO: animation */
+  animation: slideDown var(--duration-fast) var(--easing-out);
+}
+
+/* NOVO: Keyframe para animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .r-timepicker__selectors {
@@ -270,6 +295,8 @@ const togglePicker = () => {
   max-height: 200px;
   overflow-y: auto;
   padding: var(--spacing-1);
+  /* NOVO: smooth scroll */
+  scroll-behavior: smooth;
 }
 
 .r-timepicker__option {
@@ -279,13 +306,13 @@ const togglePicker = () => {
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   cursor: pointer;
-  transition: var(--transition-normal);
+  transition: background-color var(--duration-normal) var(--easing-out);
   text-align: center;
   font-size: var(--font-size-sm);
 }
 
 .r-timepicker__option:hover {
-  background-color: var(--bg-secondary);
+  background-color: var(--color-gray-100); /* CORRIGIDO: era bg-secondary */
 }
 
 .r-timepicker__option--selected {
@@ -309,16 +336,16 @@ const togglePicker = () => {
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-normal);
+  transition: background-color var(--duration-normal) var(--easing-out);
 }
 
 .r-timepicker__button--cancel {
-  background-color: var(--bg-secondary);
+  background-color: var(--color-gray-100); /* CORRIGIDO: era bg-secondary */
   color: var(--text-primary);
 }
 
 .r-timepicker__button--cancel:hover {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-200); /* CORRIGIDO: era bg-tertiary */
 }
 
 .r-timepicker__button--confirm {
@@ -327,7 +354,7 @@ const togglePicker = () => {
 }
 
 .r-timepicker__button--confirm:hover {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-700); /* CORRIGIDO: era primary-dark */
 }
 
 .r-timepicker-error {

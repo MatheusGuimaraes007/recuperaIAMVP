@@ -14,6 +14,7 @@ const props = defineProps({
   required: { type: Boolean, default: false },
   rows: { type: [String, Number], default: 4 },
   maxlength: { type: [String, Number], default: null },
+  showCounter: { type: Boolean, default: false }, // NOVO
   resize: {
     type: String,
     default: 'vertical',
@@ -25,6 +26,15 @@ const emit = defineEmits(['update:modelValue', 'focus', 'blur'])
 
 const textareaRef = ref(null)
 const inputId = computed(() => `textarea-${Math.random().toString(36).substr(2, 9)}`)
+
+// NOVO: contador de caracteres
+const characterCount = computed(() => {
+  return String(props.modelValue).length
+})
+
+const showCharacterCounter = computed(() => {
+  return props.showCounter && props.maxlength
+})
 </script>
 
 <template>
@@ -52,6 +62,11 @@ const inputId = computed(() => `textarea-${Math.random().toString(36).substr(2, 
       @focus="emit('focus', $event)"
       @blur="emit('blur', $event)"
     />
+
+    <!-- NOVO: Contador de caracteres -->
+    <div v-if="showCharacterCounter" class="r-textarea__counter">
+      {{ characterCount }} / {{ maxlength }}
+    </div>
 
     <p v-if="error" class="r-textarea__error">{{ error }}</p>
     <p v-else-if="helpText" class="r-textarea__help">{{ helpText }}</p>
@@ -84,7 +99,8 @@ const inputId = computed(() => `textarea-${Math.random().toString(36).substr(2, 
   border: var(--border-width-default) solid var(--border-medium);
   border-radius: var(--radius-md);
   background-color: var(--bg-primary);
-  transition: var(--transition-normal);
+  transition: border-color var(--duration-normal) var(--easing-out),
+              box-shadow var(--duration-normal) var(--easing-out);
   outline: none;
 }
 
@@ -98,9 +114,16 @@ const inputId = computed(() => `textarea-${Math.random().toString(36).substr(2, 
 }
 
 .r-textarea__field:disabled {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-gray-100); /* CORRIGIDO: era bg-tertiary */
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* NOVO: Character counter */
+.r-textarea__counter {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-align: right;
 }
 
 .r-textarea__error {

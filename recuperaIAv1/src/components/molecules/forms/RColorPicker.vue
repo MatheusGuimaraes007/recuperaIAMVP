@@ -1,128 +1,138 @@
 <script setup>
-import RLabel from '@components/atoms/typography/RLabel.vue'
-import RIcon from '@components/atoms/icons/RIcon.vue'
+/**
+ * RColorPicker - Seletor de Cor
+ *
+ * Componente molecule para seleção de cores com input nativo
+ * e preview visual.
+ *
+ * @example
+ * <RColorPicker
+ *   v-model="color"
+ *   label="Cor do tema"
+ * />
+ */
+
+import { ref, computed } from 'vue'
+import RInput from '@components/atoms/inputs/RInput.vue'
 
 const props = defineProps({
   modelValue: { type: String, default: '#00C853' },
   label: { type: String, default: 'Cor' },
-  /**
-   * Paleta predefinida do Design System
-   */
-  colors: {
-    type: Array,
-    default: () => [
-      '#00C853', // Primary Green
-      '#2962FF', // Blue
-      '#D50000', // Red
-      '#FFD600', // Yellow
-      '#AA00FF', // Purple
-      '#00B0FF', // Light Blue
-      '#FF6D00', // Orange
-      '#62757F'  // Grey
-    ]
-  }
+  disabled: { type: Boolean, default: false },
+  required: { type: Boolean, default: false },
+  name: { type: String, default: 'color' },
+  size: { type: String, default: 'md', validator: v => ['sm', 'md', 'lg'].includes(v) },
+  helpText: { type: String, default: null },
+  presetColors: { type: Array, default: () => ['#00C853', '#2196F3', '#FF9800', '#F44336', '#9C27B0'] }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'change'])
 
-const selectColor = (color) => {
-  emit('update:modelValue', color)
+const inputRef = ref(null)
+
+const handleInput = (value) => {
+  emit('update:modelValue', value)
+  emit('change', value)
+}
+
+const selectPreset = (color) => {
+  if (!props.disabled) {
+    emit('update:modelValue', color)
+    emit('change', color)
+  }
 }
 </script>
 
 <template>
   <div class="r-color-picker">
-    <RLabel v-if="label">{{ label }}</RLabel>
+    <RInput
+      ref="inputRef"
+      :model-value="modelValue"
+      :label="label"
+      :disabled="disabled"
+      :required="required"
+      :name="name"
+      :size="size"
+      :help-text="helpText"
+      type="text"
+      placeholder="#000000"
+      @update:model-value="handleInput"
+    >
+      <template #icon-left>
+        <div
+          class="r-color-picker__preview"
+          :style="{ backgroundColor: modelValue }"
+          @click="() => !disabled && $refs.colorInput?.click()"
+        />
+      </template>
+    </RInput>
 
-    <div class="r-color-picker__grid">
+    <input
+      ref="colorInput"
+      type="color"
+      :value="modelValue"
+      :disabled="disabled"
+      style="position: absolute; opacity: 0; pointer-events: none;"
+      @input="handleInput($event.target.value)"
+    />
+
+    <div v-if="presetColors.length" class="r-color-picker__presets">
       <button
-        v-for="color in colors"
+        v-for="color in presetColors"
         :key="color"
         type="button"
-        class="r-color-picker__item"
-        :class="{ 'r-color-picker__item--selected': modelValue === color }"
+        class="r-color-picker__preset"
+        :class="{ 'r-color-picker__preset--active': modelValue === color }"
         :style="{ backgroundColor: color }"
-        @click="selectColor(color)"
-        :aria-label="`Selecionar cor ${color}`"
-      >
-        <RIcon
-          v-if="modelValue === color"
-          name="check"
-          size="16"
-          class="r-color-picker__check"
-        />
-      </button>
-
-      <label class="r-color-picker__custom">
-        <input
-          type="color"
-          :value="modelValue"
-          @input="$emit('update:modelValue', $event.target.value)"
-        >
-        <RIcon name="plus" size="16" />
-      </label>
+        :disabled="disabled"
+        @click="selectPreset(color)"
+      />
     </div>
   </div>
 </template>
 
 <style scoped>
-.r-color-picker {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
+.r-color-picker { width: 100%; }
+
+.r-color-picker__preview {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border-medium);
+  cursor: pointer;
+  transition: transform var(--transition-fast);
 }
 
-.r-color-picker__grid {
+.r-color-picker__preview:hover { transform: scale(1.1); }
+
+.r-color-picker__presets {
   display: flex;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-2);
   flex-wrap: wrap;
-  gap: var(--spacing-2);
 }
 
-.r-color-picker__item {
+.r-color-picker__preset {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border-light);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s;
+  transition: all var(--transition-fast);
 }
 
-.r-color-picker__item:hover {
+.r-color-picker__preset:hover:not(:disabled) {
   transform: scale(1.1);
+  border-color: var(--color-border-dark);
 }
 
-.r-color-picker__item--selected {
-  border-color: var(--bg-primary);
-  box-shadow: 0 0 0 2px var(--text-primary);
+.r-color-picker__preset--active {
+  border-color: var(--color-primary);
+  border-width: 3px;
 }
 
-.r-color-picker__check {
-  color: white;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-}
-
-.r-color-picker__custom {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px dashed var(--border-medium);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--text-secondary);
-  position: relative;
-  overflow: hidden;
-}
-
-.r-color-picker__custom input {
-  position: absolute;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
+.r-color-picker__preset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

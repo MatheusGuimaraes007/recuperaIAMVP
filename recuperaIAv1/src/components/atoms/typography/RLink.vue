@@ -2,7 +2,7 @@
 /**
  * RLink - Link com estilos
  */
-import { computed } from 'vue' // <--- Linha adicionada
+import { computed } from 'vue'
 
 const props = defineProps({
   href: { type: String, default: null },
@@ -61,7 +61,7 @@ const attrs = computed(() => {
 }
 
 .r-link:hover:not(.r-link--disabled) {
-  color: var(--color-primary-dark);
+  color: var(--color-primary-700); /* CORRIGIDO: era primary-dark */
 }
 
 .r-link:focus-visible {

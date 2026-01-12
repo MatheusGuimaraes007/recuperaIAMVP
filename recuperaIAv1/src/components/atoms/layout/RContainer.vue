@@ -2,7 +2,7 @@
 /**
  * RContainer - Container responsivo
  */
-import { computed } from 'vue' // <--- Adicione esta linha
+import { computed } from 'vue'
 
 const props = defineProps({
   maxWidth: {
@@ -13,12 +13,13 @@ const props = defineProps({
   padding: { type: Boolean, default: true }
 })
 
+// CORRIGIDO: Usar breakpoints do design system em vez de hardcoded
 const maxWidthMap = {
-  sm: '640px',
-  md: '768px',
-  lg: '1024px',
-  xl: '1280px',
-  '2xl': '1536px',
+  sm: 'var(--breakpoint-sm)',    // 640px
+  md: 'var(--breakpoint-md)',    // 768px
+  lg: 'var(--breakpoint-lg)',    // 1024px
+  xl: 'var(--breakpoint-xl)',    // 1280px
+  '2xl': 'var(--breakpoint-2xl)', // 1536px
   full: '100%'
 }
 

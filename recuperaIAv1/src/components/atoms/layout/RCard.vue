@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue'
-import RHeading from '../typography/RHeading.vue' // CORRIGIDO: era @components
-import RDivider from './RDivider.vue'             // CORRIGIDO: era @components
-import RSkeleton from '../feedback/RSkeleton.vue' // NOVO: para loading
+import RHeading from '../typography/RHeading.vue'
+import RDivider from './RDivider.vue'
+import RSkeleton from '../feedback/RSkeleton.vue'
 
 const props = defineProps({
   title: {
@@ -30,23 +30,26 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
-  loading: { // NOVO
+  loading: {
     type: Boolean,
     default: false
   }
 })
 
+// ✅ CORREÇÃO: Definir slots corretamente
+const slots = defineSlots()
+
 const emit = defineEmits(['click'])
 
 const cardClasses = computed(() => {
   const classes = ['r-card']
-  
+
   classes.push(`r-card--padding-${props.padding}`)
-  
+
   if (props.hoverable) classes.push('r-card--hoverable')
   if (props.clickable) classes.push('r-card--clickable')
   if (props.bordered) classes.push('r-card--bordered')
-  
+
   return classes
 })
 
@@ -56,13 +59,17 @@ const handleClick = (event) => {
   }
 }
 
-// NOVO: verificar se tem conteúdo real
+// ✅ CORREÇÃO: Verificar slots corretamente
 const hasHeader = computed(() => {
-  return props.title || props.subtitle || !!props.$slots.header
+  return props.title || props.subtitle || !!slots.header
 })
 
 const hasBody = computed(() => {
-  return !!props.$slots.default
+  return !!slots.default
+})
+
+const hasFooter = computed(() => {
+  return !!slots.footer
 })
 </script>
 
@@ -71,7 +78,7 @@ const hasBody = computed(() => {
     :class="cardClasses"
     @click="handleClick"
   >
-    <!-- NOVO: Loading State -->
+    <!-- Loading State -->
     <template v-if="loading">
       <RSkeleton variant="rectangular" height="200px" />
     </template>
@@ -89,13 +96,13 @@ const hasBody = computed(() => {
             </p>
           </div>
         </slot>
-        <div v-if="$slots.actions" class="r-card__actions">
+        <div v-if="slots.actions" class="r-card__actions">
           <slot name="actions" />
         </div>
       </div>
 
-      <!-- CORRIGIDO: só mostrar divider se há header E body -->
-      <RDivider v-if="hasHeader && (hasBody || $slots.footer)" />
+      <!-- Divider -->
+      <RDivider v-if="hasHeader && (hasBody || hasFooter)" />
 
       <!-- Body -->
       <div v-if="hasBody" class="r-card__body">
@@ -103,7 +110,7 @@ const hasBody = computed(() => {
       </div>
 
       <!-- Footer -->
-      <template v-if="$slots.footer">
+      <template v-if="hasFooter">
         <RDivider />
         <div class="r-card__footer">
           <slot name="footer" />
@@ -115,11 +122,10 @@ const hasBody = computed(() => {
 
 <style scoped>
 .r-card {
-  background-color: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: box-shadow var(--duration-normal) var(--easing-out),
-              transform var(--duration-normal) var(--easing-out);
+  background-color: var(--bg-primary, #ffffff);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.1));
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   display: flex;
   flex-direction: column;
 }
@@ -130,25 +136,25 @@ const hasBody = computed(() => {
 }
 
 .r-card--padding-sm {
-  padding: var(--spacing-4);
+  padding: var(--spacing-4, 16px);
 }
 
 .r-card--padding-md {
-  padding: var(--spacing-6);
+  padding: var(--spacing-6, 24px);
 }
 
 .r-card--padding-lg {
-  padding: var(--spacing-8);
+  padding: var(--spacing-8, 32px);
 }
 
 /* Bordered */
 .r-card--bordered {
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-light, #e5e7eb);
 }
 
 /* Hoverable */
 .r-card--hoverable:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1));
   transform: translateY(-2px);
 }
 
@@ -166,7 +172,7 @@ const hasBody = computed(() => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--spacing-4);
+  gap: var(--spacing-4, 16px);
 }
 
 .r-card__header-content {
@@ -178,14 +184,14 @@ const hasBody = computed(() => {
 }
 
 .r-card__subtitle {
-  margin: var(--spacing-1) 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  margin: var(--spacing-1, 4px) 0 0;
+  font-size: var(--font-size-sm, 14px);
+  color: var(--text-secondary, #6b7280);
 }
 
 .r-card__actions {
   display: flex;
-  gap: var(--spacing-2);
+  gap: var(--spacing-2, 8px);
 }
 
 /* Body */
@@ -198,6 +204,6 @@ const hasBody = computed(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--spacing-2);
+  gap: var(--spacing-2, 8px);
 }
 </style>

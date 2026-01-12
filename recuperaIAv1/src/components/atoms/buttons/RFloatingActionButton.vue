@@ -47,22 +47,45 @@ const emit = defineEmits(['click'])
   box-shadow: var(--shadow-lg);
   cursor: pointer;
   font-weight: var(--font-weight-semibold);
-  transition: var(--transition-normal);
+  transition: background-color var(--duration-normal) var(--easing-out),
+              box-shadow var(--duration-normal) var(--easing-out),
+              transform var(--duration-normal) var(--easing-out); /* NOVO */
 }
 
 .r-fab:hover {
   box-shadow: var(--shadow-xl);
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-700); /* CORRIGIDO: era primary-dark */
+  transform: scale(1.05); /* NOVO: microinteração */
+}
+
+/* NOVO: Estado active */
+.r-fab:active {
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.95);
 }
 
 .r-fab:focus-visible {
   box-shadow: var(--shadow-focus), var(--shadow-xl);
 }
 
-/* Sizes */
-.r-fab--sm { width: 40px; height: 40px; font-size: 18px; }
-.r-fab--md { width: 56px; height: 56px; font-size: 24px; }
-.r-fab--lg { width: 72px; height: 72px; font-size: 32px; }
+/* Sizes - CORRIGIDO: usar CSS variables */
+.r-fab--sm {
+  width: var(--spacing-10);  /* 40px */
+  height: var(--spacing-10);
+  font-size: var(--font-size-lg); /* 18px */
+}
+
+.r-fab--md {
+  width: var(--spacing-14);  /* 56px */
+  height: var(--spacing-14);
+  font-size: var(--font-size-2xl); /* 24px */
+}
+
+.r-fab--lg {
+  width: 72px;  /* Não tem spacing exato, manter fixo */
+  height: 72px;
+  font-size: var(--font-size-4xl); /* 32px - ajustado de 3xl */
+}
 
 /* Extended */
 .r-fab--extended {

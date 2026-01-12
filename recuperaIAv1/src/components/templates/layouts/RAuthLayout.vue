@@ -9,10 +9,6 @@
         <!-- Logo Section -->
         <div class="auth-logo-section">
           <RLogo class="auth-logo" />
-          <div class="brand-text">
-            <span class="brand-name">recupera</span>
-            <span class="brand-highlight">.ia</span>
-          </div>
         </div>
 
         <!-- Card Principal -->

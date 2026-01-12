@@ -17,14 +17,7 @@ import adminGuard from './guards/admin.guard'
 // Routes
 import authRoutes from './routes/auth.routes'
 import dashboardRoutes from './routes/dashboard.routes'
-// import clientsRoutes from './routes/clients.routes'
-// import opportunitiesRoutes from './routes/opportunities.routes'
 import agentsRoutes from './routes/agents.routes'
-// import productsRoutes from './routes/products.routes'
-// import adminRoutes from './routes/admin.routes'
-// import profileRoutes from './routes/profile.routes'
-// import knowledgeBaseRoutes from "@router/routes/knowledgeBase.routes.js";
-//import errorRoutes from "@router/routes/error.routes.js";
 
 // ============================================================================
 // CONFIGURAÇÃO DO ROUTER
@@ -34,7 +27,11 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    redirect: '/dashboard'
+    redirect: (to) => {
+      // Redirecionar baseado no estado de autenticação
+      const authStore = useAuthStore()
+      return authStore.isAuthenticated ? '/dashboard' : '/login'
+    }
   },
 
   // Auth routes
@@ -43,21 +40,8 @@ const routes = [
   // Dashboard routes
   ...dashboardRoutes,
 
-  // // Feature routes
-  // ...clientsRoutes,
-  // ...opportunitiesRoutes,
-   ...agentsRoutes,
-  // ...productsRoutes,
-  // ...knowledgeBaseRoutes,
-  //
-  // // Admin routes
-  // ...adminRoutes,
-  //
-  // // Profile routes
-  // ...profileRoutes,
-  //
-  // // Error routes
-//  ...errorRoutes,
+  // Feature routes
+  ...agentsRoutes,
 
   // 404 - Deve ser a última rota
   {
@@ -100,12 +84,17 @@ router.beforeEach(async (to, from, next) => {
     await authStore.initializeAuth()
   }
 
-  // Aplicar guards em ordem
+  // ⚠️ IMPORTANTE: Ordem correta dos guards
+  // 1. Guest guard - impede autenticados de acessar páginas de login
+  // 2. Auth guard - protege rotas autenticadas
+  // 3. Admin guard - protege rotas admin
+  // 4. Subscription guard - protege rotas de assinatura
+
   const guards = [
-    guestGuard,        // Redireciona autenticados de páginas guest
-    authGuard,         // Protege rotas autenticadas
-    adminGuard,        // Protege rotas admin
-    subscriptionGuard  // Protege rotas de assinatura
+    guestGuard,        // Executar PRIMEIRO
+    authGuard,
+    adminGuard,
+    subscriptionGuard
   ]
 
   // Executar guards sequencialmente

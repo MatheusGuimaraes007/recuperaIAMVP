@@ -1,12 +1,12 @@
 <template>
-  <RAuthLayout show-back-button>
+  <RAuthLayout show-back-button :back-route="{ name: 'login' }">
     <!-- Header Slot -->
     <template #header>
       <RHeading level="2" class="auth-title">
         Recuperar senha
       </RHeading>
       <RText class="auth-subtitle">
-        Digite seu e-mail e enviaremos um link para redefinir sua senha
+        Digite seu e-mail e enviaremos um link seguro para redefinir sua senha
       </RText>
     </template>
 
@@ -16,50 +16,48 @@
       <div v-if="!resetSuccess" class="forgot-form-container">
         <!-- Alert de erro -->
         <RAlertBanner
-            v-if="resetError"
-            variant="error"
-            :message="resetError"
-            dismissible
-            @close="resetError = null"
-            class="auth-alert"
+          v-if="resetError"
+          variant="error"
+          :message="resetError"
+          dismissible
+          @close="resetError = null"
+          class="auth-alert"
         />
 
         <!-- Formulário -->
         <form @submit.prevent="handleSubmit" class="auth-form">
           <!-- Email -->
           <RFormField
-              v-model="email"
-              label="E-mail"
-              type="email"
-              name="email"
-              autocomplete="email"
-              placeholder="seu@email.com"
-              :error="errors.email"
-              :disabled="isLoading"
-              required
+            v-model="email"
+            label="E-mail"
+            type="email"
+            name="email"
+            autocomplete="email"
+            placeholder="seu@email.com"
+            icon-left="mail"
+            :error="errors.email"
+            :disabled="isLoading"
+            required
           />
+
+          <!-- Info Box -->
+          <div class="info-box">
+            <RText size="sm" class="info-text">
+              💡 Enviaremos um link válido por 1 hora para o e-mail cadastrado
+            </RText>
+          </div>
 
           <!-- Botões -->
           <div class="button-group">
             <RButton
-                type="submit"
-                variant="primary"
-                size="lg"
-                full-width
-                :loading="isLoading"
-                :disabled="isLoading || !isFormValid"
+              type="submit"
+              variant="primary"
+              size="lg"
+              full-width
+              :loading="isLoading"
+              :disabled="isLoading || !isFormValid"
             >
               {{ isLoading ? 'Enviando...' : 'Enviar link de recuperação' }}
-            </RButton>
-
-            <RButton
-                variant="ghost"
-                size="md"
-                full-width
-                :disabled="isLoading"
-                @click="router.push({ name: 'login' })"
-            >
-              Voltar para login
             </RButton>
           </div>
         </form>
@@ -67,48 +65,52 @@
 
       <!-- Estado: Sucesso -->
       <div v-else class="success-container">
-        <!-- Alert de sucesso -->
-        <RAlertBanner
-            variant="success"
-            dismissible
-            class="auth-alert"
-        >
-          <template #default>
-            <div class="success-content">
-              <RHeading level="6" class="success-title">
-                E-mail enviado com sucesso!
-              </RHeading>
-              <RText size="sm" class="success-text">
-                Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-                Se não receber em alguns minutos, verifique sua pasta de spam.
-              </RText>
-            </div>
-          </template>
-        </RAlertBanner>
+        <!-- Success Icon -->
+        <div class="success-icon-wrapper">
+          <div class="success-icon">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="32" fill="#E8F5E9"/>
+              <circle cx="32" cy="32" r="24" fill="#00C853"/>
+              <path d="M24 32L29 37L40 26" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
 
-        <!-- Info adicional -->
-        <div class="success-info">
-          <RText size="sm" class="info-text">
-            E-mail enviado para: <strong>{{ email }}</strong>
+        <!-- Success Content -->
+        <div class="success-content">
+          <RHeading level="3" class="success-title">
+            E-mail enviado com sucesso!
+          </RHeading>
+          <RText size="base" class="success-description">
+            Enviamos um link de recuperação para:
+          </RText>
+          <div class="email-badge">
+            <RText size="sm" weight="semibold" class="email-text">
+              {{ email }}
+            </RText>
+          </div>
+          <RText size="sm" class="success-instructions">
+            Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+            Se não receber em alguns minutos, verifique sua pasta de spam.
           </RText>
         </div>
 
         <!-- Botões -->
         <div class="button-group">
           <RButton
-              variant="primary"
-              size="lg"
-              full-width
-              @click="router.push({ name: 'login' })"
+            variant="primary"
+            size="lg"
+            full-width
+            @click="router.push({ name: 'login' })"
           >
             Ir para login
           </RButton>
 
           <RButton
-              variant="ghost"
-              size="md"
-              full-width
-              @click="resetForm"
+            variant="ghost"
+            size="md"
+            full-width
+            @click="resetForm"
           >
             Enviar para outro e-mail
           </RButton>
@@ -244,14 +246,14 @@ const resetForm = () => {
 
 /* Títulos */
 .auth-title {
-  color: var(--text-primary);
+  color: var(--color-text-primary);
   margin-bottom: var(--spacing-2);
 }
 
 .auth-subtitle {
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  line-height: var(--line-height-relaxed);
+  line-height: 1.6;
 }
 
 /* Alert */
@@ -264,6 +266,19 @@ const resetForm = () => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+}
+
+/* Info Box */
+.info-box {
+  padding: var(--spacing-4);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+}
+
+.info-text {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 .button-group {
@@ -281,38 +296,65 @@ const resetForm = () => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
+  text-align: center;
+}
+
+.success-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-2);
+}
+
+.success-icon {
+  animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .success-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-3);
 }
 
 .success-title {
-  color: var(--color-success-700);
-  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
-.success-text {
-  color: var(--text-secondary);
-  line-height: var(--line-height-relaxed);
+.success-description {
+  color: var(--color-text-secondary);
 }
 
-.success-info {
-  padding: var(--spacing-4);
-  background-color: var(--bg-tertiary);
+.email-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-bg-tertiary);
   border-radius: var(--radius-md);
-  text-align: center;
+  border: 1px dashed var(--color-primary);
+  margin: var(--spacing-2) auto;
 }
 
-.info-text {
-  color: var(--text-secondary);
+.email-text {
+  color: var(--color-primary);
 }
 
-.info-text strong {
-  color: var(--text-primary);
-  font-weight: var(--font-weight-semibold);
+.success-instructions {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 /* =============================================================================
@@ -321,19 +363,19 @@ const resetForm = () => {
 
 .auth-footer-text {
   text-align: center;
-  margin-top: var(--spacing-6);
+  padding-top: var(--spacing-4);
 }
 
 .footer-text {
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .footer-link {
   color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
+  font-weight: 600;
   text-decoration: none;
-  margin-left: var(--spacing-1);
-  transition: var(--transition-fast);
+  margin-left: 4px;
+  transition: all var(--transition-fast);
 }
 
 .footer-link:hover {
@@ -346,8 +388,17 @@ const resetForm = () => {
    ============================================================================= */
 
 @media (max-width: 640px) {
-  .success-info {
+  .success-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .info-box {
     padding: var(--spacing-3);
+  }
+
+  .success-instructions {
+    font-size: var(--font-size-xs);
   }
 }
 </style>

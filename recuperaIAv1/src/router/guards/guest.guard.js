@@ -26,12 +26,17 @@ export const guestGuard = (to, from, next) => {
         if (authStore.isAuthenticated) {
             console.log('🔄 Usuário já autenticado, redirecionando...')
 
-            // Redirecionar baseado em role
-            const destination = authStore.isAdmin
-                ? '/admin/dashboard'
-                : '/dashboard'
+            // ⚠️ CORREÇÃO: Evitar redirect infinito
+            // Se já estamos no dashboard, não redirecionar
+            if (from.path === '/dashboard' || from.path === '/admin/dashboard') {
+                next(false) // Cancelar navegação
+                return
+            }
 
-            next({ path: destination })
+            // Redirecionar baseado em role
+            const destination = authStore.isAdmin ? '/admin/dashboard' : '/dashboard'
+
+            next({ path: destination, replace: true })
             return
         }
 
