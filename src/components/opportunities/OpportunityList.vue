@@ -261,7 +261,7 @@ const handleLogout = async () => {
               style="background-color: rgba(239, 67, 67, 0.1); border-color: var(--color-text2)"
           >
             <svg
-                class="w-5 h-5 flex-shrink-0 mt-0.5"
+                class="w-5 h-5 shrink-0 mt-0.5"
                 style="color: var(--color-text2)"
                 fill="currentColor"
                 viewBox="0 0 20 20"

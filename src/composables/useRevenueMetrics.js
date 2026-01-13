@@ -35,11 +35,12 @@ export const useRevenueMetrics = () => {
                 endDate = dateRange.endDate;
             }
 
-            // Query para TODAS as oportunidades won (faturamento total da plataforma)
+            // Query para TODAS as oportunidades won ou recovered (faturamento total da plataforma)
             let platformQuery = supabase
                 .from('opportunities')
                 .select('converted_value, value, status')
                 .eq('user_id', userId)
+                // .in('status', ['won', 'recovered'])
                 .eq('status', 'won')
                 .is('deleted_at', null);
 
@@ -57,6 +58,7 @@ export const useRevenueMetrics = () => {
             platformRevenue.value = (platformData || []).reduce((sum, opp) => {
                 return sum + (parseFloat(opp.converted_value || opp.value) || 0);
             }, 0);
+
 
             // Query para oportunidades RECUPERADAS (status = 'recovered')
             let recoveredQuery = supabase
