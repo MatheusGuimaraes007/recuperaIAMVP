@@ -75,6 +75,16 @@ const routes = [
     },
   },
   {
+    path: "/admin/contatos/:clientId",
+    name: "AdminClientContacts",
+    component: () => import("../components/adm/AdminClientContacts.vue"),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: "Contatos do Cliente"
+    }
+  },
+  {
       path: "/admin/conhecimento/:baseId",
       name: "AdminClientKnowledgeBases",
       component: () => import("../components/conhecimento/adm/EditarBaseConhecimento.vue"),
@@ -157,7 +167,7 @@ const routes = [
     path: "/oportunidades/:id",
     name: "OpportunityDetail",
     component: () => import("../components/opportunities/OpportunityDetail.vue"),
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true },
   },
 ];
 

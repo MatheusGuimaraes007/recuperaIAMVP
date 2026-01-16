@@ -56,12 +56,14 @@ export const useDashboardClients = () => {
 
             const opportunities = opps || [];
 
+            // Conversão agora definida por opportunities com status 'recovered'
+            const recoveredOpps = opportunities.filter(o => o.status === 'recovered');
+
             return {
                 total_opportunities: opportunities.length,
-                won_opportunities: opportunities.filter(o => o.status === 'won').length,
+                recovered_opportunities: recoveredOpps.length,
                 total_value: opportunities.reduce((sum, o) => sum + (parseFloat(o.value) || 0), 0),
-                converted_value: opportunities
-                    .filter(o => o.status === 'won')
+                converted_value: recoveredOpps
                     .reduce((sum, o) => sum + (parseFloat(o.converted_value || o.value) || 0), 0)
             };
         } catch (err) {
@@ -128,20 +130,23 @@ export const useDashboardClients = () => {
                         .is('deleted_at', null);
 
                     const opportunities = opps || [];
-                    const wonOpps = opportunities.filter(o => o.status === 'won');
-                    const totalRecovered = wonOpps.reduce((sum, o) =>
+                    // Conversão definida por status 'recovered'
+                    const recoveredOpps = opportunities.filter(o => o.status === 'recovered');
+                    const totalRecovered = recoveredOpps.reduce((sum, o) =>
                         sum + (parseFloat(o.converted_value || o.value) || 0), 0
                     );
 
                     const conversionRate = opportunities.length > 0
-                        ? (wonOpps.length / opportunities.length) * 100
+                        ? (recoveredOpps.length / opportunities.length) * 100
                         : 0;
 
                     return {
                         ...client,
                         metrics: {
                             totalOpportunities: opportunities.length,
-                            wonOpportunities: wonOpps.length,
+                            // Mantém a propriedade `wonOpportunities` para compatibilidade,
+                            // porém conta oportunidades com status 'recovered' conforme solicitado.
+                            wonOpportunities: recoveredOpps.length,
                             totalRecovered,
                             conversionRate: conversionRate.toFixed(1),
                             roi: client.annual_investment > 0

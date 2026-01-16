@@ -9,7 +9,11 @@ export const useOpportunitiesHistory = () => {
   async function fetchOpportunitiesHistory(opportunityId) {
     loading.value = true;
     error.value = null; 
-    const {data: dataHistory, error: errorHistory} = await supabase.from('opportunity_full_history').select('*').eq('opportunity_id', opportunityId)
+    const {data: dataHistory, error: errorHistory} = await supabase
+      .from('opportunity_full_history')
+      .select('*')
+      .eq('opportunity_id', opportunityId)
+      .order('changed_at', { ascending: false });
     if (errorHistory) {
       error.value = 'Erro ao buscar histórico de oportunidades.';
       loading.value = false;

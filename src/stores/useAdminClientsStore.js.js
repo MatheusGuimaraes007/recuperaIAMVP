@@ -220,10 +220,10 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 .reduce((sum, o) => sum + (parseFloat(o.value || 0) || 0), 0);
 
             const originalTotal = opps.length;
-            const nonWonTotal = Math.max(0, originalTotal - wonCount);
 
             const metrics = {
-                totalOpportunities: nonWonTotal,
+                // total oportunidades considerando todas
+                totalOpportunities: originalTotal,
                 totalValue: totalValue,
                 wonOpportunities: wonCount,
                 lostOpportunities: lostCount,
@@ -234,11 +234,13 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 lostValue: lostValue,
                 // legacy compatibility: expose totalRecovered as recovered value
                 totalRecovered: totalRecoveredValue,
+                // Conversão agora baseada em 'recovered' (conforme solicitado)
                 conversionRate: originalTotal > 0
-                    ? parseFloat(((wonCount / originalTotal) * 100).toFixed(1))
+                    ? parseFloat(((recoveredCount / originalTotal) * 100).toFixed(1))
                     : 0,
-                recoveryRate: nonWonTotal > 0
-                    ? parseFloat(((recoveredCount / nonWonTotal) * 100).toFixed(1))
+                // recoveryRate: recovered / non-won (kept for backward compatibility)
+                recoveryRate: originalTotal - wonCount > 0
+                    ? parseFloat(((recoveredCount / Math.max(1, originalTotal - wonCount)) * 100).toFixed(1))
                     : 0
             };
 

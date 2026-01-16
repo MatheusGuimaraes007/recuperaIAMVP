@@ -14,6 +14,9 @@ export const useProducts = () => {
   const descriptionProduct = ref('')
   const productCheckoutId = ref('')
   const productPlataform = ref('')
+  const afiliateId = ref('')
+  const afiliateLink = ref('')
+  const defaultLink = ref('')
   
   async function fetchAlProducts() {
     let query = supabase
@@ -87,7 +90,10 @@ export const useProducts = () => {
       name: nameProduct.value,
       description: descriptionProduct.value,
       checkout_id: productCheckoutId.value,
-      plataform: productPlataform.value
+      plataform: productPlataform.value,
+      afiliate_id: afiliateId.value,
+      afiliate_link: afiliateLink.value,
+      default_link: defaultLink.value
     }).select().single();
     
     if (errorCreateProduct) {
@@ -118,6 +124,10 @@ export const useProducts = () => {
         description: descriptionProduct.value,
         checkout_id: productCheckoutId.value,
         plataform: productPlataform.value
+        ,
+        afiliate_id: afiliateId.value,
+        afiliate_link: afiliateLink.value,
+        default_link: defaultLink.value
       })
       .eq('id', productId)
       .select()
@@ -151,6 +161,9 @@ export const useProducts = () => {
     deleteProductById,
     editProductById,
     productCheckoutId,
-    productPlataform
+    productPlataform,
+    afiliateId,
+    afiliateLink,
+    defaultLink
   }
 }

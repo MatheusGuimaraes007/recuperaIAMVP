@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useOpportunities } from '../../composables/useOpportunities.js';
-import { formatCurrency,  formatPhone } from '../../utils/formatters';
+import { formatCurrency,  formatPhone, formatDate } from '../../utils/formatters';
 import { OPPORTUNITY_TYPE_LABELS } from '../../utils/constants';
 import Card from "../../shared/Card.vue";
 import Button from "../../shared/Button.vue";
@@ -10,7 +10,7 @@ import LoadingState from "../../shared/LoadingState.vue";
 import StatusBadge from "../../shared/StatusBadge.vue";
 import MessageThread from './MessageThread.vue';
 import Navbar from '../../shared/Navbar.vue';
-import OpportunityStatusModal from "./OpportunityStatusModal.vue";
+import { useOpportunitiesHistory } from '../../composables/useOpportunitiesHistory.js';
 
 
 const route = useRoute();
@@ -26,27 +26,91 @@ const {
   formatLostReason
 } = useOpportunities();
 
-const showStatusModal = ref(false);
-const updating = ref(false);
+const {
+  historyRecords,
+  loading: loadingHistory,
+  error: historyError,
+  fetchOpportunitiesHistory
+} = useOpportunitiesHistory();
+
+// quick actions and status modal removed per request
 
 onMounted(async () => {
-  if (route.params.id) await fetchOpportunityById(route.params.id);
+  if (route.params.id) {
+    await fetchOpportunityById(route.params.id);
+    await fetchOpportunitiesHistory(route.params.id);
+  }
 });
 
-const handleStatusUpdate = async (newStatus) => {
-  if (!currentOpportunity.value) return;
-  updating.value = true;
-  const result = await updateOpportunity(currentOpportunity.value.id, { status: newStatus });
-  updating.value = false;
-  if (result.success) showStatusModal.value = false;
+const goBack = () => {
+  // Prefer explicit client opportunities route when clientId is available
+  const clientId = currentOpportunity?.client_id || currentOpportunity?.client?.id || null;
+  if (clientId) {
+    router.push(`/admin/oportunidades/${clientId}`);
+    return;
+  }
+
+  // Fallback to browser back, then general opportunities
+  const initialPath = route.fullPath;
+  if (typeof window !== 'undefined' && window.history && window.history.length > 1) {
+    router.back();
+    setTimeout(() => {
+      if (route.fullPath === initialPath) {
+        router.push('/oportunidades');
+      }
+    }, 250);
+    return;
+  }
+
+  router.push('/oportunidades');
 };
 
-const handleDelete = async () => {
-  if (confirm('Tem certeza que deseja excluir esta oportunidade?')) {
-    const result = await deleteOpportunity(currentOpportunity.value.id);
-    if (result.success) router.push('/oportunidades');
+const groupedHistory = computed(() => {
+  // manter apenas os campos relevantes e agrupar por data (apenas data no cabeçalho)
+  const allowed = ['payment_method', 'opportunity_type', 'status'];
+  const records = (historyRecords.value || [])
+    .filter(r => allowed.includes(r.changed_field))
+    .map(r => ({ ...r }))
+    .sort((a, b) => new Date(b.changed_at) - new Date(a.changed_at));
+
+  const map = {};
+  records.forEach((r) => {
+    const dateKey = formatDate(r.changed_at); // DD/MM/YYYY
+    if (!map[dateKey]) map[dateKey] = [];
+    map[dateKey].push(r);
+  });
+  return Object.keys(map).map((date) => ({ date, entries: map[date] }));
+});
+
+const fieldLabel = (field) => {
+  const map = {
+    payment_method: 'Método de pagamento',
+    opportunity_type: 'Tipo de Oportunidade',
+    status: 'Status'
+  };
+  return map[field] || field;
+};
+
+const translateStatusValue = (val) => {
+  const map = {
+    active: 'Ativo',
+    won: 'Ganho',
+    recovered: 'Recuperado',
+    lost: 'Perdido'
+  };
+  return map[val] || val;
+};
+
+const formatTimeOnly = (date) => {
+  try {
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return date;
   }
 };
+
+// delete and status update actions removed
 </script>
 
 <template>
@@ -56,19 +120,16 @@ const handleDelete = async () => {
     <div class="p-4 md:p-6">
       <div class="max-w-7xl mx-auto">
         <div class="mb-6 flex items-center justify-between">
-          <Button variant="ghost" size="sm" @click="router.push('/oportunidades')">
+          <Button variant="ghost" size="sm" @click="goBack">
             ← Voltar para Oportunidades
-          </Button>
-          <Button variant="ghost" size="sm" @click="showStatusModal = true">
-            Alterar Status
           </Button>
         </div>
 
         <LoadingState v-if="loading && !currentOpportunity" message="Carregando..." />
 
-        <div v-else-if="currentOpportunity" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div v-else-if="currentOpportunity" class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-          <div class="lg:col-span-2 space-y-6">
+          <div class="space-y-6">
             <Card padding="lg" class="relative overflow-hidden">
               <div class="flex justify-between items-start mb-4">
                 <div>
@@ -88,7 +149,7 @@ const handleDelete = async () => {
             <Card padding="lg">
               <h3 class="text-lg font-bold text-white mb-4">Informações do Lead</h3>
               <div class="flex items-center gap-4 mb-6">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-xl font-bold">
+                <div class="w-16 h-16 rounded-full bg-linear-to-br from-primary to-primary-dark flex items-center justify-center text-white text-xl font-bold">
                   {{ (currentOpportunity.contact?.name || 'S')[0] }}
                 </div>
                 <div>
@@ -99,19 +160,43 @@ const handleDelete = async () => {
               </div>
             </Card>
 
-            <MessageThread :opportunity-id="currentOpportunity.id" />
+            <Card padding="lg">
+              <h3 class="text-lg font-bold text-white mb-4">Histórico de Alterações</h3>
+              <div v-if="loadingHistory" class="text-gray-400">Carregando histórico...</div>
+              <div v-else-if="historyError" class="text-status-error">{{ historyError }}</div>
+              <div v-else-if="!historyRecords.length" class="text-gray-400">Nenhuma alteração encontrada.</div>
+              <div v-else class="space-y-4">
+                <div v-for="group in groupedHistory" :key="group.date">
+                  <h4 class="text-sm font-semibold text-gray-300 mb-2">{{ group.date }}</h4>
+                  <ul class="space-y-2">
+                    <li v-for="entry in group.entries" :key="entry.id" class="p-3 bg-gray-900/30 rounded flex items-center justify-between">
+                      <div class="text-xs text-gray-400 w-20">{{ formatTimeOnly(entry.changed_at) }}</div>
+                      <div class="ml-4 w-full">
+                        <div class="text-sm text-gray-200 font-medium">{{ fieldLabel(entry.changed_field) }}: <span class="text-gray-400">
+                          <template v-if="entry.changed_field === 'status'">
+                            {{ translateStatusValue(entry.old_value) || '-' }} → {{ translateStatusValue(entry.new_value) || '-' }}
+                          </template>
+                          <template v-else-if="entry.changed_field === 'opportunity_type'">
+                            {{ OPPORTUNITY_TYPE_LABELS[entry.old_value] || entry.old_value || '-' }} → {{ OPPORTUNITY_TYPE_LABELS[entry.new_value] || entry.new_value || '-' }}
+                          </template>
+                          <template v-else>
+                            {{ entry.old_value || '-' }} → {{ entry.new_value || '-' }}
+                          </template>
+                        </span></div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </Card>
           </div>
 
+          <!-- Chat sidebar (50% width) -->
           <div class="space-y-6">
-            <Card padding="md">
-              <h3 class="font-bold text-white mb-4">Ações Rápidas</h3>
-              <div class="space-y-2">
-                <Button variant="primary" class="w-full justify-start" @click="showStatusModal = true">
-                  Alterar Status
-                </Button>
-                <Button variant="ghost" class="w-full justify-start text-status-error hover:bg-status-error/10" @click="handleDelete">
-                  Excluir Oportunidade
-                </Button>
+            <Card padding="lg" class="sticky top-24 lg:h-[70vh]">
+              <h3 class="text-lg font-bold text-white mb-4">Chat</h3>
+              <div class="h-[60vh] overflow-auto">
+                <MessageThread :opportunity-id="currentOpportunity.id" />
               </div>
             </Card>
           </div>
@@ -119,12 +204,6 @@ const handleDelete = async () => {
       </div>
     </div>
 
-    <OpportunityStatusModal
-        :is-open="showStatusModal"
-        :current-status="currentOpportunity?.status"
-        :loading="updating"
-        @close="showStatusModal = false"
-        @update="handleStatusUpdate"
-    />
+    <!-- OpportunityStatusModal removed -->
   </div>
 </template>

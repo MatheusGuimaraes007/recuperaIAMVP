@@ -19,7 +19,10 @@ const {
   descriptionProduct,
   userUuid,
   productCheckoutId,
-  productPlataform
+  productPlataform,
+  afiliateId,
+  afiliateLink, 
+  defaultLink
 } = useProducts();
 
 const { fetchAllUsers, allUsers } = useUSers();
@@ -93,6 +96,9 @@ const clearForm = () => {
   nameProduct.value = '';
   descriptionProduct.value = '';
   userUuid.value = '';
+  afiliateId.value = '';
+  afiliateLink.value = '';
+  defaultLink.value = '';
 };
 
 const openDeleteModal = (product) => {
@@ -120,6 +126,11 @@ const openEditModal = (product) => {
   productToAction.value = product;
   nameProduct.value = product.name;
   descriptionProduct.value = product.description || '';
+  productCheckoutId.value = product.checkout_id || '';
+  productPlataform.value = product.plataform || '';
+  afiliateId.value = product.afiliate_id || '';
+  afiliateLink.value = product.afiliate_link || '';
+  defaultLink.value = product.default_link || '';
   showEditModal.value = true;
 };
 
@@ -256,6 +267,33 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
                         placeholder="Ex: 123456"
                     />
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">ID de Afiliado</label>
+                    <input 
+                        v-model="afiliateId"
+                        type="text" 
+                        class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none"
+                        placeholder="Ex: 123456"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Link de Afiliado</label>
+                    <input 
+                        v-model="afiliateLink"
+                        type="text" 
+                        class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none"
+                        placeholder="Ex: 123456"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Link Padrão</label>
+                    <input 
+                        v-model="defaultLink"
+                        type="text" 
+                        class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none"
+                        placeholder="Ex: 123456"
+                    />
+                </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
@@ -340,6 +378,27 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
                     </h3>
                 </div>
               </div>
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg text-[#7cba10]">
+                    <h3 class="text-md text-white leading-tight line-clamp-1" :title="product.afiliate_id">
+                  ID Afiliado: {{ product.afiliate_id || 'N/A' }}
+                    </h3>
+                </div>
+              </div>
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg text-[#7cba10]">
+                    <h3 class="text-md text-white leading-tight line-clamp-1" :title="product.afiliate_link">
+                  Link Afiliado: {{ product.afiliate_link || 'N/A' }}
+                    </h3>
+                </div>
+              </div>
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg text-[#7cba10]">
+                    <h3 class="text-md text-white leading-tight line-clamp-1" :title="product.default_link">
+                  Link Padrão: {{ product.default_link || 'N/A' }}
+                    </h3>
+                </div>
+              </div>
             {{ product.description || 'Sem descrição cadastrada.' }}
           </p>
 
@@ -371,15 +430,41 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
     </main>
 
     <div v-if="showEditModal" class="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-        <div class="w-full max-w-lg rounded-2xl border p-8 shadow-2xl relative" style="background-color: #09090b; border-color: var(--color-border1)">
-          <div class="mb-6"><h3 class="text-2xl font-bold text-white mb-1">Editar Produto</h3><p class="text-gray-400 text-sm">Atualize as informações.</p></div>
-          <div class="space-y-2 mb-4">
-             <div><label class="block text-sm font-medium text-gray-300 mb-2">Nome</label><input v-model="nameProduct" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" /></div>
-             <div><label class="block text-sm font-medium text-gray-300 mb-2">Checkout ID</label><input v-model="productCheckoutId" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" /></div>
-             <div><label class="block text-sm font-medium text-gray-300 mb-2">Plataforma</label><input v-model="productPlataform" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" /></div>
-             <div><label class="block text-sm font-medium text-gray-300 mb-2">Descrição</label><textarea v-model="descriptionProduct" rows="3" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none resize-none"></textarea></div>
+        <div class="w-full max-w-5xl rounded-2xl border p-6 lg:p-8 shadow-2xl relative max-h-[92vh] overflow-hidden flex flex-col" style="background-color: #09090b; border-color: var(--color-border1)">
+          <div class="mb-4"><h3 class="text-2xl font-bold text-white mb-1">Editar Produto</h3><p class="text-gray-400 text-sm">Atualize as informações.</p></div>
+          <div class="flex-1 overflow-y-auto pr-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+             <div>
+               <label class="block text-sm font-medium text-gray-300 mb-2">Nome</label>
+               <input v-model="nameProduct" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+             </div>
+             <div>
+               <label class="block text-sm font-medium text-gray-300 mb-2">Checkout ID</label>
+               <input v-model="productCheckoutId" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+             </div>
+             <div>
+               <label class="block text-sm font-medium text-gray-300 mb-2">Plataforma</label>
+               <input v-model="productPlataform" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+             </div>
+             <div>
+               <label class="block text-sm font-medium text-gray-300 mb-2">ID de Afiliado</label>
+               <input v-model="afiliateId" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+             </div>
+             <div>
+               <label class="block text-sm font-medium text-gray-300 mb-2">Link de Afiliado</label>
+               <input v-model="afiliateLink" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+             </div>
+             <div>
+               <label class="block text-sm font-medium text-gray-300 mb-2">Link Padrão</label>
+               <input v-model="defaultLink" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+             </div>
+             <div class="md:col-span-2">
+               <label class="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
+               <textarea v-model="descriptionProduct" rows="3" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none resize-none"></textarea>
+             </div>
           </div>
-          <div class="flex gap-3 pt-4 border-t border-white/10">
+          </div>
+          <div class="flex gap-3 pt-4 border-t border-white/10 mt-4">
              <button @click="showEditModal = false" class="flex-1 py-3 rounded-xl text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors cursor-pointer">Cancelar</button>
              <button @click="saveEdit" :disabled="isProcessing" class="flex-1 py-3 rounded-xl text-sm font-bold text-background4 shadow-lg hover:shadow-[#7cba10]/20 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer" style="background-color: var(--color-text1)">
                 <span v-if="isProcessing" class="animate-spin w-4 h-4 border-2 border-background4/30 border-t-background4 rounded-full"></span><span v-else>Salvar</span>

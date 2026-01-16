@@ -169,35 +169,44 @@ const statusConfig = computed(() => {
           </Card>
 
           <!-- Metrics Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <MetricCard
-                label="Total de Oportunidades"
-                :value="metrics.totalOpportunities"
-                icon="briefcase"
-                variant="blue"
+              label="Total de Oportunidades"
+              :value="metrics.totalOpportunities"
+              icon="briefcase"
+              variant="blue"
             />
 
             <MetricCard
-                label="Oportunidades Ganhas"
-                :value="metrics.wonOpportunities"
-                icon="check-circle"
-                variant="green"
+              label="Oportunidades Ganhas"
+              :value="metrics.wonOpportunities"
+              icon="check-circle"
+              variant="green"
             />
 
             <MetricCard
-                label="Taxa de Conversão"
-                :value="`${metrics.conversionRate}%`"
-                icon="trending-up"
-                variant="purple"
+              label="Oportunidades Recuperadas"
+              :value="metrics.recoveredOpportunities || metrics.recovered_opportunities || 0"
+              icon="refresh-cw"
+              variant="teal"
+            />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
+            <MetricCard
+              label="Taxa de Conversão"
+              :value="`${metrics.conversionRate}%`"
+              icon="trending-up"
+              variant="purple"
             />
 
             <MetricCard
-                label="Valor Recuperado"
-                :value="formatCurrency(metrics.totalRecovered)"
-                icon="dollar-sign"
-                variant="orange"
+              label="Valor Recuperado"
+              :value="formatCurrency(metrics.totalRecovered)"
+              icon="dollar-sign"
+              variant="orange"
             />
-          </div>
+            </div>
 
           <!-- Quick Actions -->
           <Card padding="lg">
@@ -225,34 +234,25 @@ const statusConfig = computed(() => {
                 </div>
               </button>
 
-              <div class="group p-6 rounded-xl border-2 border-border-card opacity-50 cursor-not-allowed bg-background-card">
+              <button
+                  @click="() => router.push(`/admin/contatos/${clientId}`)"
+                  class="group p-6 rounded-xl border-2 border-border-card hover:border-primary transition-all hover:shadow-lg hover:-translate-y-1 bg-background-card"
+              >
                 <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-lg bg-gray-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M17 20h5v-2a4 4 0 00-4-4h-1" />
+                      <path d="M9 20H4v-2a4 4 0 014-4h1" />
+                      <circle cx="12" cy="7" r="4" />
                     </svg>
                   </div>
                   <div class="flex-1 text-left">
                     <h3 class="text-lg font-bold text-white mb-1">Ver Contatos</h3>
-                    <p class="text-sm text-gray-400">Em breve</p>
+                    <p class="text-sm text-gray-400">Visualize os contatos deste cliente e quantas oportunidades cada um possui</p>
                   </div>
+                  <ChevronRight :size="20" class="text-gray-600 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
-              </div>
-
-              <div class="group p-6 rounded-xl border-2 border-border-card opacity-50 cursor-not-allowed bg-background-card">
-                <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-lg bg-gray-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div class="flex-1 text-left">
-                    <h3 class="text-lg font-bold text-white mb-1">Configurações</h3>
-                    <p class="text-sm text-gray-400">Em breve</p>
-                  </div>
-                </div>
-              </div>
+              </button>
             </div>
           </Card>
 

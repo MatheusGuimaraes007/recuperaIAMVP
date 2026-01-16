@@ -322,19 +322,23 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
 
             console.log('⏳ Cache MISS, buscando do banco...');
 
-            const { data, error: fetchError } = await supabase
+            // Para admins permitimos buscar qualquer oportunidade; para usuários normais, restringimos pelo user_id
+            let query = supabase
                 .from('opportunities')
                 .select(`
                     *,
                     contact:contacts(id, name, phone, email, status),
                     agent:agents(id, name),
-                    product:products(id, name, description),
-                    integration:user_integrations(id, name)
+                    product:products(id, name, description)
                 `)
                 .eq('id', id)
-                .eq('user_id', userId)
-                .is('deleted_at', null)
-                .single();
+                .is('deleted_at', null);
+
+            if (!authStore.isAdmin) {
+                query = query.eq('user_id', userId);
+            }
+
+            const { data, error: fetchError } = await query.single();
 
             if (fetchError) throw fetchError;
 
