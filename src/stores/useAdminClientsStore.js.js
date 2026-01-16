@@ -201,16 +201,44 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
             const opps = opportunities || [];
 
+            const totalValue = opps.reduce((sum, o) => sum + (parseFloat(o.value || 0) || 0), 0);
+            const wonCount = opps.filter(o => o.status === 'won').length;
+            const lostCount = opps.filter(o => o.status === 'lost').length;
+            const activeCount = opps.filter(o => o.status === 'active').length;
+            const recoveredCount = opps.filter(o => o.status === 'recovered').length;
+
+            const totalRecoveredValue = opps
+                .filter(o => o.status === 'recovered')
+                .reduce((sum, o) => sum + (parseFloat(o.converted_value || o.value) || 0), 0);
+
+            const totalWonValue = opps
+                .filter(o => o.status === 'won')
+                .reduce((sum, o) => sum + (parseFloat(o.converted_value || o.value) || 0), 0);
+
+            const lostValue = opps
+                .filter(o => o.status === 'lost')
+                .reduce((sum, o) => sum + (parseFloat(o.value || 0) || 0), 0);
+
+            const originalTotal = opps.length;
+            const nonWonTotal = Math.max(0, originalTotal - wonCount);
+
             const metrics = {
-                totalOpportunities: opps.length,
-                wonOpportunities: opps.filter(o => o.status === 'won').length,
-                lostOpportunities: opps.filter(o => o.status === 'lost').length,
-                activeOpportunities: opps.filter(o => o.status === 'active').length,
-                totalRecovered: opps
-                    .filter(o => o.status === 'won')
-                    .reduce((sum, o) => sum + (parseFloat(o.converted_value || o.value) || 0), 0),
-                conversionRate: opps.length > 0
-                    ? ((opps.filter(o => o.status === 'won').length / opps.length) * 100).toFixed(1)
+                totalOpportunities: nonWonTotal,
+                totalValue: totalValue,
+                wonOpportunities: wonCount,
+                lostOpportunities: lostCount,
+                activeOpportunities: activeCount,
+                recoveredOpportunities: recoveredCount,
+                totalRecoveredValue: totalRecoveredValue,
+                totalWonValue: totalWonValue,
+                lostValue: lostValue,
+                // legacy compatibility: expose totalRecovered as recovered value
+                totalRecovered: totalRecoveredValue,
+                conversionRate: originalTotal > 0
+                    ? parseFloat(((wonCount / originalTotal) * 100).toFixed(1))
+                    : 0,
+                recoveryRate: nonWonTotal > 0
+                    ? parseFloat(((recoveredCount / nonWonTotal) * 100).toFixed(1))
                     : 0
             };
 
@@ -241,12 +269,32 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
         try {
             const authStore = useAuthStore();
 
+            // Se houver sessão ativa mas `user` ainda não estiver populado,
+            // inicializa auth para garantir `user` e `isAdmin` estejam definidos.
+            if (!authStore.user && authStore.session) {
+                await authStore.initializeAuth();
+            }
+
             if (!authStore.isAdmin) {
                 throw new Error('Acesso negado.');
             }
 
             const found = clients.value.find(c => c.id === clientId);
             if (found && found.metrics) {
+                // If metrics appear incomplete (e.g. value present but counts missing),
+                // fetch fresh metrics to ensure counts like recoveredOpportunities exist.
+                const m = found.metrics;
+                const needsEnrich = (m.recoveredOpportunities === undefined && m.recovered === undefined) ||
+                    (m.totalRecoveredValue === undefined && m.totalRecovered === undefined);
+
+                if (needsEnrich) {
+                    console.log('ℹ️ Cliente local tem métricas incompletas, buscando métricas completas...');
+                    const metricsResult = await fetchClientMetrics(clientId);
+                    if (metricsResult.success) {
+                        found.metrics = { ...found.metrics, ...metricsResult.data };
+                    }
+                }
+
                 currentClient.value = found;
                 loading.value = false;
                 console.log('✅ Cliente encontrado na lista local');

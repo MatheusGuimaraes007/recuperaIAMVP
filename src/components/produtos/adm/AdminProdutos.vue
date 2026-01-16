@@ -17,7 +17,9 @@ const {
   createProduct, 
   nameProduct, 
   descriptionProduct,
-  userUuid
+  userUuid,
+  productCheckoutId,
+  productPlataform
 } = useProducts();
 
 const { fetchAllUsers, allUsers } = useUSers();
@@ -236,6 +238,24 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
                         placeholder="Ex: Consultoria Financeira"
                     />
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Plataforma</label>
+                    <input 
+                        v-model="productPlataform"
+                        type="text" 
+                        class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none"
+                        placeholder="Ex: 123456"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">ID do Produto - Checkout</label>
+                    <input 
+                        v-model="productCheckoutId"
+                        type="text" 
+                        class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none"
+                        placeholder="Ex: 123456"
+                    />
+                </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
@@ -295,6 +315,7 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
               </h3>
             </div>
             
+            
             <div class="flex gap-2">
               <button @click.stop="openEditModal(product)" class="text-gray-500 hover:text-blue-400 transition-colors p-2 rounded-md hover:bg-blue-500/10 cursor-pointer" title="Editar">
                  <Edit :size="20" />
@@ -304,8 +325,21 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
               </button>
             </div>
           </div>
-
           <p class="text-sm text-gray-400 mb-6 line-clamp-2 min-h-10 relative z-10">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg text-[#7cba10]">
+                    <h3 class="text-md text-white leading-tight line-clamp-1" :title="product.name">
+                  <span class="font-bold">ID:</span> {{ product.checkout_id || 'N/A' }}
+                    </h3>
+                </div>
+              </div>
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg text-[#7cba10]">
+                    <h3 class="text-md text-white leading-tight line-clamp-1" :title="product.name">
+                  Plataforma: {{ product.plataform || 'N/A' }}
+                    </h3>
+                </div>
+              </div>
             {{ product.description || 'Sem descrição cadastrada.' }}
           </p>
 
@@ -339,8 +373,10 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
     <div v-if="showEditModal" class="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
         <div class="w-full max-w-lg rounded-2xl border p-8 shadow-2xl relative" style="background-color: #09090b; border-color: var(--color-border1)">
           <div class="mb-6"><h3 class="text-2xl font-bold text-white mb-1">Editar Produto</h3><p class="text-gray-400 text-sm">Atualize as informações.</p></div>
-          <div class="space-y-4 mb-8">
+          <div class="space-y-2 mb-4">
              <div><label class="block text-sm font-medium text-gray-300 mb-2">Nome</label><input v-model="nameProduct" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" /></div>
+             <div><label class="block text-sm font-medium text-gray-300 mb-2">Checkout ID</label><input v-model="productCheckoutId" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" /></div>
+             <div><label class="block text-sm font-medium text-gray-300 mb-2">Plataforma</label><input v-model="productPlataform" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" /></div>
              <div><label class="block text-sm font-medium text-gray-300 mb-2">Descrição</label><textarea v-model="descriptionProduct" rows="3" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none resize-none"></textarea></div>
           </div>
           <div class="flex gap-3 pt-4 border-t border-white/10">

@@ -251,9 +251,11 @@ export const useMetricsCalculator = () => {
             }
         }
 
-        const total = opportunities.length;
-        const conversionRate = total > 0 ? parseFloat(((wonCount / total) * 100).toFixed(1)) : 0;
-        const recoveryRate = lostCount > 0 ? parseFloat(((recoveredCount / lostCount) * 100).toFixed(1)) : 0;
+        const originalTotal = opportunities.length;
+        const nonWonTotal = Math.max(0, originalTotal - wonCount);
+        const conversionRate = originalTotal > 0 ? parseFloat(((wonCount / originalTotal) * 100).toFixed(1)) : 0;
+        // Recovery rate: recovered / (total_non_won) as requested
+        const recoveryRate = nonWonTotal > 0 ? parseFloat(((recoveredCount / nonWonTotal) * 100).toFixed(1)) : 0;
 
         const avgMessages = messageCount > 0 ? Math.round(totalMessages / messageCount) : 0;
         const avgRecoveryMessages = recoveryMessageCount > 0 ? Math.round(totalRecoveryMessages / recoveryMessageCount) : 0;
@@ -269,7 +271,8 @@ export const useMetricsCalculator = () => {
         const roi = cost > 0 && totalRevenue > cost ? Math.round(((totalRevenue - cost) / cost)) : 0;
 
         return {
-            total,
+            // `total` represents non-won opportunities per product/UX request
+            total: nonWonTotal,
             active: activeCount,
             won: wonCount,
             lost: lostCount,

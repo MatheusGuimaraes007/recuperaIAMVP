@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Target,
   DollarSign,
-  MessageCircle // ✅ Novo Import
+  MessageCircle
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -73,6 +73,13 @@ const STATUS_CONFIGS = {
   },
 
   opportunity: {
+    active: {
+      label: 'Ativo',
+      icon: CheckCircle,
+      textClass: 'text-status-success',
+      bgClass: 'bg-status-success-light',
+      borderClass: 'border-status-success-border'
+    },
     new: {
       label: 'Nova',
       icon: AlertCircle,
@@ -114,6 +121,14 @@ const STATUS_CONFIGS = {
       textClass: 'text-status-success',
       bgClass: 'bg-status-success-light',
       borderClass: 'border-status-success-border'
+    }
+    ,
+    recovered: {
+      label: 'Recuperado',
+      icon: TrendingUp,
+      textClass: 'text-primary',
+      bgClass: 'bg-primary/10',
+      borderClass: 'border-primary/20'
     }
   },
 
@@ -202,6 +217,11 @@ const config = computed(() => {
   if (!typeConfig) return STATUS_CONFIGS.default.info
 
   const statusConfig = typeConfig[props.status]
+  // Se for oportunidade e não existir um mapeamento, tratar fallback como 'Ativo'
+  if (!statusConfig && props.type === 'opportunity') {
+    return typeConfig.active || STATUS_CONFIGS.default.info
+  }
+
   return statusConfig || STATUS_CONFIGS.default.info
 })
 

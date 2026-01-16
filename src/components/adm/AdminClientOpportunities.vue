@@ -74,6 +74,8 @@ const loadOpportunities = async (filterParams = {}) => {
     delete params.period;
   }
 
+  // Forçar busca pelas oportunidades do cliente (admin view)
+  params.userId = currentClient.value?.id || clientId.value;
   await opportunitiesStore.fetchOpportunities(params);
 };
 
@@ -179,6 +181,48 @@ const metrics = computed(() => {
   return metricsCalculator.calculateAllMetrics(filteredOpps);
 });
 
+// Métricas totais (all-time) vindas do objeto do cliente — exibidas sempre
+const totalMetrics = computed(() => {
+  const cm = currentClient.value?.metrics;
+  if (!cm) {
+    return {
+      total: 0,
+      won: 0,
+      lost: 0,
+      recovered: 0,
+      conversionRate: 0,
+      recoveryRate: 0,
+      totalValue: 0,
+      lostValue: 0,
+      convertedValue: 0,
+      recoveredValue: 0,
+      roi: 0,
+      averageMessages: 0,
+      averageRecoveryMessages: 0,
+      averageTime: '0min',
+      averageRecoveryTime: '0min'
+    };
+  }
+
+  return {
+    total: cm.totalOpportunities || cm.total || 0,
+    won: cm.wonOpportunities || cm.won || 0,
+    lost: cm.lostOpportunities || cm.lost || 0,
+    recovered: cm.recoveredOpportunities || cm.recovered || 0,
+    conversionRate: cm.conversionRate || cm.conversion_rate || 0,
+    recoveryRate: cm.recoveryRate || 0,
+    totalValue: cm.totalValue || 0,
+    lostValue: cm.lostValue || 0,
+    convertedValue: cm.totalWonValue || cm.totalRecovered || 0,
+    recoveredValue: cm.totalRecoveredValue || cm.totalRecovered || 0,
+    roi: cm.roi || 0,
+    averageMessages: cm.averageMessages || 0,
+    averageRecoveryMessages: cm.averageRecoveryMessages || 0,
+    averageTime: cm.averageTime || '0min',
+    averageRecoveryTime: cm.averageRecoveryTime || '0min'
+  };
+});
+
 const showEmptyState = computed(() => {
   const opps = Array.isArray(opportunities.value) ? opportunities.value : [];
   return !loading.value && opps.length === 0;
@@ -233,9 +277,9 @@ const hasActiveFilters = computed(() => {
 
         <!-- Filters -->
         <div class="mb-6">
-          <OpportunityFilters
+            <OpportunityFilters
               :loading="loading"
-              :metrics="metrics"
+              :metrics="totalMetrics"
               @search="handleSearch"
               @status-change="handleStatusChange"
               @period-change="handlePeriodChange"

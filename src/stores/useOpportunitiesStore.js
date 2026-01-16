@@ -87,15 +87,23 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
 
         try {
             const authStore = useAuthStore();
-            const userId = authStore.user?.id;
+            // Se houver sessão ativa mas `user` ainda não estiver populado,
+            // inicializa auth para garantir `user` esteja disponível.
+            if (!authStore.user && authStore.session) {
+                await authStore.initializeAuth();
+            }
+            const authUserId = authStore.user?.id;
 
-            if (!userId) {
+            // Permite sobrescrever o user id via filterParams (útil para views administrativas)
+            const currentFilters = { ...filters.value, ...filterParams };
+            // aceita tanto `userId` (camelCase) quanto `user_id` (snake_case) nos filtros
+            const targetUserId = currentFilters.userId || currentFilters.user_id || authUserId;
+
+            if (!targetUserId) {
                 throw new Error('Usuário não autenticado');
             }
 
-            const currentFilters = { ...filters.value, ...filterParams };
-
-            const cacheKey = createCacheKey('opportunities', userId, {
+            const cacheKey = createCacheKey('opportunities', targetUserId, {
                 page: currentFilters.page,
                 limit: currentFilters.limit,
                 status: currentFilters.status,
@@ -118,7 +126,7 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
 
             console.log('⏳ Cache MISS, buscando do banco...', cacheKey);
 
-            // Calcular datas para query
+            // Calcular datas para query (normalizar para timezone America/Sao_Paulo)
             let startDate = currentFilters.startDate;
             let endDate = currentFilters.endDate;
 
@@ -128,13 +136,23 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                 endDate = dateRange.endDate;
             }
 
+            // Converter datas fornecidas (ex: YYYY-MM-DD) para ISO UTC no timezone desejado
+            const { toZonedISOString } = await import('../utils/date.js');
+            try {
+                if (startDate) startDate = toZonedISOString(startDate, 'America/Sao_Paulo', true);
+                if (endDate) endDate = toZonedISOString(endDate, 'America/Sao_Paulo', false);
+            } catch (e) {
+                console.warn('Não foi possível normalizar as datas para timezone:', e.message || e);
+            }
+
             const page = currentFilters.page || 1;
             const limit = currentFilters.limit || 25;
             const offset = (page - 1) * limit;
 
             try {
                 const { data: rpcData, error: rpcError } = await supabase.rpc('search_opportunities', {
-                    p_user_id: userId,
+                    // usa targetUserId para permitir buscas em nome de outro usuário (admin)
+                    p_user_id: targetUserId,
                     p_search: currentFilters.search || null,
                     p_status: currentFilters.status === 'all' ? null : currentFilters.status,
                     p_start_date: startDate,
@@ -216,7 +234,8 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                     agent:agents(id, name),
                     product:products(id, name)
                 `, { count: 'exact' })
-                .eq('user_id', userId)
+                // filtra pelo user do cliente quando fornecido, caso contrário usa o usuário autenticado
+                .eq('user_id', targetUserId)
                 .is('deleted_at', null)
                 .order('created_at', { ascending: false });
 

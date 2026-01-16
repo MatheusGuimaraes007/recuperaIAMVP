@@ -40,8 +40,8 @@ export const useRevenueMetrics = () => {
                 .from('opportunities')
                 .select('converted_value, value, status')
                 .eq('user_id', userId)
-                // .in('status', ['won', 'recovered'])
-                .eq('status', 'won')
+                .in('status', ['won', 'recovered'])
+                // .eq('status', 'won')
                 .is('deleted_at', null);
 
             if (startDate && endDate) {

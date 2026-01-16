@@ -12,6 +12,8 @@ export const useProducts = () => {
   const productById = ref([])
   const nameProduct = ref('')
   const descriptionProduct = ref('')
+  const productCheckoutId = ref('')
+  const productPlataform = ref('')
   
   async function fetchAlProducts() {
     let query = supabase
@@ -84,6 +86,8 @@ export const useProducts = () => {
       user_id: userUuid.value,
       name: nameProduct.value,
       description: descriptionProduct.value,
+      checkout_id: productCheckoutId.value,
+      plataform: productPlataform.value
     }).select().single();
     
     if (errorCreateProduct) {
@@ -112,6 +116,8 @@ export const useProducts = () => {
       .update({
         name: nameProduct.value,
         description: descriptionProduct.value,
+        checkout_id: productCheckoutId.value,
+        plataform: productPlataform.value
       })
       .eq('id', productId)
       .select()
@@ -143,6 +149,8 @@ export const useProducts = () => {
     descriptionProduct,
     createProduct,
     deleteProductById,
-    editProductById
+    editProductById,
+    productCheckoutId,
+    productPlataform
   }
 }

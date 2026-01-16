@@ -117,6 +117,14 @@ const handleClear = () => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
+          label="TOTAL de Oportunidades"
+          :value="metrics.total - metrics.won"
+          icon="briefcase"
+          variant="blue"
+          :loading="loading"
+      />
+
+      <MetricCard
           label="Oportunidades Perdidas"
           :value="metrics.lost"
           icon="x-circle"

@@ -35,7 +35,7 @@ const platformPercentage = computed(() => {
 
 <template>
   <Card padding="lg" class="relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
+    <div class="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent"></div>
 
     <div class="relative">
       <h3 class="text-lg font-bold text-white mb-2">
@@ -56,17 +56,12 @@ const platformPercentage = computed(() => {
         <!-- Plataforma -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-300">Plataforma</span>
+            <span class="text-sm font-medium text-gray-300">Venda dos Produtos</span>
             <span class="text-lg font-bold text-white">
-              {{ formatCurrency(platformOnlyRevenue) }}
+              {{ formatCurrency(props.platformRevenue) }}
             </span>
           </div>
-          <div class="relative h-3 bg-gray-800 rounded-full overflow-hidden">
-            <div
-                class="absolute inset-y-0 left-0 bg-gradient-to-r from-gray-600 to-gray-500 rounded-full transition-all duration-500"
-                :style="{ width: `${platformPercentage}%` }"
-            ></div>
-          </div>
+          <!-- barra removida conforme solicitado -->
         </div>
 
         <!-- Recupera.ia -->
@@ -84,7 +79,7 @@ const platformPercentage = computed(() => {
           </div>
           <div class="relative h-3 bg-gray-800 rounded-full overflow-hidden">
             <div
-                class="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary-dark rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(124,186,16,0.5)]"
+                class="absolute inset-y-0 left-0 bg-linear-to-r from-primary to-primary-dark rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(124,186,16,0.5)]"
                 :style="{ width: `${recoveryPercentage}%` }"
             ></div>
           </div>

@@ -15,11 +15,11 @@ export const OPPORTUNITY_STATUS = {
  */
 export const STATUS_OPTIONS = [
     { value: OPPORTUNITY_STATUS.ALL, label: 'Todos os status', count: 0 },
-    { value: OPPORTUNITY_STATUS.ACTIVE, label: 'Ativas', count: 0, color: 'blue' },
-    { value: OPPORTUNITY_STATUS.WON, label: 'Ganhas', count: 0, color: 'green' },
-    { value: OPPORTUNITY_STATUS.LOST, label: 'Perdidas', count: 0, color: 'red' },
-    { value: OPPORTUNITY_STATUS.RECOVERED, label: 'Recuperadas', count: 0, color: 'primary' },
-    { value: OPPORTUNITY_STATUS.PAUSED, label: 'Pausadas', count: 0, color: 'yellow' }
+    { value: OPPORTUNITY_STATUS.ACTIVE, label: 'Ativo', count: 0, color: 'blue' },
+    { value: OPPORTUNITY_STATUS.WON, label: 'Ganho', count: 0, color: 'green' },
+    { value: OPPORTUNITY_STATUS.LOST, label: 'Perdido', count: 0, color: 'red' },
+    { value: OPPORTUNITY_STATUS.RECOVERED, label: 'Recuperado', count: 0, color: 'primary' },
+    { value: OPPORTUNITY_STATUS.PAUSED, label: 'Pausada', count: 0, color: 'yellow' }
 ];
 
 /**
