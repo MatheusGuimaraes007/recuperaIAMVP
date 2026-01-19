@@ -74,7 +74,8 @@ export function useBaseConhecimento() {
     const { data: dataQuestions, error: errorQuestions } = await supabase
       .from('product_knowledge_entries')
       .select('*')
-      .eq('id_knowledge_base', knowledgeBaseId);
+      .eq('id_knowledge_base', knowledgeBaseId)
+      .order('id', { ascending: true });
     if (errorQuestions) {
       console.error('Erro ao buscar perguntas da base de conhecimento:', errorQuestions);
       return null;

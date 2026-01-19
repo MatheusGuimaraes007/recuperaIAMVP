@@ -53,23 +53,27 @@ export const useAdminModalBaseConhecimento = () => {
 
 
   async function createQuestions() {
-   await fetchCategoriesTemplate(productCategory.value)
-   templatesOfCategories.value.forEach(async (template) => {
-      const {data: dataCreateQuestion, error: errorCreateQuestion} = await supabase.from('product_knowledge_entries').insert({
-        product_id: productSelected.value,
-        template_id: template.id,
-        category_id: productCategory.value,
-        id_knowledge_base: knowledgeBaseId.value,
-        question: template.question,
-        answer: '',
-        is_active: true,
-        writer: template.writer
-      })
+    await fetchCategoriesTemplate(productCategory.value)
+
+    for (const template of templatesOfCategories.value) {
+      const { error: errorCreateQuestion } = await supabase
+        .from('product_knowledge_entries')
+        .insert({
+          product_id: productSelected.value,
+          template_id: template.id,
+          category_id: productCategory.value,
+          id_knowledge_base: knowledgeBaseId.value,
+          question: template.question,
+          answer: '',
+          is_active: true,
+          writer: template.writer
+        });
+
       if (errorCreateQuestion) {
         console.error('Erro ao criar perguntas:', errorCreateQuestion);
         return;
       }
-   })
+    }
   }
 
 
