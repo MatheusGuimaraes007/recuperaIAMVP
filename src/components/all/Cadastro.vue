@@ -342,7 +342,7 @@ onMounted(async () => {
                     type="button"
                     variant="secondary"
                     size="lg"
-                    @click="router.push('/adm/dashboard')"
+                    @click="router.push('/admin/dashboard')"
                     class="flex-1 sm:flex-none"
                 >
                   <span class="flex items-center gap-2">

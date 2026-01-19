@@ -6,6 +6,8 @@ import Card from '../../../shared/Card.vue';
 import Button from '../../../shared/Button.vue';
 // Cliente não pode criar bases aqui; usamos apenas listagem/edição
 import { useBaseConhecimento } from '../../../composables/useBaseConhecimento';
+import { useAuthStore } from '../../../stores/useAuthStore';
+import { useAuth } from '../../../composables/useAuth';
 
 const props = defineProps({
   pageTitle: { type: String, default: 'Administre suas bases de conhecimento' },
@@ -15,20 +17,30 @@ const props = defineProps({
 
 const route = useRoute();
 const { allKnowledgeBases, fetchAllKnowledgeBases, loading } = useBaseConhecimento();
+const auth = useAuthStore();
+const { user } = useAuth();
 
 // no modal creation for clients
 
 async function loadBasesForQuery() {
-  const clientId = route.query.clientId;
+  // Prefer explicit query param; otherwise use currently authenticated user
+  const clientId = route.query.clientId || user.value?.id || auth.currentUser?.value?.id;
   if (clientId) {
     await fetchAllKnowledgeBases({ userId: clientId });
   } else {
-    await fetchAllKnowledgeBases();
+    // No client context — avoid fetching all bases for all users.
+    allKnowledgeBases.value = [];
   }
 }
 
 onMounted(() => {
   loadBasesForQuery();
+  // If user later becomes available, reload bases for that user
+  watch(user, (newUser) => {
+    if (newUser && (!route.query.clientId)) {
+      loadBasesForQuery();
+    }
+  });
 });
 
 watch(() => route.query.clientId, () => {

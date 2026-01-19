@@ -57,7 +57,7 @@ const handleLogout = async () => {
 }
 
 const dashboardPath = computed(() => {
-  return isAdmin.value ? '/adm/dashboard' : '/oportunidades'
+  return isAdmin.value ? '/admin/dashboard' : '/oportunidades'
 })
 
 const getIconComponent = (iconName) => {

@@ -41,13 +41,17 @@ export const useAuthStore = defineStore('auth', () => {
                 }
             }
 
-            console.log('⏳ Buscando user data do banco...');
+            console.log('⏳ Buscando user data do banco...', { authUuid, skipCache });
+            const start = Date.now();
 
             const { data, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
                 .eq('auth_uuid', authUuid)
                 .maybeSingle();
+
+            const duration = Date.now() - start;
+            console.log('fetchUserData: query finished', { authUuid, duration, fetchError, dataExists: !!data });
 
             if (fetchError) throw fetchError;
 
@@ -98,7 +102,40 @@ export const useAuthStore = defineStore('auth', () => {
                 session.value = newSession;
 
                 if (newSession) {
-                    await fetchUserData(newSession.user.id, true);
+                    const fetched = await fetchUserData(newSession.user.id, true);
+
+                    // Se não achou user no banco, tentar criar automaticamente usando user_metadata
+                    if (!fetched) {
+                        try {
+                            console.log('initializeAuth: user não encontrado — tentando criar a partir de auth metadata');
+                            const metadata = newSession.user.user_metadata || {};
+                            const toInsert = {
+                                auth_uuid: newSession.user.id,
+                                email: newSession.user.email,
+                                name: metadata.name || null,
+                                phone: metadata.phone || null,
+                                role: metadata.role || 'user',
+                                status: 'trial'
+                            };
+
+                            const { data: createdUser, error: createError } = await supabase
+                                .from('users')
+                                .insert(toInsert)
+                                .select()
+                                .single();
+
+                            if (createError) {
+                                console.warn('initializeAuth: falha ao criar user automático', createError);
+                            } else {
+                                user.value = createdUser;
+                                const cacheKey = `auth:user:${newSession.user.id}`;
+                                storeCache.set(cacheKey, createdUser, CacheTTL.SHORT);
+                                console.log('initializeAuth: user criado e salvo no cache', createdUser);
+                            }
+                        } catch (err) {
+                            console.error('initializeAuth: erro ao tentar criar user automaticamente', err);
+                        }
+                    }
                 } else {
                     user.value = null;
 
@@ -113,19 +150,92 @@ export const useAuthStore = defineStore('auth', () => {
                 try {
                     if (document.visibilityState === 'visible') {
                         console.log('👀 Aba visível — verificando sessão...');
-                        // tentar renovar sessão primeiro
-                        await refreshSession();
+
+                        console.log('ensureSessionOnVisible: session.value (store) =', session.value);
+
+                        // tentar renovar sessão primeiro e logar resultado
+                        try {
+                            const refreshed = await refreshSession();
+                            console.log('ensureSessionOnVisible: refreshSession result =', refreshed);
+                        } catch (refreshErr) {
+                            console.warn('ensureSessionOnVisible: refreshSession threw', refreshErr);
+                        }
 
                         const { data: { session: freshSession } } = await supabase.auth.getSession();
+                        console.log('ensureSessionOnVisible: getSession freshSession =', freshSession);
+
                         if (freshSession) {
                             // se mudou ou não existe em memória, atualizar e buscar user
                             if (!session.value || session.value?.user?.id !== freshSession.user.id || session.value?.access_token !== freshSession.access_token) {
+                                console.log('ensureSessionOnVisible: sessão diferente — atualizando e buscando user');
                                 session.value = freshSession;
-                                await fetchUserData(freshSession.user.id, true);
-                                console.log('🔄 Sessão renovada e user reobtido ao voltar à aba');
+                                try {
+                                    // proteger fetchUserData com timeout para evitar hangs
+                                    const fetchWithTimeout = (p, ms) => {
+                                        return Promise.race([
+                                            p,
+                                            new Promise((_, rej) => setTimeout(() => rej(new Error('fetchUserData timeout')), ms))
+                                        ]);
+                                    };
+
+                                    await fetchWithTimeout(fetchUserData(freshSession.user.id, true), 6000);
+                                    console.log('🔄 Sessão renovada e user reobtido ao voltar à aba');
+                                } catch (fetchErr) {
+                                    console.error('ensureSessionOnVisible: erro ou timeout ao fetchUserData após refresh', fetchErr);
+                                    // fallback: recarregar a página para reinicializar estado do app
+                                    try {
+                                        // tentar re-inicializar a autenticação antes de recarregar
+                                        console.log('ensureSessionOnVisible: tentando re-inicializar auth como fallback');
+                                        try {
+                                            await initializeAuth();
+                                            console.log('ensureSessionOnVisible: initializeAuth retornou (fallback)');
+                                            return;
+                                        } catch (initErr) {
+                                            console.warn('ensureSessionOnVisible: initializeAuth falhou', initErr);
+                                        }
+
+                                        // evitar reloads infinitos
+                                        window.__recuperaReloadAttempts = (window.__recuperaReloadAttempts || 0) + 1;
+                                        console.log('ensureSessionOnVisible: reload attempts =', window.__recuperaReloadAttempts);
+                                        if (window.__recuperaReloadAttempts > 1) {
+                                            console.warn('ensureSessionOnVisible: já tentou recarregar antes — abortando reload para evitar loop');
+                                            // como último recurso, encerrar sessão local e notificar usuário
+                                            try {
+                                                await supabase.auth.signOut();
+                                            } catch (signErr) {
+                                                console.warn('ensureSessionOnVisible: signOut também falhou', signErr);
+                                            }
+                                            user.value = null;
+                                            session.value = null;
+                                            storeCache.clear();
+                                            setError('Sessão inconsistente. Recarregue a página e faça login novamente.');
+                                        } else {
+                                            console.log('ensureSessionOnVisible: recarregando a página como fallback');
+                                            window.location.reload();
+                                        }
+                                    } catch (reloadErr) {
+                                        console.error('ensureSessionOnVisible: falha ao tentar recarregar', reloadErr);
+                                    }
+                                }
+                            } else {
+                                console.log('ensureSessionOnVisible: sessão igual — nada a fazer');
                             }
                         } else {
-                            console.log('⚠️ Nenhuma sessão ativa após visible check');
+                            console.log('ensureSessionOnVisible: nenhuma sessão ativa após visible check — limpando estado local');
+                            user.value = null;
+                            session.value = null;
+                            storeCache.invalidateNamespace('auth');
+                            // se não houver sessão, recarregar a página para evitar estado inconsistente
+                            try {
+                                window.__recuperaReloadAttempts = (window.__recuperaReloadAttempts || 0) + 1;
+                                if (window.__recuperaReloadAttempts > 1) {
+                                    console.warn('ensureSessionOnVisible: já tentou recarregar antes — abortando reload para evitar loop');
+                                } else {
+                                    window.location.reload();
+                                }
+                            } catch (reloadErr) {
+                                console.error('ensureSessionOnVisible: falha ao tentar recarregar após sessão ausente', reloadErr);
+                            }
                         }
                     }
                 } catch (err) {
@@ -200,6 +310,7 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             console.log('📝 Tentando registrar usuário...');
 
+            console.log('register: before signUp')
             const { data: authData, error: signUpError } = await supabase.auth.signUp({
                 email: userData.email,
                 password: userData.password,
@@ -211,8 +322,14 @@ export const useAuthStore = defineStore('auth', () => {
                 }
             });
 
-            if (signUpError) throw signUpError;
+            console.log('register: after signUp', { authData, signUpError });
 
+            if (signUpError) {
+                console.error('register: signUpError', signUpError);
+                throw signUpError;
+            }
+
+            console.log('register: before insert users')
             const { data: userRecord, error: insertError } = await supabase
                 .from('users')
                 .insert({
@@ -226,7 +343,12 @@ export const useAuthStore = defineStore('auth', () => {
                 .select()
                 .single();
 
-            if (insertError) throw insertError;
+            console.log('register: after insert users', { userRecord, insertError })
+
+            if (insertError) {
+                console.error('register: insertError', insertError);
+                throw insertError;
+            }
 
             // Se foi passado um plano ao criar o usuário, criar subscription ativa
             let createdSubscription = null;
