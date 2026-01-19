@@ -116,6 +116,57 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
             // CORREÇÃO: data agora é um objeto JSON direto, não um array
             console.log('📊 Dados recebidos da RPC:', data);
 
+            // Recalcular comissões a partir de oportunidades RECOVERED (usar updated_at)
+            let computedCurrentCommissions = null;
+            let computedPrevCommissions = null;
+            try {
+                // current period recovered commissions
+                let recQuery = supabase
+                    .from('opportunities')
+                    .select('converted_value, value, updated_at')
+                    .eq('status', 'recovered')
+                    .is('deleted_at', null);
+
+                if (start && end) {
+                    recQuery = recQuery.gte('updated_at', start.toISOString()).lte('updated_at', end.toISOString());
+                }
+
+                const { data: recCurr, error: recCurrError } = await recQuery;
+                if (recCurrError) throw recCurrError;
+
+                computedCurrentCommissions = (recCurr || []).reduce((sum, opp) => {
+                    return sum + ((parseFloat(opp.converted_value || opp.value) || 0) * 0.20);
+                }, 0);
+
+                // previous period recovered commissions
+                if (prevStart && prevEnd) {
+                    const recPrevQuery = await supabase
+                        .from('opportunities')
+                        .select('converted_value, value, updated_at')
+                        .eq('status', 'recovered')
+                        .is('deleted_at', null)
+                        .gte('updated_at', prevStart.toISOString())
+                        .lte('updated_at', prevEnd.toISOString());
+
+                    if (recPrevQuery.error) throw recPrevQuery.error;
+
+                    computedPrevCommissions = (recPrevQuery.data || []).reduce((sum, opp) => {
+                        return sum + ((parseFloat(opp.converted_value || opp.value) || 0) * 0.20);
+                    }, 0);
+                } else {
+                    computedPrevCommissions = 0;
+                }
+
+                // sobrescrever os valores retornados pela RPC para usar recovered
+                data.current_commissions = computedCurrentCommissions;
+                data.prev_commissions = computedPrevCommissions;
+            } catch (e) {
+                console.error('Erro ao recalcular comissões recovered:', e);
+                // fallback: manter valores da RPC
+                data.current_commissions = data.current_commissions || 0;
+                data.prev_commissions = data.prev_commissions || 0;
+            }
+
             const newStats = {
                 monthlyRevenue: parseFloat(data.current_revenue) || 0,
                 monthlyBillings: parseFloat(data.current_commissions) || 0,
@@ -182,12 +233,13 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
                     .gte('created_at', start.toISOString())
                     .lte('created_at', end.toISOString()),
 
+                // buscar oportunidades RECOVERED (usaremos updated_at como referência de quando foi recuperada)
                 supabase.from('opportunities')
-                    .select('value, converted_value, created_at')
-                    .eq('status', 'won')
+                    .select('value, converted_value, updated_at')
+                    .eq('status', 'recovered')
                     .is('deleted_at', null)
-                    .gte('created_at', start.toISOString())
-                    .lte('created_at', end.toISOString())
+                    .gte('updated_at', start.toISOString())
+                    .lte('updated_at', end.toISOString())
             ]);
 
             if (revResult.error) throw revResult.error;
@@ -244,7 +296,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         // Processar opportunities (20% de comissão)
         opportunities?.forEach(c => {
             const value = parseFloat(c.converted_value || c.value) || 0;
-            if (value > 0) addToDay(c.created_at, value * 0.20);
+            if (value > 0) addToDay(c.updated_at, value * 0.20);
         });
 
         const timeline = [];
@@ -295,7 +347,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
         opportunities?.forEach(c => {
             const value = parseFloat(c.converted_value || c.value) || 0;
-            if (value > 0) addToWeek(c.created_at, value * 0.20);
+            if (value > 0) addToWeek(c.updated_at, value * 0.20);
         });
 
         const timeline = [];
@@ -355,7 +407,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
         opportunities?.forEach(c => {
             const value = parseFloat(c.converted_value || c.value) || 0;
-            if (value > 0) addToMonth(c.created_at, value * 0.20);
+            if (value > 0) addToMonth(c.updated_at, value * 0.20);
         });
 
         const timeline = [];

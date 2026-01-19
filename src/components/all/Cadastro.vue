@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 import { useFormValidation } from '../../composables/useFormValidation'
-import { UserPlus, User, Mail, Lock, Shield, ArrowLeft, Check } from 'lucide-vue-next'
+import { usePlans } from '../../composables/usePlans'
+import { UserPlus, User, Mail, Lock, Shield, ArrowLeft, Check, Cable, BusIcon } from 'lucide-vue-next'
 import Button from '../../shared/Button.vue'
 import Card from '../../shared/Card.vue'
 import Navbar from '../../shared/Navbar.vue'
@@ -26,7 +27,8 @@ const formData = ref({
   phone: '',
   password: '',
   confirmPassword: '',
-  role: 'user'
+  role: 'user',
+  plan: ''
 })
 
 const formErrors = ref({})
@@ -50,6 +52,11 @@ const validateForm = () => {
   formErrors.value.confirmPassword = validateRequired(formData.value.confirmPassword, 'Confirmação de senha') ||
       validateMatch(formData.value.password, formData.value.confirmPassword, 'Senhas')
 
+  // Se for usuário, obrigar seleção de plano
+  if (formData.value.role === 'user') {
+    formErrors.value.plan = validateRequired(formData.value.plan, 'Plano')
+  }
+
   Object.keys(formErrors.value).forEach(key => {
     if (!formErrors.value[key]) delete formErrors.value[key]
   })
@@ -69,14 +76,16 @@ const handleSubmit = async () => {
     phone: formData.value.phone,
     password: formData.value.password,
     role: formData.value.role
+    ,
+    plan: formData.value.role === 'user' ? formData.value.plan : null
   }
 
   const result = await register(userData)
 
   if (result.success) {
     successMessage.value = 'Usuário cadastrado com sucesso!'
-    formData.value = { name: '', email: '', phone: '', password: '', confirmPassword: '', role: 'user' }
-    setTimeout(() => router.push('/adm/dashboard'), 2000)
+    formData.value = { name: '', email: '', phone: '', password: '', confirmPassword: '', role: 'user', plan: '' }
+    setTimeout(() => router.push('/admin/dashboard'), 2000)
   }
 }
 
@@ -85,18 +94,34 @@ const handlePhoneInput = () => {
   delete formErrors.value.phone
 }
 
+const onRoleChange = () => {
+  if (formData.value.role !== 'user') {
+    formData.value.plan = ''
+    delete formErrors.value.plan
+  }
+}
+
 const isFormValid = computed(() => {
   return formData.value.name &&
       formData.value.email &&
       formData.value.phone &&
       formData.value.password &&
-      formData.value.confirmPassword
+      formData.value.confirmPassword &&
+      (formData.value.role !== 'user' || !!formData.value.plan)
 })
 
 const formProgress = computed(() => {
   const fields = ['name', 'email', 'phone', 'password', 'confirmPassword']
+  if (formData.value.role === 'user') fields.push('plan')
   const filled = fields.filter(field => formData.value[field]).length
   return Math.round((filled / fields.length) * 100)
+})
+
+// Plans
+const { allPlans, fetchAllPlans } = usePlans()
+onMounted(async () => {
+  const plans = await fetchAllPlans()
+  console.log('Cadastro.vue: planos obtidos:', plans)
 })
 </script>
 
@@ -112,7 +137,7 @@ const formProgress = computed(() => {
 
           <div class="relative flex items-center justify-between">
             <div class="flex items-center gap-4">
-              <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/30">
+              <div class="w-16 h-16 rounded-xl bg-linear-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/30">
                 <UserPlus :size="32" class="text-background-base" />
               </div>
               <div>
@@ -197,12 +222,26 @@ const formProgress = computed(() => {
                 <div class="relative">
                   <select
                       v-model="formData.role"
+                      @change="onRoleChange"
                       class="input-base appearance-none pr-10"
                   >
                     <option value="user">Usuário</option>
                     <option value="admin">Administrador</option>
                   </select>
                   <Shield :size="18" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+
+                <div v-if="formData.role === 'user'">
+                  <label class="block text-sm font-medium text-gray-300 mb-2 mt-3">Plano</label>
+                  <div class="relative">
+                    <select v-model="formData.plan" class="input-base appearance-none pr-10 w-full">
+                      <option value="">Selecione um plano</option>
+                      <option v-for="plan in allPlans" :key="plan.id" :value="plan.id">
+                        {{ plan.name || plan.title || plan.id }}
+                      </option>
+                    </select>
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-400 text-sm" v-if="formErrors.plan">{{ formErrors.plan }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -282,6 +321,8 @@ const formProgress = computed(() => {
               Senha válida
             </p>
           </Card>
+
+          <!-- Planos (condicional acima) -->
 
           <!-- Actions -->
           <Card padding="lg">

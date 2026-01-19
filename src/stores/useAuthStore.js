@@ -107,6 +107,39 @@ export const useAuthStore = defineStore('auth', () => {
                 }
             });
 
+            // Quando o usuário volta para a aba (visibilitychange) ou a janela ganha foco,
+            // assegurar que a sessão está ativa/atualizada e reobter user data se necessário.
+            const ensureSessionOnVisible = async () => {
+                try {
+                    if (document.visibilityState === 'visible') {
+                        console.log('👀 Aba visível — verificando sessão...');
+                        // tentar renovar sessão primeiro
+                        await refreshSession();
+
+                        const { data: { session: freshSession } } = await supabase.auth.getSession();
+                        if (freshSession) {
+                            // se mudou ou não existe em memória, atualizar e buscar user
+                            if (!session.value || session.value?.user?.id !== freshSession.user.id || session.value?.access_token !== freshSession.access_token) {
+                                session.value = freshSession;
+                                await fetchUserData(freshSession.user.id, true);
+                                console.log('🔄 Sessão renovada e user reobtido ao voltar à aba');
+                            }
+                        } else {
+                            console.log('⚠️ Nenhuma sessão ativa após visible check');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Erro ao garantir sessão na visibilidade:', err);
+                }
+            };
+
+            // Registrar listeners para visibilidade e foco (apenas uma vez)
+            if (!window.__recuperaEnsureSessionOnVisible) {
+                window.__recuperaEnsureSessionOnVisible = ensureSessionOnVisible;
+                document.addEventListener('visibilitychange', window.__recuperaEnsureSessionOnVisible);
+                window.addEventListener('focus', window.__recuperaEnsureSessionOnVisible);
+            }
+
         } catch (err) {
             const friendlyMessage = ErrorHandler.handle(err, 'initializeAuth');
             console.error(friendlyMessage);
@@ -195,8 +228,44 @@ export const useAuthStore = defineStore('auth', () => {
 
             if (insertError) throw insertError;
 
+            // Se foi passado um plano ao criar o usuário, criar subscription ativa
+            let createdSubscription = null;
+            if (userData.plan) {
+                try {
+                    const planId = userData.plan;
+
+                    // Tentar obter dados do plano para popular name/fee
+                    const { data: planRow, error: planError } = await supabase
+                        .from('plans')
+                        .select('id, name, monthly_maintenance_fee')
+                        .eq('id', planId)
+                        .maybeSingle();
+
+                    if (planError) throw planError;
+
+                    const { data: subData, error: subError } = await supabase
+                        .from('user_subscriptions')
+                        .insert({
+                            user_id: userRecord.id,
+                            plan_id: planRow?.id || planId,
+                            status: 'active',
+                            plan_name: planRow?.name || null,
+                            monthly_fee: planRow?.monthly_maintenance_fee || null
+                        })
+                        .select()
+                        .single();
+
+                    if (subError) throw subError;
+                    createdSubscription = subData;
+                    console.log('✅ Assinatura do usuário criada com sucesso', createdSubscription);
+                } catch (subErr) {
+                    // Não falhar todo o registro por causa da assinatura — logar e prosseguir
+                    console.error('❌ Erro ao criar user_subscription:', subErr);
+                }
+            }
+
             console.log('✅ Usuário registrado com sucesso');
-            return { success: true, data: userRecord };
+            return { success: true, data: { user: userRecord, subscription: createdSubscription } };
 
         } catch (err) {
             let friendlyMessage;
@@ -237,6 +306,17 @@ export const useAuthStore = defineStore('auth', () => {
 
             user.value = null;
             session.value = null;
+
+            // remover listeners de visibilidade/foco se existirem
+            try {
+                if (window.__recuperaEnsureSessionOnVisible) {
+                    document.removeEventListener('visibilitychange', window.__recuperaEnsureSessionOnVisible);
+                    window.removeEventListener('focus', window.__recuperaEnsureSessionOnVisible);
+                    delete window.__recuperaEnsureSessionOnVisible;
+                }
+            } catch (e) {
+                console.warn('Erro ao remover listeners de visibilidade:', e);
+            }
 
             storeCache.clear();
             console.log('🗑️  TODO o cache foi limpo (segurança)');

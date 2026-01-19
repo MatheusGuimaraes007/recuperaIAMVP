@@ -63,40 +63,7 @@ const hasActiveFilters = () => {
 
 <template>
   <div class="space-y-6">
-    <!-- Métricas com MetricCard -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <MetricCard
-          label="Total de Contatos"
-          :value="metrics.total || 0"
-          icon="users"
-          variant="blue"
-          :loading="loading"
-      />
-
-      <MetricCard
-          label="Engajados"
-          :value="metrics.engaged || 0"
-          icon="message-circle"
-          variant="purple"
-          :loading="loading"
-      />
-
-      <MetricCard
-          label="Convertidos"
-          :value="metrics.converted || 0"
-          icon="check-circle"
-          variant="green"
-          :loading="loading"
-      />
-
-      <MetricCard
-          label="Taxa de Conversão"
-          :value="`${metrics.conversionRate || 0}%`"
-          icon="trending-up"
-          variant="orange"
-          :loading="loading"
-      />
-    </div>
+    <!-- Métricas removidas para versão cliente (exibimos só filtros/listagem) -->
 
     <!-- Filtros -->
     <Card padding="lg" class="relative overflow-hidden">

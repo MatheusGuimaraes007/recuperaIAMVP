@@ -23,9 +23,10 @@ const {
   error,
   totalCount,
   hasClients,
-  getClientsMetrics,
+  platformCardsMetrics,
   statusOptions,
   fetchPlatformClients,
+  fetchPlatformStats,
   clearClients
 } = useAdminClients();
 
@@ -39,7 +40,10 @@ onMounted(async () => {
     router.push('/clientes');
     return;
   }
-  await loadClients();
+  await Promise.all([
+    loadClients(),
+    fetchPlatformStats()
+  ]);
 });
 
 const loadClients = async (filters = {}) => {
@@ -164,7 +168,7 @@ const hasActiveFilters = computed(() => {
         <div class="mb-6">
           <AdminClientsFilters
               :loading="loading"
-              :metrics="getClientsMetrics"
+              :metrics="platformCardsMetrics"
               :status-options="statusOptions"
               @search="handleSearch"
               @status-change="handleStatusChange"

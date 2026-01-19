@@ -11,7 +11,8 @@ export const useAdminClients = () => {
         currentClient,
         totalCount,
         loading,
-        error
+        error,
+        platformStats
     } = storeToRefs(adminClientsStore);
 
     const {
@@ -142,6 +143,23 @@ export const useAdminClients = () => {
         return metrics;
     });
 
+    const platformCardsMetrics = computed(() => {
+        if (platformStats.value?.lastUpdated) {
+            return {
+                total: platformStats.value.totalClients || 0,
+                active: platformStats.value.activeClients || 0,
+                trial: platformStats.value.trialClients || 0,
+                suspended: 0,
+                canceled: 0,
+                totalOpportunities: platformStats.value.totalOpportunities || 0,
+                totalRecovered: platformStats.value.totalRecovered || 0,
+                averageConversionRate: getClientsMetrics.value.averageConversionRate || 0
+            };
+        }
+
+        return getClientsMetrics.value;
+    });
+
     /**
      * Opções de status com contadores atualizados
      */
@@ -207,11 +225,13 @@ export const useAdminClients = () => {
         totalCount,
         loading,
         error,
+        platformStats,
 
         // Computed
         hasClients,
         hasCurrentClient,
         getClientsMetrics,
+        platformCardsMetrics,
         statusOptionsWithCount,
 
         // Actions

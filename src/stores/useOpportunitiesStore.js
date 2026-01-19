@@ -426,6 +426,19 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                 throw new Error('Usuário não autenticado');
             }
 
+            // fetch current values to record history entries for changed fields
+            let oldRow = null;
+            try {
+                const { data: existing, error: existingError } = await supabase
+                    .from('opportunities')
+                    .select('status, payment_method, opportunity_type')
+                    .eq('id', id)
+                    .single();
+                if (!existingError) oldRow = existing;
+            } catch (e) {
+                console.warn('Não foi possível buscar valores antigos para histórico:', e.message || e);
+            }
+
             const { data, error: updateError } = await supabase
                 .from('opportunities')
                 .update({
@@ -457,6 +470,37 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
             storeCache.invalidatePattern(pattern);
             storeCache.delete(`opportunities:${userId}:detail:${id}`);
             console.log('🗑️  Cache invalidado após update');
+
+            // Attempt to append history records for changed fields so we don't overwrite previous entries
+            try {
+                if (oldRow) {
+                    const changedFields = [];
+                    const fieldsToTrack = ['status', 'payment_method', 'opportunity_type'];
+                    fieldsToTrack.forEach((f) => {
+                        if (updates[f] !== undefined && String(updates[f]) !== String(oldRow[f])) {
+                            changedFields.push({
+                                opportunity_id: id,
+                                changed_field: f,
+                                old_value: oldRow[f] === null ? null : String(oldRow[f]),
+                                new_value: updates[f] === null ? null : String(updates[f]),
+                                changed_at: new Date().toISOString(),
+                                changed_by: authStore.user?.id || null
+                            });
+                        }
+                    });
+
+                    if (changedFields.length > 0) {
+                        const { error: histErr } = await supabase
+                            .from('opportunity_history')
+                            .insert(changedFields);
+                        if (histErr) {
+                            console.warn('Falha ao inserir histórico de oportunidade (não bloqueante):', histErr.message || histErr);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Erro ao gravar linhas de histórico (não bloqueante):', e.message || e);
+            }
 
             return { success: true, data };
 

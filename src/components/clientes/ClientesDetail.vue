@@ -66,6 +66,22 @@ const goBack = () => {
   router.push('/clientes');
 };
 
+// Map client status to the same small mapping used in admin view
+const getStatusConfig = (status) => {
+  const configs = {
+    active: { type: 'success', label: 'Ativo' },
+    trial: { type: 'warning', label: 'Trial' },
+    suspended: { type: 'error', label: 'Suspenso' },
+    canceled: { type: 'neutral', label: 'Cancelado' }
+  };
+  return configs[status] || configs.trial;
+};
+
+const statusConfig = computed(() => {
+  if (!contact.value) return null;
+  return getStatusConfig(contact.value.status);
+});
+
 // Helper seguro para formatar ID
 const formatOppId = (id) => {
   if (!id) return '';
@@ -86,11 +102,20 @@ const opportunityMetrics = computed(() => {
   const opps = contact.value.opportunities;
   const metrics = {
     total: opps.length,
-    won: opps.filter(o => o.status === 'won').length,
+    // Count opportunities considered 'won' for reporting: status 'won' OR 'recovered'
+    won: opps.filter(o => o.status === 'won' || o.status === 'recovered').length,
     totalValue: opps.reduce((sum, o) => sum + (parseFloat(o.value) || 0), 0),
-    totalConverted: opps.reduce((sum, o) => sum + (parseFloat(o.converted_value) || 0), 0)
+    // Sum converted value: prefer converted_value when present, otherwise fall back to opportunity value
+    totalConverted: opps.reduce((sum, o) => {
+      if (o.status === 'won' || o.status === 'recovered') {
+        const converted = parseFloat(o.converted_value);
+        return sum + (isNaN(converted) || converted === 0 ? (parseFloat(o.value) || 0) : converted);
+      }
+      return sum;
+    }, 0)
   };
 
+  // conversionRate = percentage of opportunities considered won (won + recovered) over total
   metrics.conversionRate = metrics.total > 0
       ? ((metrics.won / metrics.total) * 100).toFixed(1)
       : 0;
@@ -153,30 +178,12 @@ const opportunityMetrics = computed(() => {
                 </div>
               </div>
 
-              <div class="flex-shrink-0">
-                <StatusBadge
-                    :status="contact.status"
-                    type="client"
-                    size="lg"
-                />
-              </div>
+                <!-- Status removed for client view -->
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-border">
 
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-lg bg-metric-purple-light flex items-center justify-center flex-shrink-0">
-                  <User :size="20" class="text-metric-purple" />
-                </div>
-                <div>
-                  <p class="text-gray-400 text-sm mb-1">Agente Responsável</p>
-                  <div v-if="contact.agent" class="flex items-center gap-2">
-                    <UserAvatar :name="contact.agent.name" size="xs" />
-                    <p class="text-white font-medium">{{ contact.agent.name }}</p>
-                  </div>
-                  <p v-else class="text-gray-500 italic">Não atribuído</p>
-                </div>
-              </div>
+              <!-- Agent removed for client view -->
 
               <div class="flex items-start gap-3">
                 <div class="w-10 h-10 rounded-lg bg-metric-blue-light flex items-center justify-center flex-shrink-0">
@@ -274,9 +281,9 @@ const opportunityMetrics = computed(() => {
 
                   <div class="text-right">
                     <p class="text-2xl font-bold text-white mb-1">{{ formatCurrency(opp.value) }}</p>
-                    <p v-if="opp.status === 'won' && opp.converted_value" class="text-sm font-semibold text-status-success flex items-center justify-end gap-1">
+                    <p v-if="(opp.status === 'won' || opp.status === 'recovered')" class="text-sm font-semibold text-status-success flex items-center justify-end gap-1">
                       <CheckCircle :size="14" />
-                      {{ formatCurrency(opp.converted_value) }}
+                      {{ formatCurrency((parseFloat(opp.converted_value) && parseFloat(opp.converted_value) > 0) ? opp.converted_value : opp.value) }}
                     </p>
                   </div>
                 </div>

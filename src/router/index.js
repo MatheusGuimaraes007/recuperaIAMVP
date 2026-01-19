@@ -161,7 +161,13 @@ const routes = [
     path: "/conhecimento",
     name: "ClienteBaseConhecimento",
     component: () => import("../components/conhecimento/cliente/ClienteBaseConhecimento.vue"),
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/conhecimento/:baseId",
+    name: "ClienteEditarBase",
+    component: () => import("../components/conhecimento/adm/EditarBaseConhecimento.vue"),
+    meta: { requiresAuth: true },
   },
   {
     path: "/oportunidades/:id",

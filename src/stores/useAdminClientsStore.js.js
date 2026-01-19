@@ -12,6 +12,14 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
     const totalCount = ref(0);
     const loading = ref(false);
     const error = ref(null);
+    const platformStats = ref({
+        totalClients: 0,
+        activeClients: 0,
+        trialClients: 0,
+        totalOpportunities: 0,
+        totalRecovered: 0,
+        lastUpdated: null
+    });
 
     const setError = (message) => {
         error.value = message;
@@ -421,6 +429,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
             const cached = storeCache.get(cacheKey);
             if (cached) {
+                platformStats.value = cached;
                 console.log('✅ Stats da plataforma carregadas do CACHE');
                 return { success: true, data: cached, fromCache: true };
             }
@@ -431,7 +440,8 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 { count: totalClients },
                 { count: activeClients },
                 { count: trialClients },
-                { count: totalOpportunities }
+                { count: totalOpportunities },
+                { data: recoveredRows, error: recoveredError }
             ] = await Promise.all([
                 supabase
                     .from('users')
@@ -456,16 +466,31 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 supabase
                     .from('opportunities')
                     .select('*', { count: 'exact', head: true })
+                    .is('deleted_at', null),
+
+                supabase
+                    .from('opportunities')
+                    .select('converted_value, value')
+                    .eq('status', 'recovered')
                     .is('deleted_at', null)
             ]);
+
+            if (recoveredError) throw recoveredError;
+
+            const totalRecoveredValue = (recoveredRows || []).reduce((sum, opp) => {
+                return sum + (parseFloat(opp.converted_value || opp.value) || 0);
+            }, 0);
 
             const stats = {
                 totalClients: totalClients || 0,
                 activeClients: activeClients || 0,
                 trialClients: trialClients || 0,
-                totalOpportunities: totalOpportunities || 0
+                totalOpportunities: totalOpportunities || 0,
+                totalRecovered: totalRecoveredValue,
+                lastUpdated: new Date().toISOString()
             };
 
+            platformStats.value = stats;
             storeCache.set(cacheKey, stats, CacheTTL.SHORT);
             console.log('💾 Stats da plataforma salvas no CACHE');
 
@@ -496,6 +521,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
         totalCount,
         loading,
         error,
+        platformStats,
 
         fetchPlatformClients,
         fetchClientMetrics,

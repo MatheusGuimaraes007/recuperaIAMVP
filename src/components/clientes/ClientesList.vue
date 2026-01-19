@@ -120,7 +120,7 @@ const hasActiveFilters = computed(() => {
              style="background-color: var(--color-background4); border: 1px solid var(--color-border1)">
           <div>
             <h1 class="text-3xl font-bold text-white mb-2">
-              Gestão de Clientes
+              Contatos
             </h1>
             <p class="text-gray-400 text-sm">
               Visualize e gerencie todos os seus contatos

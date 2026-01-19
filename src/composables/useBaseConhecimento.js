@@ -7,9 +7,9 @@ export function useBaseConhecimento() {
   const knowledgeBaseById = ref(null)
   const allQuestionsByKnowledgeBaseId = ref([])
 
-  async function fetchAllKnowledgeBases() {
+  async function fetchAllKnowledgeBases(filters = {}) {
     loading.value = true
-    const { data, error } = await supabase
+    let query = supabase
       .from('knowledge_bases')
       .select(`
         *,
@@ -17,6 +17,17 @@ export function useBaseConhecimento() {
         product:products (name)
       `)
       .order('created_at', { ascending: false })
+
+    // filter by user/client if provided
+    if (filters.userId) {
+      query = query.eq('user_id', filters.userId)
+    }
+
+    if (filters.productId) {
+      query = query.eq('product_id', filters.productId)
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Erro ao buscar bases de conhecimento', error);
@@ -73,13 +84,26 @@ export function useBaseConhecimento() {
   }
 
   async function updateAnswerQuestion(questionId, newAnswer) {
-    const { error} = await supabase.from('product_knowledge_entries').update({
-      answer: newAnswer
-    }).eq('id', questionId);
+    const { data, error } = await supabase
+      .from('product_knowledge_entries')
+      .update({ answer: newAnswer })
+      .eq('id', questionId)
+      .select()
+      .single();
+
     if (error) {
       console.error('Erro ao atualizar resposta da pergunta:', error);
       return error;
     }
+
+    // Atualiza cache local para refletir imediatamente a alteração
+    if (data) {
+      allQuestionsByKnowledgeBaseId.value = allQuestionsByKnowledgeBaseId.value.map(q => {
+        if (q.id === data.id) return { ...q, ...data };
+        return q;
+      });
+    }
+
     return null;
   }
 

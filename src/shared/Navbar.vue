@@ -42,7 +42,7 @@ const navItems = computed(() => {
   
   return [
     { name: 'Oportunidades', path: '/oportunidades', icon: 'clipboard', adminOnly: false },
-    { name: 'Clientes', path: '/clientes', icon: 'users', adminOnly: false },
+    { name: 'Contatos', path: '/clientes', icon: 'users', adminOnly: false },
     { name: 'Base de Conhecimento', path: '/conhecimento', icon: 'book', adminOnly: false}
   ];
 });
