@@ -106,10 +106,10 @@ defineProps({
         <div class="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
           <div class="text-xs text-gray-400 mb-1.5 flex items-center gap-1">
             <DollarSign :size="12" />
-            Vendas
+            Recuperado
           </div>
           <div class="font-semibold text-white text-lg mb-0.5">
-            {{ client.active_guarantee.won_opportunities || 0 }}
+            {{ client.active_guarantee.recovered_opportunities || client.active_guarantee.won_opportunities || 0 }}
           </div>
           <div class="text-xs text-green-400">
             {{ formatCurrency(client.active_guarantee.converted_value || 0) }}
@@ -138,7 +138,7 @@ defineProps({
           />
         </div>
         <div class="text-xs text-gray-500">
-          Gerado: {{ formatCurrency(client.active_guarantee.current_recovered_amount || 0) }}
+          Gerado: {{ formatCurrency(client.active_guarantee.converted_value || client.active_guarantee.current_recovered_amount || 0) }}
         </div>
       </div>
     </div>

@@ -20,10 +20,32 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
         limit: 25,
         period: 'last7days',
         startDate: null,
-        endDate: null
+        endDate: null,
+        excludeStatuses: []
     });
 
     let searchDebounceTimer = null;
+
+    const normalizeExcludeStatuses = (value) => {
+        if (!value) return [];
+        if (Array.isArray(value)) {
+            return value.filter(status => typeof status === 'string' && status.trim().length > 0);
+        }
+        if (typeof value === 'string') {
+            return value
+                .split(',')
+                .map(status => status.trim())
+                .filter(Boolean);
+        }
+        return [];
+    };
+
+    const formatStatusListForQuery = (statuses) => {
+        if (!Array.isArray(statuses) || statuses.length === 0) return null;
+        const uniqueStatuses = [...new Set(statuses.map(status => status.trim()))].filter(Boolean);
+        if (uniqueStatuses.length === 0) return null;
+        return `(${uniqueStatuses.map(status => `"${status}"`).join(',')})`;
+    };
 
 
     const setError = (message) => {
@@ -50,7 +72,8 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
             limit: 25,
             period: 'last7days',
             startDate: null,
-            endDate: null
+            endDate: null,
+            excludeStatuses: []
         };
     };
 
@@ -96,6 +119,8 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
 
             // Permite sobrescrever o user id via filterParams (útil para views administrativas)
             const currentFilters = { ...filters.value, ...filterParams };
+            const excludeStatuses = normalizeExcludeStatuses(currentFilters.excludeStatuses);
+            currentFilters.excludeStatuses = excludeStatuses;
             // aceita tanto `userId` (camelCase) quanto `user_id` (snake_case) nos filtros
             const targetUserId = currentFilters.userId || currentFilters.user_id || authUserId;
 
@@ -110,7 +135,8 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                 search: currentFilters.search,
                 period: currentFilters.period,
                 startDate: currentFilters.startDate,
-                endDate: currentFilters.endDate
+                endDate: currentFilters.endDate,
+                excludeStatuses: excludeStatuses.join(',') || null
             });
 
             const cached = storeCache.get(cacheKey);
@@ -149,64 +175,70 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
             const limit = currentFilters.limit || 25;
             const offset = (page - 1) * limit;
 
-            try {
-                const { data: rpcData, error: rpcError } = await supabase.rpc('search_opportunities', {
-                    // usa targetUserId para permitir buscas em nome de outro usuário (admin)
-                    p_user_id: targetUserId,
-                    p_search: currentFilters.search || null,
-                    p_status: currentFilters.status === 'all' ? null : currentFilters.status,
-                    p_start_date: startDate,
-                    p_end_date: endDate,
-                    p_limit: limit,
-                    p_offset: offset
-                });
+            const shouldSkipRpc = excludeStatuses.length > 0;
 
-                if (!rpcError && rpcData) {
-                    const transformedData = rpcData.map(row => ({
-                        id: row.id,
-                        status: row.status,
-                        value: row.value,
-                        converted_value: row.converted_value,
-                        opportunity_type: row.opportunity_type,
-                        payment_method: row.payment_method,
-                        message_count: row.message_count,
-                        notes: row.notes,
-                        created_at: row.created_at,
-                        updated_at: row.updated_at,
-                        conversion_time_minutes: row.conversion_time_minutes,
-                        recovery_time_minutes: row.recovery_time_minutes,
-                        lost_reason: row.lost_reason,
-                        contact: row.contact_id ? {
-                            id: row.contact_id,
-                            name: row.contact_name,
-                            phone: row.contact_phone,
-                            email: row.contact_email
-                        } : null,
-                        agent: row.agent_id ? {
-                            id: row.agent_id,
-                            name: row.agent_name
-                        } : null,
-                        product: row.product_id ? {
-                            id: row.product_id,
-                            name: row.product_name
-                        } : null
-                    }));
+            if (!shouldSkipRpc) {
+                try {
+                    const { data: rpcData, error: rpcError } = await supabase.rpc('search_opportunities', {
+                        // usa targetUserId para permitir buscas em nome de outro usuário (admin)
+                        p_user_id: targetUserId,
+                        p_search: currentFilters.search || null,
+                        p_status: currentFilters.status === 'all' ? null : currentFilters.status,
+                        p_start_date: startDate,
+                        p_end_date: endDate,
+                        p_limit: limit,
+                        p_offset: offset
+                    });
 
-                    opportunities.value = transformedData;
-                    totalCount.value = rpcData.length; // TODO: RPC should return count
+                    if (!rpcError && rpcData) {
+                        const transformedData = rpcData.map(row => ({
+                            id: row.id,
+                            status: row.status,
+                            value: row.value,
+                            converted_value: row.converted_value,
+                            opportunity_type: row.opportunity_type,
+                            payment_method: row.payment_method,
+                            message_count: row.message_count,
+                            notes: row.notes,
+                            created_at: row.created_at,
+                            updated_at: row.updated_at,
+                            conversion_time_minutes: row.conversion_time_minutes,
+                            recovery_time_minutes: row.recovery_time_minutes,
+                            lost_reason: row.lost_reason,
+                            contact: row.contact_id ? {
+                                id: row.contact_id,
+                                name: row.contact_name,
+                                phone: row.contact_phone,
+                                email: row.contact_email
+                            } : null,
+                            agent: row.agent_id ? {
+                                id: row.agent_id,
+                                name: row.agent_name
+                            } : null,
+                            product: row.product_id ? {
+                                id: row.product_id,
+                                name: row.product_name
+                            } : null
+                        }));
 
-                    storeCache.set(cacheKey, {
-                        data: transformedData,
-                        count: rpcData.length
-                    }, CacheTTL.SHORT);
+                        opportunities.value = transformedData;
+                        totalCount.value = rpcData.length; // TODO: RPC should return count
 
-                    updateFilters(currentFilters);
+                        storeCache.set(cacheKey, {
+                            data: transformedData,
+                            count: rpcData.length
+                        }, CacheTTL.SHORT);
 
-                    console.log('💾 Oportunidades salvas no CACHE (via RPC):', cacheKey);
-                    return { success: true, data: transformedData, fromCache: false, source: 'rpc' };
+                        updateFilters(currentFilters);
+
+                        console.log('💾 Oportunidades salvas no CACHE (via RPC):', cacheKey);
+                        return { success: true, data: transformedData, fromCache: false, source: 'rpc' };
+                    }
+                } catch (rpcError) {
+                    console.warn('⚠️  RPC search_opportunities não disponível, usando fallback:', rpcError.message);
                 }
-            } catch (rpcError) {
-                console.warn('⚠️  RPC search_opportunities não disponível, usando fallback:', rpcError.message);
+            } else {
+                console.log('➡️  Pulando RPC: filtragem por status excluído requisitada');
             }
 
             console.log('📋 Usando query normal (fallback)');
@@ -254,6 +286,13 @@ export const useOpportunitiesStore = defineStore('opportunities', () => {
                 query = query
                     .gte('created_at', startDate)
                     .lte('created_at', endDate);
+            }
+
+            if (excludeStatuses.length > 0) {
+                const excludedList = formatStatusListForQuery(excludeStatuses);
+                if (excludedList) {
+                    query = query.not('status', 'in', excludedList);
+                }
             }
 
             const from = (page - 1) * limit;

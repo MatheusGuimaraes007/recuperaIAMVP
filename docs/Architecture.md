@@ -35,7 +35,7 @@
 └─────────────────────────────────────────────────────────────┘
                               ↕️ API Calls
 ┌─────────────────────────────────────────────────────────────┐
-│                   CAMADA DE INTEGRAÇÕES                      │
+│                   CAMADA DE INTEGRAÇÕES                     │
 │  • WhatsApp Business API (Meta)                             │
 │  • OpenAI / Anthropic Claude (IA)                           │
 │  • Checkout Platforms (Webhooks)                            │

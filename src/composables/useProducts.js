@@ -1,6 +1,16 @@
 import { ref } from 'vue'
 import { supabase } from '../utils/supabase'
 
+const DEFAULT_COMMISSION = 0.20;
+
+const normalizeCommissionValue = (value) => {
+  const numeric = parseFloat(value)
+  if (Number.isNaN(numeric)) return DEFAULT_COMMISSION
+  if (numeric < 0) return 0
+  if (numeric > 1) return 1
+  return Number(numeric.toFixed(4))
+}
+
 export const useProducts = () => {
   const allProducts = ref([])
   const errorType = ref('')
@@ -12,6 +22,7 @@ export const useProducts = () => {
   const productById = ref([])
   const nameProduct = ref('')
   const descriptionProduct = ref('')
+  const commissionProduct = ref(DEFAULT_COMMISSION)
   const productCheckoutId = ref('')
   const productPlataform = ref('')
   const afiliateId = ref('')
@@ -93,7 +104,8 @@ export const useProducts = () => {
       plataform: productPlataform.value,
       afiliate_id: afiliateId.value,
       afiliate_link: afiliateLink.value,
-      default_link: defaultLink.value
+      default_link: defaultLink.value,
+      commission: normalizeCommissionValue(commissionProduct.value)
     }).select().single();
     
     if (errorCreateProduct) {
@@ -123,11 +135,11 @@ export const useProducts = () => {
         name: nameProduct.value,
         description: descriptionProduct.value,
         checkout_id: productCheckoutId.value,
-        plataform: productPlataform.value
-        ,
+        plataform: productPlataform.value,
         afiliate_id: afiliateId.value,
         afiliate_link: afiliateLink.value,
-        default_link: defaultLink.value
+        default_link: defaultLink.value,
+        commission: normalizeCommissionValue(commissionProduct.value)
       })
       .eq('id', productId)
       .select()
@@ -164,6 +176,7 @@ export const useProducts = () => {
     productPlataform,
     afiliateId,
     afiliateLink,
-    defaultLink
+    defaultLink,
+    commissionProduct
   }
 }

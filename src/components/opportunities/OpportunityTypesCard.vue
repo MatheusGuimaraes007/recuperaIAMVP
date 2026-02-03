@@ -52,8 +52,8 @@ const getBarColor = (index) => {
   <Card padding="lg" class="relative overflow-hidden">
     <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
 
-    <div class="relative">
-      <h3 class="text-lg font-bold text-white mb-6">
+    <div class="relative flex flex-col">
+      <h3 class="text-lg font-bold text-white mb-6 shrink-0">
         Tipos de Oportunidade
       </h3>
 
@@ -68,7 +68,7 @@ const getBarColor = (index) => {
         <p class="text-gray-400 text-sm">Nenhuma oportunidade registrada</p>
       </div>
 
-      <div v-else class="space-y-5">
+      <div v-else class="max-h-[300px] overflow-y-auto pr-2 scrollbar-custom space-y-5 pb-2">
         <div
             v-for="(item, index) in opportunityTypeCounts"
             :key="item.type"

@@ -28,11 +28,18 @@ const {
   showGuarantee,
   isGracePeriod,
   roi,
+  totalOpportunities,
+  totalOpportunitiesValue,
+  recoveredValue,
+  minimumRequired,
+  minimumRequiredPercentage,
   fetchActiveGuarantee,
+  fetchOpportunitiesData,
 } = useGuarantee();
 
 onMounted(async () => {
   await fetchActiveGuarantee();
+  await fetchOpportunitiesData();
 });
 
 const shouldShowTrigger = computed(() => {
@@ -89,6 +96,11 @@ const shouldShowTrigger = computed(() => {
           :is-critical="isCritical"
           :is-in-alert="isInAlert"
           :roi="roi"
+          :total-opportunities="totalOpportunities"
+          :total-opportunities-value="totalOpportunitiesValue"
+          :recovered-value="recoveredValue"
+          :minimum-required="minimumRequired"
+          :minimum-required-percentage="minimumRequiredPercentage"
       />
 
       <GuaranteeTimeSection
@@ -106,6 +118,10 @@ const shouldShowTrigger = computed(() => {
 
       <GuaranteeOpportunitiesSection
           :guarantee="guarantee"
+          :total-opportunities="totalOpportunities"
+          :total-opportunities-value="totalOpportunitiesValue"
+          :minimum-required="minimumRequired"
+          :minimum-required-percentage="minimumRequiredPercentage"
       />
     </div>
   </SidebarTrigger>

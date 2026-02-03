@@ -1,11 +1,20 @@
 import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useGuaranteeStore } from '../stores/useGuaranteeStore.js';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getDaysDifference } from '../utils/date';
+import { useAuthStore } from '../stores/useAuthStore.js';
+import { supabase } from '../utils/supabase.js';
+
+// Lista de emails de clientes que não devem ver o card de garantia
+const EXCLUDED_CLIENTS = [
+    // 'cliente@exemplo.com',
+    // Adicione emails aqui para ocultar a garantia
+];
 
 export const useGuarantee = () => {
     const guaranteeStore = useGuaranteeStore();
+    const authStore = useAuthStore();
 
     const {
         guarantee,
@@ -17,6 +26,57 @@ export const useGuarantee = () => {
         fetchActiveGuarantee,
         clearError
     } = guaranteeStore;
+
+    const opportunities = ref([]);
+
+    const fetchOpportunitiesData = async () => {
+        try {
+            const userId = authStore.user?.id;
+            if (!userId) return;
+
+            const { data, error: fetchError } = await supabase
+                .from('opportunities')
+                .select('*')
+                .eq('user_id', userId)
+                .is('deleted_at', null);
+
+            if (fetchError) throw fetchError;
+            opportunities.value = data || [];
+        } catch (err) {
+            console.error('Erro ao buscar oportunidades:', err);
+        }
+    };
+
+    const totalOpportunities = computed(() => {
+        const wonCount = opportunities.value.filter(o => o.status === 'won').length;
+        return Math.max(0, opportunities.value.length - wonCount);
+    });
+
+    const totalOpportunitiesValue = computed(() => {
+        return opportunities.value.reduce((sum, opp) => {
+            return sum + (parseFloat(opp.value) || 0);
+        }, 0);
+    });
+
+    const recoveredValue = computed(() => {
+        return opportunities.value
+            .filter(opp => opp.status === 'recovered')
+            .reduce((sum, opp) => {
+                return sum + (parseFloat(opp.converted_value || opp.value) || 0);
+            }, 0);
+    });
+
+    const minimumRequired = computed(() => {
+        if (!guarantee.value) return 0;
+        // Mínimo exigido é 10x a meta
+        return parseFloat(guarantee.value.goal_amount || 0) * 10;
+    });
+
+    const minimumRequiredPercentage = computed(() => {
+        if (!totalOpportunitiesValue.value || !minimumRequired.value) return 0;
+        const percentage = (totalOpportunitiesValue.value / minimumRequired.value) * 100;
+        return Math.min(100, percentage);
+    });
 
     const guaranteeStatusConfig = computed(() => {
         if (!guarantee.value) return null;
@@ -88,14 +148,18 @@ export const useGuarantee = () => {
 
     const progressPercentage = computed(() => {
         if (!guarantee.value) return 0;
-        return parseFloat(guarantee.value.progress_percentage || 0);
+        // Calcular progresso baseado no valor recuperado das oportunidades
+        const goal = parseFloat(guarantee.value.goal_amount || 0);
+        if (goal === 0) return 0;
+        const percentage = (recoveredValue.value / goal) * 100;
+        return Math.min(100, percentage);
     });
 
     const remainingAmount = computed(() => {
         if (!guarantee.value) return 0;
 
         const goal = parseFloat(guarantee.value.goal_amount || 0);
-        const recovered = parseFloat(guarantee.value.current_recovered_amount || 0);
+        const recovered = recoveredValue.value;
 
         return Math.max(0, goal - recovered);
     });
@@ -133,6 +197,12 @@ export const useGuarantee = () => {
     });
 
     const showGuarantee = computed(() => {
+        // Verificar se o cliente está na lista de excluídos
+        const userEmail = authStore.user?.email;
+        if (userEmail && EXCLUDED_CLIENTS.includes(userEmail)) {
+            return false;
+        }
+
         if (!guarantee.value) return false;
 
         const daysElapsed = daysSinceStart.value;
@@ -232,7 +302,16 @@ export const useGuarantee = () => {
         isGracePeriod,
         roi,
 
+        // Oportunidades
+        opportunities,
+        totalOpportunities,
+        totalOpportunitiesValue,
+        recoveredValue,
+        minimumRequired,
+        minimumRequiredPercentage,
+
         fetchActiveGuarantee,
+        fetchOpportunitiesData,
         clearError,
 
         formatCurrency,

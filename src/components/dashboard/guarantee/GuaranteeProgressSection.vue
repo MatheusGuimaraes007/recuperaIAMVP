@@ -11,7 +11,12 @@ const props = defineProps({
   hasActiveGuarantee: { type: Boolean, required: true },
   isCritical: { type: Boolean, default: false },
   isInAlert: { type: Boolean, default: false },
-  roi: { type: Number, default: 0 }
+  roi: { type: Number, default: 0 },
+  totalOpportunities: { type: Number, default: 0 },
+  totalOpportunitiesValue: { type: Number, default: 0 },
+  recoveredValue: { type: Number, default: 0 },
+  minimumRequired: { type: Number, default: 0 },
+  minimumRequiredPercentage: { type: Number, default: 0 }
 });
 
 const progressWidth = computed(() => Math.min(props.progressPercentage, 100));
@@ -24,6 +29,24 @@ const progressGlow = computed(() => {
 
 const showROI = computed(() => {
   return props.roi > 0;
+});
+
+const minimumRequiredProgressWidth = computed(() => Math.min(props.minimumRequiredPercentage, 100));
+
+const minimumRequiredBarColor = computed(() => {
+  const percentage = props.minimumRequiredPercentage;
+  if (percentage >= 100) return '#10b981'; // verde
+  if (percentage >= 70) return '#3b82f6'; // azul
+  if (percentage >= 40) return '#f59e0b'; // laranja
+  return '#ef4444'; // vermelho
+});
+
+const minimumRequiredGlow = computed(() => {
+  const percentage = props.minimumRequiredPercentage;
+  if (percentage >= 100) return 'rgba(16, 185, 129, 0.4)';
+  if (percentage >= 70) return 'rgba(59, 130, 246, 0.4)';
+  if (percentage >= 40) return 'rgba(245, 158, 11, 0.4)';
+  return 'rgba(239, 68, 68, 0.4)';
 });
 </script>
 
@@ -58,7 +81,7 @@ const showROI = computed(() => {
       <div class="p-4 bg-primary/5 border border-primary/15 rounded-xl hover:bg-primary/10 hover:border-primary/25 transition-all group">
         <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Recuperado</span>
         <span class="block text-2xl font-bold text-primary group-hover:scale-105 transition-transform origin-left">
-          {{ formatCurrency(guarantee.current_recovered_amount) }}
+          {{ formatCurrency(recoveredValue) }}
         </span>
       </div>
       <div class="p-4 bg-primary/5 border border-primary/15 rounded-xl hover:bg-primary/10 hover:border-primary/25 transition-all group">

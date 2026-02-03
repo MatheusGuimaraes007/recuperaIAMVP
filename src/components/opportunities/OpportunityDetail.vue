@@ -191,12 +191,19 @@ const formatTimeOnly = (date) => {
             </Card>
           </div>
 
-          <!-- Chat sidebar (50% width) -->
+          <!-- Chat sidebar with fixed height and internal scroll -->
           <div class="space-y-6">
-            <Card padding="lg" class="sticky top-24 lg:h-[70vh]">
+            <Card
+              padding="lg"
+              class="sticky top-24 h-[70vh] lg:max-h-[calc(100vh-160px)] flex flex-col"
+            >
               <h3 class="text-lg font-bold text-white mb-4">Chat</h3>
-              <div class="h-[60vh] overflow-auto">
-                <MessageThread :opportunity-id="currentOpportunity.id" />
+              <div class="flex-1 min-h-0">
+                <MessageThread
+                  :opportunity-id="currentOpportunity.id"
+                  :contact-id="currentOpportunity.contact?.id"
+                  class="h-full"
+                />
               </div>
             </Card>
           </div>

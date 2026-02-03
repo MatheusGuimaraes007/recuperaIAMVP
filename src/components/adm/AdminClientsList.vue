@@ -31,7 +31,8 @@ const {
 } = useAdminClients();
 
 const currentPage = ref(PAGINATION.DEFAULT_PAGE);
-const itemsPerPage = PAGINATION.ITEMS_PER_PAGE;
+const itemsPerPage = 20; // show 20 clients per page as requested
+const showAll = ref(false);
 const currentStatus = ref('all');
 const currentSearch = ref('');
 
@@ -47,9 +48,19 @@ onMounted(async () => {
 });
 
 const loadClients = async (filters = {}) => {
-  const filterParams = {
+  // If `showAll` is enabled, ignore search/status filters and load all clients (paginated)
+  const baseParams = {
     page: currentPage.value,
-    limit: itemsPerPage,
+    limit: itemsPerPage
+  };
+
+  if (showAll.value) {
+    await fetchPlatformClients(baseParams);
+    return;
+  }
+
+  const filterParams = {
+    ...baseParams,
     ...filters
   };
 
@@ -89,13 +100,19 @@ const handleClearFilters = async () => {
   currentPage.value = 1;
   currentStatus.value = 'all';
   currentSearch.value = '';
-
+  showAll.value = false;
   clearClients();
   await loadClients();
 };
 
 const handlePageChange = async (page) => {
   currentPage.value = page;
+  await loadClients();
+};
+
+const handleShowAll = async (value) => {
+  showAll.value = !!value;
+  currentPage.value = 1;
   await loadClients();
 };
 
@@ -173,6 +190,7 @@ const hasActiveFilters = computed(() => {
               @search="handleSearch"
               @status-change="handleStatusChange"
               @clear="handleClearFilters"
+              @show-all="handleShowAll"
           />
         </div>
 

@@ -48,10 +48,22 @@ const metrics = computed(() => {
       lostOpportunities: 0,
       activeOpportunities: 0,
       totalRecovered: 0,
-      conversionRate: 0
+      conversionRate: 0,
+      totalCommission: 0,
+      commissionByProduct: []
     };
   }
   return currentClient.value.metrics;
+});
+
+const contractedPlanName = computed(() => {
+  const planDetails = currentClient.value?.planDetails;
+  if (planDetails) {
+    return planDetails.name || planDetails.title || planDetails.description || 'Plano personalizado';
+  }
+  if (metrics.value.planName) return metrics.value.planName;
+  if (currentClient.value?.plan) return String(currentClient.value.plan);
+  return 'Não definido';
 });
 
 const getStatusConfig = (status) => {
@@ -68,6 +80,9 @@ const statusConfig = computed(() => {
   if (!currentClient.value) return null;
   return getStatusConfig(currentClient.value.status);
 });
+
+const commissionByProduct = computed(() => metrics.value.commissionByProduct || []);
+const totalCommission = computed(() => metrics.value.totalCommission || 0);
 </script>
 
 <template>
@@ -95,14 +110,14 @@ const statusConfig = computed(() => {
           <!-- Client Header Card -->
           <Card padding="lg" class="mb-6 relative overflow-hidden">
             <div class="absolute inset-0 opacity-5">
-              <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,_white_1px,_transparent_0)] bg-[length:40px_40px]"></div>
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,white_1px,transparent_0)] bg-size-[40px_40px]"></div>
             </div>
 
             <div class="relative">
               <div class="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
                 <div class="flex items-center gap-4">
                   <div class="relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary-dark rounded-full blur opacity-30 group-hover:opacity-100 transition duration-300"></div>
+                    <div class="absolute -inset-0.5 bg-linear-to-r from-primary to-primary-dark rounded-full blur opacity-30 group-hover:opacity-100 transition duration-300"></div>
                     <UserAvatar
                         :name="currentClient.name || 'Sem nome'"
                         size="xl"
@@ -136,7 +151,7 @@ const statusConfig = computed(() => {
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-border">
                 <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-metric-blue-light flex items-center justify-center flex-shrink-0">
+                  <div class="w-10 h-10 rounded-lg bg-metric-blue-light flex items-center justify-center shrink-0">
                     <Calendar :size="20" class="text-metric-blue" />
                   </div>
                   <div>
@@ -146,7 +161,7 @@ const statusConfig = computed(() => {
                 </div>
 
                 <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-metric-green-light flex items-center justify-center flex-shrink-0">
+                  <div class="w-10 h-10 rounded-lg bg-metric-green-light flex items-center justify-center shrink-0">
                     <Clock :size="20" class="text-metric-green" />
                   </div>
                   <div>
@@ -156,12 +171,12 @@ const statusConfig = computed(() => {
                 </div>
 
                 <div class="flex items-start gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-metric-purple-light flex items-center justify-center flex-shrink-0">
+                  <div class="w-10 h-10 rounded-lg bg-metric-purple-light flex items-center justify-center shrink-0">
                     <Briefcase :size="20" class="text-metric-purple" />
                   </div>
                   <div>
                     <p class="text-gray-400 text-sm mb-1">Plano</p>
-                    <p class="text-white font-semibold">{{ metrics.planName || 'Não definido' }}</p>
+                    <p class="text-white font-semibold">{{ contractedPlanName }}</p>
                   </div>
                 </div>
               </div>
@@ -169,7 +184,7 @@ const statusConfig = computed(() => {
           </Card>
 
           <!-- Metrics Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <MetricCard
               label="Total de Oportunidades"
               :value="metrics.totalOpportunities"
@@ -190,6 +205,12 @@ const statusConfig = computed(() => {
               icon="refresh-cw"
               variant="teal"
             />
+            <MetricCard
+              label="Total de Comissão"
+              :value="formatCurrency(totalCommission)"
+              icon="dollar-sign"
+              variant="yellow"
+            />
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
@@ -208,6 +229,41 @@ const statusConfig = computed(() => {
             />
             </div>
 
+          <Card padding="lg" class="mb-6">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-2xl font-bold text-white mb-1">Comissão por Produto</h2>
+                <p class="text-gray-400 text-sm">Comparativo do que foi recuperado versus o percentual contratado.</p>
+              </div>
+            </div>
+
+            <div v-if="commissionByProduct.length" class="space-y-3">
+              <div
+                v-for="product in commissionByProduct"
+                :key="product.productId"
+                class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 rounded-xl border border-white/5 bg-white/5/5"
+              >
+                <div>
+                  <p class="text-sm text-gray-400">Produto</p>
+                  <p class="text-white font-semibold">{{ product.productName }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-400">Taxa de Comissão</p>
+                  <p class="text-white font-semibold">{{ (product.commissionRate * 100).toFixed(2) }}%</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-400">Valor Recuperado</p>
+                  <p class="text-white font-semibold">{{ formatCurrency(product.recoveredValue) }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-400">Comissão Retida</p>
+                  <p class="text-primary font-bold">{{ formatCurrency(product.commissionAmount) }}</p>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-gray-400 text-sm">Nenhuma comissão registrada ainda.</div>
+          </Card>
+
           <!-- Quick Actions -->
           <Card padding="lg">
             <div class="flex items-center justify-between mb-6">
@@ -223,7 +279,7 @@ const statusConfig = computed(() => {
                   class="group p-6 rounded-xl border-2 border-border-card hover:border-primary transition-all hover:shadow-lg hover:-translate-y-1 bg-background-card"
               >
                 <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <Briefcase :size="24" class="text-primary" />
                   </div>
                   <div class="flex-1 text-left">
@@ -239,7 +295,7 @@ const statusConfig = computed(() => {
                   class="group p-6 rounded-xl border-2 border-border-card hover:border-primary transition-all hover:shadow-lg hover:-translate-y-1 bg-background-card"
               >
                 <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path d="M17 20h5v-2a4 4 0 00-4-4h-1" />
                       <path d="M9 20H4v-2a4 4 0 014-4h1" />

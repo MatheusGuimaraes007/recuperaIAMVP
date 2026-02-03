@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router';
 import { useAuth } from '../../composables/useAuth';
 import { useOpportunities } from "../../composables/useOpportunities.js";
 import { useRevenueMetrics } from "../../composables/useRevenueMetrics.js";
+import { useMetricsCalculator } from "../../composables/useMetricsCalculator.js";
+import { supabase } from '../../utils/supabase';
 import { PAGINATION } from '../../utils/constants';
 
 import OpportunityFilters from './OpportunityFilters.vue';
@@ -19,8 +21,9 @@ import SupportButton from "../../shared/SupportButton.vue";
 import Navbar from '../../shared/Navbar.vue';
 import {SUPPORT_WHATSAPP} from "../../utils/supportButton.js";
 
-const { logout } = useAuth();
+const { logout, user } = useAuth();
 const router = useRouter();
+const metricsCalculator = useMetricsCalculator();
 const {
   opportunities,
   loading,
@@ -33,6 +36,8 @@ const {
   getMetricsByPeriod,
   getMetricsByDateRange
 } = useOpportunities();
+
+const allOpportunities = ref([]);
 
 const {
   platformRevenue,
@@ -48,8 +53,24 @@ const currentDateRange = ref(null);
 const currentStatus = ref('all');
 const currentSearch = ref('');
 
+const loadAllOpportunities = async () => {
+  try {
+    const { data, error: fetchError } = await supabase
+      .from('opportunities')
+      .select('*')
+      .eq('user_id', user.value?.id)
+      .is('deleted_at', null);
+    
+    if (fetchError) throw fetchError;
+    allOpportunities.value = data || [];
+  } catch (err) {
+    console.error('Erro ao buscar todas as oportunidades:', err);
+  }
+};
+
 onMounted(async () => {
   await Promise.all([
+    loadAllOpportunities(),
     loadOpportunities(),
     loadRevenueMetrics()
   ]);
@@ -166,34 +187,26 @@ const totalPages = computed(() => {
 });
 
 const metrics = computed(() => {
-  if (!opportunities.value || opportunities.value.length === 0) {
-    return {
-      total: 0,
-      won: 0,
-      lost: 0,
-      recovered: 0,
-      conversionRate: 0,
-      recoveryRate: 0,
-      totalValue: 0,
-      lostValue: 0,
-      convertedValue: 0,
-      recoveredValue: 0,
-      roi: 0,
-      averageMessages: 0,
-      averageRecoveryMessages: 0,
-      averageTime: '0min',
-      averageRecoveryTime: '0min'
-    };
-  }
-
+  // Calcular métricas gerais com TODAS as oportunidades do cliente
+  const allMetrics = metricsCalculator.calculateAllMetrics(allOpportunities.value);
+  
+  // Calcular métricas do período selecionado
+  let periodMetrics;
   if (currentDateRange.value?.startDate && currentDateRange.value?.endDate) {
-    return getMetricsByDateRange(
+    periodMetrics = getMetricsByDateRange(
         currentDateRange.value.startDate,
         currentDateRange.value.endDate
     );
+  } else {
+    periodMetrics = getMetricsByPeriod(currentPeriod.value);
   }
 
-  return getMetricsByPeriod(currentPeriod.value);
+  // Retornar combinação: total e recoveryRate do geral, resto do período
+  return {
+    ...periodMetrics,
+    total: allMetrics.total,  // Total geral (todas menos 'won')
+    recoveryRate: allMetrics.recoveryRate  // % recuperação geral
+  };
 });
 
 const showEmptyState = computed(() => {
@@ -247,6 +260,11 @@ const handleLogout = async () => {
           <OpportunityFilters
               :loading="loading"
               :metrics="metrics"
+              :status-options="[
+                { value: 'active', label: 'Ativo' },
+                { value: 'won', label: 'Venda' },
+                { value: 'recovered', label: 'Recuperado' }
+              ]"
               @search="handleSearch"
               @status-change="handleStatusChange"
               @period-change="handlePeriodChange"

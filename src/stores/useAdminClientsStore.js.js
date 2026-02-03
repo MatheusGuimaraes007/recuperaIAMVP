@@ -5,6 +5,8 @@ import { useAuthStore } from './useAuthStore';
 import { storeCache, createCacheKey, createInvalidationPattern, CacheTTL } from '../utils/storeCache';
 import ErrorHandler from '../utils/errorHandler';
 
+const DEFAULT_COMMISSION_RATE = 0.20;
+
 export const useAdminClientsStore = defineStore('adminClients', () => {
 
     const clients = ref([]);
@@ -30,6 +32,57 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
     const clearError = () => {
         error.value = null;
+    };
+
+    const planDetailsCache = new Map();
+
+    const clampCommissionRate = (rate) => {
+        if (Number.isNaN(rate) || rate < 0) return 0;
+        if (rate > 1) return 1;
+        return rate;
+    };
+
+    const resolveOpportunityCommissionRate = (opportunity) => {
+        const candidate = parseFloat(opportunity?.product?.commission);
+        if (!Number.isNaN(candidate)) {
+            return clampCommissionRate(candidate);
+        }
+        return DEFAULT_COMMISSION_RATE;
+    };
+
+    const getOpportunityCommissionValue = (opportunity) => {
+        const baseValue = parseFloat(opportunity?.converted_value ?? opportunity?.value) || 0;
+        if (baseValue <= 0) return 0;
+        const commissionRate = resolveOpportunityCommissionRate(opportunity);
+        return baseValue * commissionRate;
+    };
+
+    const fetchPlanDetails = async (planId) => {
+        if (!planId) return null;
+        if (planDetailsCache.has(planId)) {
+            return planDetailsCache.get(planId);
+        }
+
+        try {
+            const { data, error: planError } = await supabase
+                .from('plans')
+                .select('id, name, title, description, slug')
+                .eq('id', planId)
+                .maybeSingle();
+
+            if (planError) {
+                console.warn('Não foi possível carregar detalhes do plano:', planError.message || planError);
+                planDetailsCache.set(planId, null);
+                return null;
+            }
+
+            planDetailsCache.set(planId, data);
+            return data;
+        } catch (e) {
+            console.warn('Erro inesperado ao buscar detalhes do plano:', e.message || e);
+            planDetailsCache.set(planId, null);
+            return null;
+        }
     };
 
     const fetchPlatformClients = async (filters = {}) => {
@@ -90,6 +143,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                         role: row.role,
                         created_at: row.created_at,
                         updated_at: row.updated_at,
+                        plan: row.plan || null,
                         metrics: {
                             totalOpportunities: row.total_opportunities || 0,
                             wonOpportunities: row.won_opportunities || 0,
@@ -137,6 +191,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                     phone,
                     status,
                     role,
+                    plan,
                     created_at,
                     updated_at
                 `, { count: 'exact' })
@@ -201,7 +256,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
         try {
             const { data: opportunities, error: oppError } = await supabase
                 .from('opportunities')
-                .select('id, status, value, converted_value')
+                .select('id, status, value, converted_value, product:products(id, name, commission)')
                 .eq('user_id', clientId)
                 .is('deleted_at', null);
 
@@ -228,10 +283,42 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 .reduce((sum, o) => sum + (parseFloat(o.value || 0) || 0), 0);
 
             const originalTotal = opps.length;
+            // total non-finalized opportunities: exclude only WON (keep recovered in the total)
+            const totalNonWon = Math.max(0, originalTotal - wonCount);
+            let totalCommission = 0;
+            const commissionByProductMap = {};
+
+            // Comissão só deve considerar oportunidades efetivamente recuperadas
+            const recoveredOpportunitiesList = opps.filter(o => o.status === 'recovered');
+
+            recoveredOpportunitiesList.forEach((opp) => {
+                const recoveredValue = parseFloat(opp.converted_value || opp.value || 0) || 0;
+                if (recoveredValue <= 0) return;
+
+                const commissionValue = getOpportunityCommissionValue(opp);
+                if (commissionValue <= 0) return;
+
+                totalCommission += commissionValue;
+
+                const productId = opp.product?.id || 'no-product';
+                if (!commissionByProductMap[productId]) {
+                    commissionByProductMap[productId] = {
+                        productId,
+                        productName: opp.product?.name || 'Sem produto vinculado',
+                        commissionRate: resolveOpportunityCommissionRate(opp),
+                        commissionAmount: 0,
+                        recoveredValue: 0
+                    };
+                }
+
+                commissionByProductMap[productId].commissionAmount += commissionValue;
+                commissionByProductMap[productId].recoveredValue += recoveredValue;
+            });
 
             const metrics = {
-                // total oportunidades considerando todas
-                totalOpportunities: originalTotal,
+                // total de oportunidades considerando apenas o que não está WON
+                totalOpportunities: totalNonWon,
+                totalOpportunitiesAll: originalTotal,
                 totalValue: totalValue,
                 wonOpportunities: wonCount,
                 lostOpportunities: lostCount,
@@ -242,14 +329,16 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                 lostValue: lostValue,
                 // legacy compatibility: expose totalRecovered as recovered value
                 totalRecovered: totalRecoveredValue,
-                // Conversão agora baseada em 'recovered' (conforme solicitado)
-                conversionRate: originalTotal > 0
-                    ? parseFloat(((recoveredCount / originalTotal) * 100).toFixed(1))
+                // Conversão baseada em recovered / oportunidades não finalizadas (exclui apenas WON)
+                conversionRate: totalNonWon > 0
+                    ? parseFloat(((recoveredCount / totalNonWon) * 100).toFixed(1))
                     : 0,
                 // recoveryRate: recovered / non-won (kept for backward compatibility)
-                recoveryRate: originalTotal - wonCount > 0
-                    ? parseFloat(((recoveredCount / Math.max(1, originalTotal - wonCount)) * 100).toFixed(1))
-                    : 0
+                recoveryRate: totalNonWon > 0
+                    ? parseFloat(((recoveredCount / Math.max(1, totalNonWon)) * 100).toFixed(1))
+                    : 0,
+                totalCommission: totalCommission,
+                commissionByProduct: Object.values(commissionByProductMap)
             };
 
             const { data: subscription } = await supabase
@@ -305,6 +394,10 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                     }
                 }
 
+                if (!found.planDetails && found.plan) {
+                    found.planDetails = await fetchPlanDetails(found.plan);
+                }
+
                 currentClient.value = found;
                 loading.value = false;
                 console.log('✅ Cliente encontrado na lista local');
@@ -315,6 +408,11 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
             const cached = storeCache.get(cacheKey);
             if (cached) {
+                if (!cached.planDetails && cached.plan) {
+                    cached.planDetails = await fetchPlanDetails(cached.plan);
+                    storeCache.set(cacheKey, cached, CacheTTL.SHORT);
+                }
+
                 currentClient.value = cached;
                 loading.value = false;
                 console.log('✅ Cliente carregado do CACHE');
@@ -333,6 +431,7 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
                     phone,
                     status,
                     role,
+                    plan,
                     created_at,
                     updated_at
                 `)
@@ -345,8 +444,11 @@ export const useAdminClientsStore = defineStore('adminClients', () => {
 
             const metricsResult = await fetchClientMetrics(clientId);
 
+            const planDetails = clientData.plan ? await fetchPlanDetails(clientData.plan) : null;
+
             const fullClient = {
                 ...clientData,
+                planDetails,
                 metrics: metricsResult.data || {}
             };
 

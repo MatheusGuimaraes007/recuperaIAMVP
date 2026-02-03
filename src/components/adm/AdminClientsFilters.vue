@@ -19,7 +19,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['search', 'status-change', 'clear']);
+const emit = defineEmits(['search', 'status-change', 'clear', 'show-all']);
 
 const searchInput = ref('');
 const selectedStatus = ref('all');
@@ -49,6 +49,12 @@ const handleClear = () => {
   searchInput.value = '';
   selectedStatus.value = 'all';
   emit('clear');
+};
+
+const showAll = ref(false);
+const handleShowAllToggle = () => {
+  showAll.value = !showAll.value;
+  emit('show-all', showAll.value);
 };
 
 watch(() => props.loading, (newVal) => {
@@ -162,7 +168,13 @@ const hasActiveFilters = () => {
         </div>
 
         <!-- Actions -->
-        <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border">
+        <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border items-center">
+          <div class="flex items-center gap-3 mr-auto">
+            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+              <input type="checkbox" class="form-checkbox h-4 w-4" :disabled="loading" @change="handleShowAllToggle" />
+              <span>Mostrar todos</span>
+            </label>
+          </div>
           <Button
               variant="secondary"
               :disabled="loading || !hasActiveFilters()"

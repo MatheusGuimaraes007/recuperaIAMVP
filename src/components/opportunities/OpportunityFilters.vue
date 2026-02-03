@@ -32,6 +32,15 @@ const props = defineProps({
       averageTime: '0min',
       averageRecoveryTime: '0min'
     })
+  },
+  initialPeriod: {
+    type: String,
+    default: 'last7days'
+  },
+  // allow passing a custom set of status options (value, label)
+  statusOptions: {
+    type: Array,
+    default: null
   }
 });
 
@@ -39,9 +48,18 @@ const emit = defineEmits(['search', 'clear', 'status-change', 'period-change', '
 
 const searchTerm = ref('');
 const selectedStatus = ref('all');
-const selectedPeriod = ref('last7days');
+const selectedPeriod = ref(props.initialPeriod);
 const customDateRange = ref({ startDate: null, endDate: null });
 let searchTimeout = null;
+
+watch(
+    () => props.initialPeriod,
+    (newValue) => {
+      if (newValue && newValue !== selectedPeriod.value) {
+        selectedPeriod.value = newValue;
+      }
+    }
+);
 
 const periodOptions = [
   { value: 'last7days', label: 'Últimos 7 dias' },
@@ -50,8 +68,26 @@ const periodOptions = [
   { value: 'all', label: 'Desde o início' }
 ];
 
+// status option set to be used by the component (fallback to global)
+import { STATUS_OPTIONS as GLOBAL_STATUS_OPTIONS } from '../../utils/constants';
+const options = computed(() => {
+  return props.statusOptions && Array.isArray(props.statusOptions) && props.statusOptions.length > 0
+    ? props.statusOptions
+    : GLOBAL_STATUS_OPTIONS;
+});
+
 const showROI = computed(() => {
   return props.metrics.roi > 0;
+});
+
+// Determine the displayed total of opportunities.
+// Prefer `metrics.total` when provided (already may exclude won).
+// Fallback to calculating from total/all minus won only (keep recovered) for older sources.
+const displayTotal = computed(() => {
+  const m = props.metrics || {};
+  if (m.total !== undefined && m.total !== null) return m.total;
+  if (m.totalAll !== undefined && m.totalAll !== null) return (m.totalAll - (m.won || 0));
+  return (m.total || 0) - (m.won || 0);
 });
 
 watch(searchTerm, (newValue) => {
@@ -82,7 +118,7 @@ const handleDateRangeApply = (dates) => emit('date-range-change', dates);
 const handleClear = () => {
   searchTerm.value = '';
   selectedStatus.value = 'all';
-  selectedPeriod.value = 'last7days';
+  selectedPeriod.value = props.initialPeriod || 'last7days';
   customDateRange.value = { startDate: null, endDate: null };
   emit('clear');
 };
@@ -118,19 +154,12 @@ const handleClear = () => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
           label="TOTAL de Oportunidades"
-          :value="metrics.total - metrics.won"
+          :value="displayTotal"
           icon="briefcase"
           variant="blue"
           :loading="loading"
       />
 
-      <MetricCard
-          label="Oportunidades Perdidas"
-          :value="metrics.lost"
-          icon="x-circle"
-          variant="red"
-          :loading="loading"
-      />
       <MetricCard
           label="% Recuperação"
           :value="`${metrics.recoveryRate}%`"
@@ -139,18 +168,12 @@ const handleClear = () => {
           :loading="loading"
           :trend="{ value: metrics.recoveryRate, direction: metrics.recoveryRate > 0 ? 'up' : 'neutral' }"
       />
+
       <MetricCard
           label="Valor de Oportunidades Perdidas"
           :value="formatCurrency(metrics.lostValue)"
           icon="dollar-sign"
           variant="red"
-          :loading="loading"
-      />
-      <MetricCard
-          label="Tempo Médio até Recuperação"
-          :value="metrics.averageRecoveryTime"
-          icon="clock"
-          variant="orange"
           :loading="loading"
       />
 
@@ -163,28 +186,10 @@ const handleClear = () => {
       />
 
       <MetricCard
-          v-if="showROI"
-          label="ROI"
-          :value="metrics.roi"
-          icon="trending-up"
-          variant="green"
-          :loading="loading"
-      />
-
-      <MetricCard
-          :class="{ 'md:col-span-1': showROI, 'md:col-span-2 lg:col-span-1': !showROI }"
           label="Valor de Oportunidades Recuperadas"
           :value="formatCurrency(metrics.recoveredValue)"
           icon="dollar-sign"
           variant="green"
-          :loading="loading"
-      />
-
-      <MetricCard
-          label="Mensagens até Recuperação"
-          :value="metrics.averageRecoveryMessages"
-          icon="message-circle"
-          variant="purple"
           :loading="loading"
       />
     </div>
@@ -199,9 +204,9 @@ const handleClear = () => {
         />
       </div>
 
-      <div class="flex flex-wrap gap-2 mb-4">
+        <div class="flex flex-wrap gap-2 mb-4">
         <button
-            v-for="status in STATUS_OPTIONS"
+            v-for="status in options"
             :key="status.value"
             @click="handleStatusFilter(status.value)"
             :disabled="loading"

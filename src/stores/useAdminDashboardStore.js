@@ -5,6 +5,8 @@ import { useAuthStore } from './useAuthStore';
 import { storeCache, createCacheKey, CacheTTL } from '../utils/storeCache';
 import ErrorHandler from '../utils/errorHandler';
 
+const DEFAULT_COMMISSION_RATE = 0.20;
+
 export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
     const stats = ref({
@@ -62,6 +64,28 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
     const clearError = () => {
         error.value = null;
+    };
+
+    const clampCommissionRate = (rate) => {
+        if (Number.isNaN(rate) || rate < 0) return 0;
+        if (rate > 1) return 1;
+        return rate;
+    };
+
+    const resolveOpportunityCommissionRate = (opportunity) => {
+        const candidate = opportunity?.product?.commission;
+        const parsedCandidate = parseFloat(candidate);
+        if (!Number.isNaN(parsedCandidate) && parsedCandidate >= 0) {
+            return clampCommissionRate(parsedCandidate);
+        }
+        return DEFAULT_COMMISSION_RATE;
+    };
+
+    const getOpportunityCommissionValue = (opportunity) => {
+        const baseValue = parseFloat(opportunity?.converted_value ?? opportunity?.value) || 0;
+        if (baseValue <= 0) return 0;
+        const commissionRate = resolveOpportunityCommissionRate(opportunity);
+        return baseValue * commissionRate;
     };
 
 
@@ -123,7 +147,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
                 // current period recovered commissions
                 let recQuery = supabase
                     .from('opportunities')
-                    .select('converted_value, value, updated_at')
+                    .select('converted_value, value, updated_at, product:products(commission)')
                     .eq('status', 'recovered')
                     .is('deleted_at', null);
 
@@ -135,14 +159,14 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
                 if (recCurrError) throw recCurrError;
 
                 computedCurrentCommissions = (recCurr || []).reduce((sum, opp) => {
-                    return sum + ((parseFloat(opp.converted_value || opp.value) || 0) * 0.20);
+                    return sum + getOpportunityCommissionValue(opp);
                 }, 0);
 
                 // previous period recovered commissions
                 if (prevStart && prevEnd) {
                     const recPrevQuery = await supabase
                         .from('opportunities')
-                        .select('converted_value, value, updated_at')
+                        .select('converted_value, value, updated_at, product:products(commission)')
                         .eq('status', 'recovered')
                         .is('deleted_at', null)
                         .gte('updated_at', prevStart.toISOString())
@@ -151,7 +175,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
                     if (recPrevQuery.error) throw recPrevQuery.error;
 
                     computedPrevCommissions = (recPrevQuery.data || []).reduce((sum, opp) => {
-                        return sum + ((parseFloat(opp.converted_value || opp.value) || 0) * 0.20);
+                        return sum + getOpportunityCommissionValue(opp);
                     }, 0);
                 } else {
                     computedPrevCommissions = 0;
@@ -235,7 +259,7 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
 
                 // buscar oportunidades RECOVERED (usaremos updated_at como referência de quando foi recuperada)
                 supabase.from('opportunities')
-                    .select('value, converted_value, updated_at')
+                    .select('value, converted_value, updated_at, product:products(commission)')
                     .eq('status', 'recovered')
                     .is('deleted_at', null)
                     .gte('updated_at', start.toISOString())
@@ -293,10 +317,10 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
             if (value > 0) addToDay(r.created_at, value);
         });
 
-        // Processar opportunities (20% de comissão)
+        // Processar opportunities usando a comissão configurada
         opportunities?.forEach(c => {
-            const value = parseFloat(c.converted_value || c.value) || 0;
-            if (value > 0) addToDay(c.updated_at, value * 0.20);
+            const commissionValue = getOpportunityCommissionValue(c);
+            if (commissionValue > 0) addToDay(c.updated_at, commissionValue);
         });
 
         const timeline = [];
@@ -346,8 +370,8 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         });
 
         opportunities?.forEach(c => {
-            const value = parseFloat(c.converted_value || c.value) || 0;
-            if (value > 0) addToWeek(c.updated_at, value * 0.20);
+            const commissionValue = getOpportunityCommissionValue(c);
+            if (commissionValue > 0) addToWeek(c.updated_at, commissionValue);
         });
 
         const timeline = [];
@@ -406,8 +430,8 @@ export const useAdminDashboardStore = defineStore('adminDashboard', () => {
         });
 
         opportunities?.forEach(c => {
-            const value = parseFloat(c.converted_value || c.value) || 0;
-            if (value > 0) addToMonth(c.updated_at, value * 0.20);
+            const commissionValue = getOpportunityCommissionValue(c);
+            if (commissionValue > 0) addToMonth(c.updated_at, commissionValue);
         });
 
         const timeline = [];

@@ -42,6 +42,16 @@ const routes = [
     component: () => import("../components/adm/AdminDashboard.vue"),
     meta: { requiresAuth: true, requiresAdmin: true },
   },
+  {
+    path: "/admin/system-errors",
+    name: "AdminSystemErrors",
+    component: () => import("../components/adm/AdminSystemErrors.vue"),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: "Erros do Sistema"
+    }
+  },
   
   // Rotas Admin - Gestão de Clientes
   {

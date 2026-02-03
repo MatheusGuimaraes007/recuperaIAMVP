@@ -130,20 +130,23 @@ export const useDashboardClients = () => {
                         .is('deleted_at', null);
 
                     const opportunities = opps || [];
-                    // Conversão definida por status 'recovered'
                     const recoveredOpps = opportunities.filter(o => o.status === 'recovered');
+                    const wonOpps = opportunities.filter(o => o.status === 'won');
                     const totalRecovered = recoveredOpps.reduce((sum, o) =>
                         sum + (parseFloat(o.converted_value || o.value) || 0), 0
                     );
 
-                    const conversionRate = opportunities.length > 0
-                        ? (recoveredOpps.length / opportunities.length) * 100
+                    const totalNonWon = Math.max(0, opportunities.length - wonOpps.length);
+
+                    const conversionRate = totalNonWon > 0
+                        ? (recoveredOpps.length / totalNonWon) * 100
                         : 0;
 
                     return {
                         ...client,
                         metrics: {
-                            totalOpportunities: opportunities.length,
+                            totalOpportunities: totalNonWon,
+                            totalOpportunitiesAll: opportunities.length,
                             // Mantém a propriedade `wonOpportunities` para compatibilidade,
                             // porém conta oportunidades com status 'recovered' conforme solicitado.
                             wonOpportunities: recoveredOpps.length,
@@ -270,7 +273,6 @@ export const useDashboardClients = () => {
         const progress = parseFloat(guarantee.progress_percentage || 0);
         const status = getGuaranteeStatus(guarantee);
 
-        if (status.label === 'Cumprida') return '#10b981';
         if (status.label === 'Expirada' || status.label === 'Não Cumprida') return '#ef4444';
 
         if (progress >= 75) return '#10b981';

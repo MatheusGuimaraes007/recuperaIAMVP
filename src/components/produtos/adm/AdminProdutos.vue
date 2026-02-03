@@ -22,7 +22,8 @@ const {
   productPlataform,
   afiliateId,
   afiliateLink, 
-  defaultLink
+  defaultLink,
+  commissionProduct
 } = useProducts();
 
 const { fetchAllUsers, allUsers } = useUSers();
@@ -55,6 +56,25 @@ const showAlert = (type, message) => {
       isAlertVisible.value = false;
     }, 3000);
   }
+};
+
+const commissionPercent = computed({
+  get: () => Number(((commissionProduct.value ?? 0) * 100).toFixed(2)),
+  set: (value) => {
+    const numeric = parseFloat(value);
+    if (Number.isNaN(numeric)) {
+      commissionProduct.value = 0;
+      return;
+    }
+    const clamped = Math.min(Math.max(numeric, 0), 100);
+    commissionProduct.value = Number((clamped / 100).toFixed(4));
+  }
+});
+
+const formatCommissionPercent = (value) => {
+  const numeric = parseFloat(value);
+  if (Number.isNaN(numeric)) return '0%';
+  return `${(numeric * 100).toFixed(2)}%`;
 };
 
 onMounted(async () => {
@@ -99,6 +119,7 @@ const clearForm = () => {
   afiliateId.value = '';
   afiliateLink.value = '';
   defaultLink.value = '';
+  commissionProduct.value = 0.20;
 };
 
 const openDeleteModal = (product) => {
@@ -131,6 +152,7 @@ const openEditModal = (product) => {
   afiliateId.value = product.afiliate_id || '';
   afiliateLink.value = product.afiliate_link || '';
   defaultLink.value = product.default_link || '';
+  commissionProduct.value = typeof product.commission === 'number' ? product.commission : 0.20;
   showEditModal.value = true;
 };
 
@@ -294,6 +316,24 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
                         placeholder="Ex: 123456"
                     />
                 </div>
+                <div>
+                  <label class="flex items-center justify-between text-sm font-medium text-gray-300 mb-2">
+                    <span>Comissão (%)</span>
+                    <span class="text-xs text-gray-500">Armazenado como decimal</span>
+                  </label>
+                  <div class="relative">
+                    <input 
+                      v-model.number="commissionPercent"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 pr-12 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none"
+                      placeholder="Ex: 20"
+                    />
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
+                  </div>
+                </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Descrição</label>
@@ -408,6 +448,10 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
               <span class="text-white font-medium truncate max-w-[150px]">{{ product.user?.name || 'Não identificado' }}</span>
             </div>
             <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-500 flex items-center gap-1.5"><DollarSign :size="14" /> Comissão</span>
+              <span class="text-gray-100">{{ formatCommissionPercent(product.commission ?? 0.2) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
               <span class="text-gray-500 flex items-center gap-1.5"><Calendar :size="14" /> Criado em</span>
               <span class="text-gray-400">{{ formatDate(product.created_at) }}</span>
             </div>
@@ -457,6 +501,13 @@ const hasItems = computed(() => filteredProducts.value.length > 0);
              <div>
                <label class="block text-sm font-medium text-gray-300 mb-2">Link Padrão</label>
                <input v-model="defaultLink" type="text" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+             </div>
+             <div>
+               <label class="block text-sm font-medium text-gray-300 mb-2">Comissão (%)</label>
+               <div class="relative">
+                 <input v-model.number="commissionPercent" type="number" min="0" max="100" step="0.1" class="w-full bg-black/20 border border-gray-700 rounded-xl px-4 py-3 pr-12 text-white focus:border-[#7cba10] focus:ring-1 focus:ring-[#7cba10] outline-none" />
+                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
+               </div>
              </div>
              <div class="md:col-span-2">
                <label class="block text-sm font-medium text-gray-300 mb-2">Descrição</label>

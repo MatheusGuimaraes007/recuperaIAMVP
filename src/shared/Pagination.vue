@@ -19,6 +19,10 @@ const props = defineProps({
   itemsPerPage: {
     type: Number,
     default: PAGINATION.ITEMS_PER_PAGE
+  },
+  entityLabel: {
+    type: String,
+    default: 'clientes'
   }
 });
 
@@ -74,7 +78,7 @@ const goToNextPage = () => {
       class="pt-4 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4"
   >
     <div class="text-sm text-gray-400">
-      Mostrando <span class="text-white font-medium">{{ showingFrom }}</span> - <span class="text-white font-medium">{{ showingTo }}</span> de <span class="text-white font-medium">{{ totalCount }}</span> clientes
+      Mostrando <span class="text-white font-medium">{{ showingFrom }}</span> - <span class="text-white font-medium">{{ showingTo }}</span> de <span class="text-white font-medium">{{ totalCount }}</span> {{ entityLabel }}
     </div>
 
     <div class="flex gap-1">
@@ -87,12 +91,12 @@ const goToNextPage = () => {
         <ChevronLeft :size="20" />
       </button>
 
-      <button
+        <button
           v-for="(page, index) in paginationRange"
           :key="index"
           @click="handlePageChange(page)"
           :disabled="page === '...'"
-          class="min-w-[40px] px-3 py-2 rounded-lg border transition-all"
+          class="min-w-10 px-3 py-2 rounded-lg border transition-all"
           :class="page === currentPage
           ? 'border-primary text-primary bg-primary/10'
           : page === '...'

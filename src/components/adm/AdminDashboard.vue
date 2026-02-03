@@ -94,7 +94,8 @@ watch(loading, (newVal) => {
         <!-- Header Welcome Card -->
         <DashboardHeader
             :userName="user?.name || 'Usuário'"
-            :loading="loading"
+          :loading="loading"
+          :show-system-errors-button="isAdmin"
         />
 
         <!-- Low Conversion Alert -->

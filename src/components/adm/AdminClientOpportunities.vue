@@ -35,7 +35,10 @@ const loading = computed(() => clientLoading.value || oppsLoading.value);
 
 const currentPage = ref(PAGINATION.DEFAULT_PAGE);
 const itemsPerPage = PAGINATION.ITEMS_PER_PAGE;
-const currentPeriod = ref('last7days');
+const defaultPeriod = 'all';
+// Do not exclude 'won' and 'recovered' here — show all statuses in the table.
+const excludedStatuses = [];
+const currentPeriod = ref(defaultPeriod);
 const currentDateRange = ref(null);
 const currentStatus = ref('all');
 const currentSearch = ref('');
@@ -74,8 +77,9 @@ const loadOpportunities = async (filterParams = {}) => {
     delete params.period;
   }
 
-  // Forçar busca pelas oportunidades do cliente (admin view)
-  params.userId = currentClient.value?.id || clientId.value;
+      // Forçar busca pelas oportunidades do cliente (admin view)
+    params.userId = currentClient.value?.id || clientId.value;
+    // do not pass excludeStatuses so the table shows all statuses (including won/recovered)
   await opportunitiesStore.fetchOpportunities(params);
 };
 
@@ -127,7 +131,7 @@ const handleDateRangeChange = async (dates) => {
 
 const handleClearFilters = async () => {
   currentPage.value = 1;
-  currentPeriod.value = 'last7days';
+  currentPeriod.value = defaultPeriod;
   currentDateRange.value = null;
   currentStatus.value = 'all';
   currentSearch.value = '';
@@ -231,7 +235,7 @@ const showEmptyState = computed(() => {
 const hasActiveFilters = computed(() => {
   return currentSearch.value !== '' ||
       currentStatus.value !== 'all' ||
-      currentPeriod.value !== 'last7days' ||
+  currentPeriod.value !== defaultPeriod ||
       currentDateRange.value !== null;
 });
 </script>
@@ -257,12 +261,12 @@ const hasActiveFilters = computed(() => {
         <!-- Header -->
         <Card padding="lg" class="mb-8 relative overflow-hidden">
           <div class="absolute inset-0 opacity-5">
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,_white_1px,_transparent_0)] bg-[length:40px_40px]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,white_1px,transparent_0)] bg-size-[40px_40px]"></div>
           </div>
 
           <div class="relative">
             <div class="flex items-center gap-3 mb-2">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+              <div class="w-12 h-12 rounded-xl bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
                 <Briefcase :size="24" class="text-white" />
               </div>
               <h1 class="text-3xl font-bold text-white">
@@ -280,6 +284,12 @@ const hasActiveFilters = computed(() => {
             <OpportunityFilters
               :loading="loading"
               :metrics="totalMetrics"
+              :initial-period="defaultPeriod"
+              :status-options="[
+                { value: 'active', label: 'Ativo' },
+                { value: 'won', label: 'Venda' },
+                { value: 'recovered', label: 'Recuperado' }
+              ]"
               @search="handleSearch"
               @status-change="handleStatusChange"
               @period-change="handlePeriodChange"
@@ -291,7 +301,7 @@ const hasActiveFilters = computed(() => {
         <!-- Error State -->
         <Card v-if="error" padding="md" class="mb-6">
           <div class="p-4 rounded-lg border flex items-start gap-3 bg-status-error-light border-status-error-border">
-            <AlertCircle :size="20" class="text-status-error flex-shrink-0 mt-0.5" />
+            <AlertCircle :size="20" class="text-status-error shrink-0 mt-0.5" />
             <div>
               <p class="text-sm font-medium text-status-error">
                 Erro ao carregar dados
